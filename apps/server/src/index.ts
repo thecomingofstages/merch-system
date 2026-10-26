@@ -1,18 +1,17 @@
 /**
- * Welcome to Cloudflare Workers! This is your first worker.
+ * Worker entry point (docs/BACKEND.md "Hosting"): the Express app runs on
+ * Cloudflare Workers through httpServerHandler.
  *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
+ * No database step here: Workers keep nothing between requests, so each request
+ * opens its own connection (db.ts).
  */
+import { env } from "cloudflare:workers";
+import { httpServerHandler } from "cloudflare:node";
+import { buildApp } from "./app";
+import { readEnv } from "./env";
 
-export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		return new Response("Hello World!");
-	},
-} satisfies ExportedHandler<Env>;
+const PORT = 3000; // only a label that links listen() to the handler
+
+buildApp(readEnv(env as unknown as Record<string, unknown>)).listen(PORT);
+
+export default httpServerHandler({ port: PORT });
