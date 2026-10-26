@@ -8,9 +8,9 @@ packages/
   shared/   @merch/shared  zod schemas + types, cartSubtotal(), promptpayPayload(), formatThaiAddress()
   ui/       @merch/ui      React components, useCart, slip QR reader, Tailwind theme (styles.css)
 apps/
-  client/     storefront (phones first)
-  pos/        on-site sale (tablet, landscape)
-  dashboard/  back office (desktop)
+  client/     storefront (phones first)            Cloudflare Workers (OpenNext)
+  pos/        on-site sale (tablet, landscape)     private VM, pm2, Tailscale only, HTTPS
+  dashboard/  back office (desktop)                private VM, pm2, Tailscale only
 ```
 - Each app's `next.config.ts` adds `transpilePackages: ["@merch/ui", "@merch/shared"]`.
 - Each app's `globals.css` does `@import "@merch/ui/styles.css";` and `@source "../../../../packages/ui/src";` so Tailwind sees the classes used inside `packages/ui` (adjust the relative path per app).
@@ -26,41 +26,43 @@ apps/
 
 | Component / hook | Props (summary) | Used by | Task |
 |---|---|---|---|
-| `Button`, `Input`, `Select`, `Dialog`, `QuantityStepper`, `Price` | standard | all | T07 |
-| `ProductCard` | `product`, `stockOf(variant)`, `onOpen` | client, POS | T11 |
-| `ProductPopup` | `product`, `stockOf(variant)`, `onAdd(variantId, count)`; caps the amount by `buy_limit` and stock | client, POS | T11 |
-| `CartSummary` | `lines`, `shippingFee?`, `total?` (shipping hidden on POS) | client, POS | T11 |
-| `useCart()` | add / setCount / remove / clear; lines grouped by product | client, POS | T12 |
-| `PaymentQR` | `promptpayId`, `amount` | client, POS | T15 |
-| `readSlipQrFromFile(file)` / `useSlipQrCamera()` | returns the payload string or null | client / POS | T16 |
-| `CartTicket` | `count`, `total`, `action` (see design direction) | client tray, POS checkout pane, payment step | T11 |
+| `Button`, `Input`, `Select`, `Dialog`, `QuantityStepper`, `Price` | standard | all | F8 |
+| `ProductCard` | `product`, `stockOf(variant)`, `onOpen` | client, POS | 1.1 |
+| `ProductPopup` | `product`, `stockOf(variant)`, `onAdd(variantId, count)`; caps the amount by `buy_limit` and stock | client, POS | 1.1 |
+| `CartSummary` | `lines`, `shippingFee?`, `total?` (shipping hidden on POS) | client, POS | 1.1 |
+| `useCart()` | add / setCount / remove / clear; lines grouped by product | client, POS | 1.2 |
+| `PaymentQR` | `promptpayId`, `amount` | client, POS | 1.6 |
+| `readSlipQrFromFile(file)` / `useSlipQrCamera()` | returns the payload string or null | client / POS | 1.7 |
+| `CartTicket` | `count`, `total`, `action` (see design direction) | client tray, POS checkout pane, payment step | 1.1 |
 
 ## App screens
 
 ### apps/client (FE1)
 | Screen | Notes | Task |
 |---|---|---|
-| Shop list | Header with cart count, one section per shop, `ProductCard` grid, `CartTicket` tray at the bottom | T13 |
-| Product popup | `ProductPopup` | T11 |
-| Checkout ① details | Sprint 1: plain form. Sprint 2: Google sign-in required first, autofill from `/me` (all fields editable, email read-only), postcode → tambon dropdown → amphoe/province auto, details field, live address preview with `formatThaiAddress()` | T14, T21, T23 |
-| Checkout ② payment | `PaymentQR` with the quoted total, "Upload slip" → `readSlipQrFromFile` → show read / not read | T18 |
-| Checkout ③ confirm | "Place order" → `POST /orders` → popup "Order placed" → Home | T18 |
+| Shop list | Header with cart count, one section per shop, `ProductCard` grid, `CartTicket` tray at the bottom | 1.3 |
+| Product popup | `ProductPopup` | 1.1 |
+| Checkout ① details | Sprint 1: plain form. Sprint 2: Google sign-in required first, autofill from `/me` (all fields editable, email read-only), postcode → tambon dropdown → amphoe/province auto, details field, live address preview with `formatThaiAddress()` | 1.4, 2.1, 2.3 |
+| Checkout ② payment | `PaymentQR` with the quoted total, "Upload slip" → `readSlipQrFromFile` → show read / not read. If the QR can't be read, "Place order" stays disabled (D5). | 1.5 |
+| Checkout ③ confirm | "Place order" → `POST /orders` → popup "Order placed" → Home | 1.5 |
 
 ### apps/pos (FE3)
 | Screen | Notes | Task |
 |---|---|---|
-| Rotate prompt | Shown in portrait | T33 |
-| Sell | POS location select (persisted in `localStorage`), product grid with `pos_stock`, `CartSummary` + Checkout | T33 |
-| Pay | `PaymentQR`, camera scan with `useSlipQrCamera`, Back, Manual verify (confirm dialog) → sale saved → back to Sell with an empty cart | T34 |
+| Rotate prompt | Shown in portrait | 2.6 |
+| Sell | POS location select (persisted in `localStorage`), product grid with `pos_stock`, `CartSummary` + Checkout | 2.6 |
+| Pay | `PaymentQR`, camera scan with `useSlipQrCamera`, Back, Manual verify (confirm dialog) → sale saved → back to Sell with an empty cart | 2.7 |
+
+The POS never calls `apps/server` directly. Its browser calls the POS's own Next.js server (`/api/...`), which adds `ADMIN_ACCESS_TOKEN` from the VM's env and forwards the call (F7). Never put the token in a `NEXT_PUBLIC_` variable.
 
 ### apps/dashboard (FE2)
 | Screen | Notes | Task |
 |---|---|---|
-| Sign in | Token field; token kept in `sessionStorage` | T06 |
-| Dashboard | Empty state: "Sales overview comes later." | T06 |
-| Products | Shops → products → variants table; Add stock; Transfer to POS | T10, T32 |
-| Orders | List with new-order badge, detail, Submit for shipping | T28 |
-| POS | Create, list, stock table, End sale | T32 |
+| Sign in | Token field; token kept in `sessionStorage` | 1.8 |
+| Dashboard | Empty state: "Sales overview comes later." | 1.8 |
+| Products | Shops → products → variants table; Add stock; Transfer to POS | 1.9, 2.9 |
+| Orders | List with new-order badge, detail, Submit for shipping | 2.8 |
+| POS | Create, list, stock table, End sale | 2.9 |
 
 ## Design direction
 
