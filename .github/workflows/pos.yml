@@ -1,0 +1,29 @@
+# Checks for apps/pos, which runs on the private VM under pm2 (D8, D9).
+# Same flow as client.yml's check job; the build is `next build`, as the VM runs it.
+# Deploys to the VM: task I5.
+name: pos
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/pos/**", "packages/**", "package.json", "package-lock.json", ".github/workflows/pos.yml"]
+  pull_request:
+    paths: ["apps/pos/**", "packages/**", "package.json", "package-lock.json", ".github/workflows/pos.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint -w apps/pos
+      - run: npm run typecheck -w apps/pos
+      - run: npm run test -w apps/pos --if-present
+      - run: npm run build -w apps/pos
