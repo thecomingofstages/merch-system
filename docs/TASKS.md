@@ -20,7 +20,8 @@ One brief per task. Hand a developer (or their AI tool) the brief together with 
 
 | # | Decision |
 |---|---|
-| D1 | Products: separate `products` collection with `shop_id` (recommended in BACKEND.md). **Still open: BE confirms before S1.** |
+| D1 | Products: separate `products` collection with `shop_id`, variants embedded. **BE confirms; DO to approve.** |
+| D10 | **Proposed by BE, needs the CEO (question 21):** online orders start as `payment_status: PENDING_CHECK` and an admin verifies each slip against the bank account before shipping (BACKEND.md "Business rules" 6). |
 | D2 | A **new Atlas project** with a **free (M0) cluster**, separate from the enrollment site's project. Every Atlas cluster is a replica set, so transactions work. The merch server never connects to the enrollment cluster. |
 | D3 | The Google Cloud project is owned by the TCOS Google account; DO sets it up. |
 | D4 | **No enrollment data.** The merch `users` collection starts empty and keeps the draft schema. A buyer's first Google sign-in creates their user; later sign-ins autofill from it. |
@@ -39,6 +40,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 3. **Mongoose on Workers:** not yet confirmed to work. F3 checks it. If it doesn't, use the official `mongodb` driver, as the portfolio project does.
 4. **Workers plan:** free or paid. Affects I4.
 5. **Domains** for the client and the server. They must share one parent domain (see I6).
+6. **Database connection per request** (raised by BE). `withDb` opens a new connection for every request: TLS, auth and server discovery each time, and many connections against M0's limit. Caching it per isolate may be faster, but Workers may refuse a socket opened in another request, and AGENTS.md forbids it today. DO and BE measure both on staging before changing `db.ts`.
 
 ---
 
@@ -227,6 +229,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Size:** M · **Depends on:** 1.8, S7, 2.4 · **Owner:** FE2
 - **Read:** POC page 3, Orders
 - **Done when:** the list shows the new-order badge, the detail shows buyer and address, and saving a tracking ID changes the status to SHIPPING.
+- **If D10 is accepted:** the detail shows the transaction reference from `slip_qr_data` and the expected total, with Verify and Reject buttons; the tracking field is disabled until the order is verified.
 
 ### 2.9 Dashboard: POS page
 - **Size:** M · **Depends on:** 1.9, S8 · **Owner:** FE2
@@ -261,12 +264,15 @@ Leave these as `TODO(<question>)` until the project lead answers:
 ### S1. Models and indexes
 - **Size:** S · **Sprint:** 1 · **Depends on:** F3, F4, D1 · **Owner:** BE · **shared**
 - **Read:** BACKEND.md "Data model"
-- **Done when:** the models load (including `users`, with the draft schema), and `slip_qr_data` and `users.email` have unique indexes.
+- **Done when:**
+  - the models load (including `users`, with the draft schema as changed in BACKEND.md "Data model");
+  - `users.email` has a unique index, and `slip_qr_data` a unique **partial** index: two purchases without `slip_qr_data` both save, two with the same value don't;
+  - a smoke check against `wrangler dev` runs one transaction on the cluster.
 
 ### S2. Admin catalog API
 - **Size:** M · **Sprint:** 1 · **Depends on:** S1, F6 · **Owner:** BE
 - **Read:** BACKEND.md "API"
-- **Done when:** shops, products and variants have CRUD, and adding stock uses an atomic `$inc`. Each route has a test.
+- **Done when:** shops, products and variants have CRUD, and adding stock uses an atomic `$inc`. `DELETE` archives instead of removing and answers `409 IN_USE` while the item has stock. Each route has a test.
 
 ### S3. Public catalog
 - **Size:** S · **Sprint:** 1 · **Depends on:** S2 · **Owner:** BE
@@ -274,17 +280,18 @@ Leave these as `TODO(<question>)` until the project lead answers:
 
 ### S4. Pricing and quote
 - **Size:** S · **Sprint:** 1 · **Depends on:** S1 · **Owner:** BE · **shared** (`services/pricing.ts`)
-- **Read:** BACKEND.md "Business rules" 1
-- **Done when:** `POST /quote` returns subtotal, shipping and total from database prices, and a test shows client-sent prices are ignored.
+- **Read:** BACKEND.md "Business rules" 1, 2
+- **Done when:** `POST /quote` returns subtotal, shipping and total from database prices for both channels (`ONLINE` with shipping, `POS` without), lines for the same variant are merged, and a test shows client-sent prices are ignored.
 
 ### S5. Create order
 - **Size:** M · **Sprint:** 1 · **Depends on:** S4 · **Owner:** BE
 - **Read:** BACKEND.md "Business rules"
 - **Done when:** tests cover:
   - a duplicate slip returns `409 DUPLICATE_SLIP`;
-  - two orders for the last item: only one succeeds;
-  - `buy_limit` is enforced;
-  - an order without `slip_qr_data` is rejected (D5).
+  - two orders for the last item: only one succeeds, the other gets `409 OUT_OF_STOCK` (use `withTransaction`, which retries write conflicts);
+  - `buy_limit` is enforced, also when a variant is split over two lines;
+  - an order without `slip_qr_data` is rejected (D5);
+  - the order copies product and variant names, and starts as `payment_status: PENDING_CHECK` (D10).
 
 ### S6. Google sign-in
 - **Size:** M · **Sprint:** 2 · **Depends on:** S1, I6 · **Owner:** BE
@@ -294,11 +301,15 @@ Leave these as `TODO(<question>)` until the project lead answers:
   - With no user for that email, create one in the merch `users` collection with the email and the name from Google (D4). Fields the merch site doesn't collect stay empty.
   - Placing an order saves the buyer's details (name, nickname, phone, LINE ID, address) to their user, so the next sign-in autofills them.
   - `GET /me` returns the autofill fields. `POST /orders` requires the session.
-- **Done when:** an expired or forged token is rejected, a first sign-in gives an empty form apart from the name and email, and a second sign-in gives the details from the last order.
+  - Session routes accept only `application/json` and an `Origin` from `CORS_ORIGINS` (CSRF).
+- **Done when:** a non-JSON or foreign-origin request to `POST /orders` is rejected, an expired or forged token is rejected, a first sign-in gives an empty form apart from the name and email, and a second sign-in gives the details from the last order.
 
 ### S7. Admin orders
-- **Size:** S · **Sprint:** 2 · **Depends on:** S5 · **Owner:** BE
-- **Done when:** orders can be listed by status and counted, and `PATCH /admin/orders/:id/tracking` sets status `SHIPPING`. A POS sale can't get a tracking ID.
+- **Size:** M (S, plus the payment check if D10 is accepted) · **Sprint:** 2 · **Depends on:** S5 · **Owner:** BE
+- **Done when:**
+  - orders can be listed by status and by payment status, and counted;
+  - `PATCH /admin/orders/:id/payment` sets `VERIFIED` or `REJECTED`; rejecting returns the stock in a transaction;
+  - `PATCH /admin/orders/:id/tracking` sets status `SHIPPING`, and answers `409 NOT_VERIFIED` before verification. A POS sale can't get a tracking ID.
 
 ### S8. POS management API
 - **Size:** M · **Sprint:** 2 · **Depends on:** S2 · **Owner:** BE
@@ -306,7 +317,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 
 ### S9. POS sales
 - **Size:** S · **Sprint:** 2 · **Depends on:** S8, S4 · **Owner:** BE
-- **Done when:** the same tests as S5 pass against `pos_stock`, and "Manual verify" saves `verify_method: MANUAL` with no `slip_qr_data`.
+- **Done when:** the same tests as S5 pass against `pos_stock`, a variant outside the POS's shops is rejected, no shipping is charged, and "Manual verify" saves `verify_method: MANUAL` with no `slip_qr_data` (two manual sales in a row both save).
 
 ### S10. Email calls
 - **Size:** S · **Sprint:** 2 · **Depends on:** 2.5, S7 · **Owner:** BE
@@ -397,6 +408,8 @@ Rough days per person (S = 1, M = 2.5), against 5 working days per sprint:
 1. **Add a third sprint**, as the portfolio project has.
 2. **Cut, in this order, until it fits:** emails (2.5, S10), the postcode lookup (2.2; use plain address fields), CI (I3; check builds by hand), the dashboard POS page (2.9; transfer stock from the Products page only).
 3. **Move work to FE3, who has the most room:** for example F6 or S11.
+
+**BE's proposal (needs DO's OK):** S7 grows by about 1.5 days for the payment check (D10), which matters more for money than emails do. To make room: S11 moves to FE3, and S10 moves to a third sprint (or is cut with 2.5). BE's sprint 2 then stays at about 9 days.
 
 **Critical path:** I1 → F1 → F3 → S1 → S4 → S5 → 1.5 (sprint 1 demo), then S8 → S9 → 2.7 (POS).
 
