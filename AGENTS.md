@@ -61,7 +61,7 @@ CI (`.github/workflows/`) runs lint, type check, tests and the deploy build for 
 
 ### Server (Express on Cloudflare Workers)
 - The server runs on Workers, not a long-running Node process. Keep `nodejs_compat` in `wrangler.jsonc`. Do not rely on the disk, on memory kept between requests, or on packages with native add-ons.
-- Open the database only through `withDb` in `src/db.ts` (one connection per request).
+- Open the database only through `withDb` in `src/app/database/db.ts` (one connection per request).
 - Check request bodies with the zod schemas from `@merch/shared`.
 - Every `/admin/*` route needs `Authorization: Bearer <ADMIN_ACCESS_TOKEN>`.
 

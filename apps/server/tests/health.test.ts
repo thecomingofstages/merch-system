@@ -1,9 +1,9 @@
 import request from "supertest";
 import { describe, expect, it, vi } from "vitest";
-import { buildTestApp } from "./helpers";
+import { buildTestApp } from "./helpers/app";
 
-vi.mock("../src/db", () => ({ pingDatabase: vi.fn() }));
-const { pingDatabase } = await import("../src/db");
+vi.mock("../src/app/helpers/health.helper", () => ({ pingDatabase: vi.fn() }));
+const { pingDatabase } = await import("../src/app/helpers/health.helper");
 
 describe("GET /health", () => {
   it("answers 200 when the database answers", async () => {

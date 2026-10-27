@@ -1,12 +1,12 @@
 import request from "supertest";
 import { describe, expect, it } from "vitest";
-import { buildTestApp, testEnv } from "./helpers";
+import { buildTestApp, testConfig } from "./helpers/app";
 
 describe("admin auth (F6)", () => {
   it.each([
     ["no header", undefined],
     ["wrong token", "Bearer wrong-token"],
-    ["token without Bearer", testEnv.ADMIN_ACCESS_TOKEN],
+    ["token without Bearer", testConfig.ADMIN_ACCESS_TOKEN],
   ])("answers 401 with %s", async (_label, header) => {
     const req = request(buildTestApp()).get("/admin/anything");
     const res = await (header ? req.set("Authorization", header) : req);
@@ -15,7 +15,7 @@ describe("admin auth (F6)", () => {
   });
 
   it("lets the right token through (no admin routes yet, so 404)", async () => {
-    const res = await request(buildTestApp()).get("/admin/anything").set("Authorization", `Bearer ${testEnv.ADMIN_ACCESS_TOKEN}`);
+    const res = await request(buildTestApp()).get("/admin/anything").set("Authorization", `Bearer ${testConfig.ADMIN_ACCESS_TOKEN}`);
     expect(res.status).toBe(404);
   });
 });
