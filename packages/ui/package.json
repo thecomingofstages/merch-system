@@ -1,0 +1,10 @@
+{
+  "name": "@merch/ui",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts", "./styles.css": "./src/styles.css" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "peerDependencies": { "react": "^19.3.1" },
+  "dependencies": { "@merch/shared": "*" },
+  "devDependencies": { "@types/react": "^19.3.0", "react": "^19.3.1", "typescript": "^5.9.3" }
+}

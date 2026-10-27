@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@import "@merch/ui/styles.css";
+/* Let Tailwind see the classes used inside packages/ui */
+@source "../../../../packages/ui/src";

@@ -1,0 +1,40 @@
+/*
+ * Design tokens for every app (docs/FRONTEND.md "Design direction").
+ * Each app's globals.css imports this after "tailwindcss".
+ * Fonts are loaded in each app's layout.tsx with next/font, which sets
+ * --font-chonburi and --font-anuphan on <body>.
+ */
+@theme {
+  --color-curtain: #b3122e; /* primary actions and the cart ticket */
+  --color-ink: #221b33; /* text */
+  --color-house: #f6f5fb; /* page background */
+  --color-violet: #5b3fd1; /* links, selected variant */
+  --color-spotlight: #ffd23f; /* focus ring, changed-total flash; ink text on top */
+  --color-rigging: #dcd8e8; /* borders and dividers */
+
+  --font-display: var(--font-chonburi), serif; /* 24px and above only */
+  --font-text: var(--font-anuphan), sans-serif;
+
+  /* 1.25 scale: 13 / 16 / 20 / 25 / 31 / 39 px */
+  --text-small: 0.8125rem;
+  --text-body: 1rem;
+  --text-h4: 1.25rem;
+  --text-h3: 1.5625rem;
+  --text-h2: 1.9375rem;
+  --text-h1: 2.4375rem;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-house);
+    color: var(--color-ink);
+    font-family: var(--font-text);
+    font-size: var(--text-body);
+    line-height: 1.6; /* Thai needs more than Latin: stacked vowels and tone marks */
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-spotlight);
+    outline-offset: 2px;
+  }
+}

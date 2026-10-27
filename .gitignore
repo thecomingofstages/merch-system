@@ -1,1 +1,17 @@
+# Dependencies and build output (every app and package)
+node_modules/
+.next/
+.open-next/
+.wrangler/
+dist/
+out/
+*.tsbuildinfo
+
+# Secrets: never commit. Use .env.example / .dev.vars.example.
+.env*
+!.env.example
+.dev.vars*
+!.dev.vars.example
+
+# Kept on the project lead's PC only
 docs/research/

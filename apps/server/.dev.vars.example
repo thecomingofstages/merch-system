@@ -1,0 +1,15 @@
+# Local secrets for `npx wrangler dev`. Copy to .dev.vars (never committed) and fill in.
+# In production these are set with `npx wrangler secret put <NAME>` (docs/BACKEND.md "Environment").
+
+# Used now (F3, F6)
+MONGODB_URI=
+# At least 32 random characters, e.g. `openssl rand -hex 32`
+ADMIN_ACCESS_TOKEN=
+
+# Added by later tasks
+# PROMPTPAY_ID=        (S4)
+# SHIPPING_FEE=        (S4)
+# GOOGLE_CLIENT_ID=    (S6)
+# SESSION_SECRET=      (S6)
+# RESEND_API_KEY=      (2.5)
+# EMAIL_FROM=          (2.5)
