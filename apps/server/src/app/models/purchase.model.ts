@@ -3,7 +3,7 @@
  * at order time, so later edits never change a past order.
  */
 import { Schema } from "mongoose";
-import { addressSchema } from "./address";
+import { addressSchema } from "./address.model";
 
 const lineVariantSchema = new Schema(
   {

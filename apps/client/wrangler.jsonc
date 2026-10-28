@@ -34,6 +34,12 @@
 	"observability": {
 		"enabled": true
 	},
+	// Bindings for `wrangler preview` (client.yml); previews don't inherit the ones above
+	"previews": {
+		"images": {
+			"binding": "IMAGES"
+		}
+	},
 	"upload_source_maps": true
 	/**
 	 * Smart Placement

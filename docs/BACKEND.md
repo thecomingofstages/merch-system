@@ -32,17 +32,23 @@
 - Tests and staging use their own database (`MONGODB_URI_TEST`), never the production one.
 
 ## Folder layout
+Same layout as the portfolio website's `apps/server`.
 ```
 apps/server/src/
-  index.ts          Worker entry point
-  app.ts            Express app: CORS, routes, error handler
-  env.ts            reads and checks the environment with zod (fail fast on start)
-  db.ts             the database connection (F3)
-  models/           Mongoose models
-  routes/           public.ts, auth.ts, orders.ts, address.ts, admin/*.ts, pos.ts
-  services/         pricing.ts (quote), stock.ts, email.ts, postcode.ts
-  middleware/       adminAuth.ts, session.ts
+  index.ts              Worker entry point: config → app → listen
+  app/
+    server.ts           buildApp: Security, routes, NotFound, ErrorHandler
+    config/             init.ts reads and checks the environment with zod (fail fast on start);
+                        app.conf.ts (vars), app.keys.ts (secrets), db.conf.ts, db.keys.ts
+    database/db.ts      the database connection, withDb (F3)
+    models/             Mongoose models: <name>.model.ts
+    routes/             init.ts mounts them; <name>.route.ts: public, auth, order, address, pos; admin/*.route.ts
+    controllers/        <name>.controller.ts: read the request, call a helper, send the answer
+    helpers/            business logic: pricing.helper.ts (quote), stock.helper.ts, email.helper.ts, postcode.helper.ts
+    middleware/         Security.ts (helmet, CORS, JSON limit), Auth.ts (admin token), Session.ts, ErrorHandler.ts
+    utils/              ApiError.ts, config.ts
 ```
+Request bodies are checked with the zod schemas from `@merch/shared` (see "Shared zod schemas"), so there is no `schemas/` folder.
 
 ## Environment
 Secrets are set with `npx wrangler secret put` in production and in `.dev.vars` locally. `.dev.vars.example` lists every key with empty values.
@@ -74,7 +80,7 @@ From the draft schema plus the additions on POC page 4. D1 (proposed by BE): a s
 - **Why the slip index is partial, not sparse:** a sparse index still indexes an explicit `null`, so the second manual POS sale would hit the unique index. The index is `{ unique: true, partialFilterExpression: { slip_qr_data: { $type: "string" } } }`.
 
 ## Business rules (the reason this system exists)
-1. **The server decides every amount.** Prices, subtotal and shipping always come from the database (`services/pricing.ts`). Totals sent by a client are ignored. `POST /quote`, `POST /orders` and `POST /pos/:id/sales` call the same function, so the QR amount equals the charged amount. It takes a channel:
+1. **The server decides every amount.** Prices, subtotal and shipping always come from the database (`helpers/pricing.helper.ts`). Totals sent by a client are ignored. `POST /quote`, `POST /orders` and `POST /pos/:id/sales` call the same function, so the QR amount equals the charged amount. It takes a channel:
    - `ONLINE`: only `visible_to_online` variants, `online_stock`, plus `SHIPPING_FEE` once per order.
    - `POS` (with `pos_id`): only variants of that POS's `shop_ids`, `pos_stock`, no shipping.
    `POST /orders` always prices as `ONLINE` and `POST /pos/:id/sales` as `POS`; the server sets the channel, never the client.
@@ -124,7 +130,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 - **POS (D6):** `ADMIN_ACCESS_TOKEN` is set in the POS's env on the VM. The POS browser calls the POS's own Next.js server, which adds the token and forwards the call (F7). The token never reaches the tablet's browser. Because the POS uses the admin token, anyone with access to the POS VM has full admin access; Tailscale is what limits that.
 
 ## Emails (2.5, S10)
-`services/email.ts` exposes `sendOrderConfirmation(order)` and `sendShippingUpdate(order)`. They are called after the database write succeeds. A failed send is logged and never rolls back the order. The tracking link is not included yet (tracking provider is still open).
+`helpers/email.helper.ts` exposes `sendOrderConfirmation(order)` and `sendShippingUpdate(order)`. They are called after the database write succeeds. A failed send is logged and never rolls back the order. The tracking link is not included yet (tracking provider is still open).
 
 ## Tests that must exist
 - Pricing: client-sent prices ignored; shipping added once per online order and never on a POS sale.

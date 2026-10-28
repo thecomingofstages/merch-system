@@ -7,17 +7,16 @@
  */
 import { createHash, timingSafeEqual } from "node:crypto";
 import type { RequestHandler } from "express";
-import type { Env } from "../env";
-import { ApiError } from "../errors";
+import { ApiError } from "../utils/ApiError";
+import { getConfig } from "../utils/config";
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest();
 
-export const adminAuth: RequestHandler = (req, res, next) => {
-  const { ADMIN_ACCESS_TOKEN } = req.app.locals.env as Env;
+export const Auth: RequestHandler = (req, res, next) => {
   const given = /^Bearer (.+)$/.exec(req.get("authorization") ?? "")?.[1] ?? "";
-  if (!timingSafeEqual(sha256(given), sha256(ADMIN_ACCESS_TOKEN))) {
+  if (!timingSafeEqual(sha256(given), sha256(getConfig(req).ADMIN_ACCESS_TOKEN))) {
     res.set("WWW-Authenticate", 'Bearer realm="admin"');
-    return next(new ApiError(401, "UNAUTHORIZED", "Unauthorized"));
+    return next(ApiError.unauthorized());
   }
   next();
 };

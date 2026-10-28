@@ -3,7 +3,7 @@
  * Google only. Created on first sign-in (D4); fields merch doesn't collect stay empty.
  */
 import { Schema } from "mongoose";
-import { addressSchema } from "./address";
+import { addressSchema } from "./address.model";
 
 export const userSchema = new Schema(
   {

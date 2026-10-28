@@ -5,21 +5,13 @@
  * each request opens one through `withDb` and closes it when done.
  */
 import mongoose, { type Connection } from "mongoose";
+import { dbConf } from "../config/db.conf";
 
 export async function withDb<T>(uri: string, fn: (db: Connection) => Promise<T>): Promise<T> {
-  const db = await mongoose
-    .createConnection(uri, { maxPoolSize: 1, serverSelectionTimeoutMS: 5000 })
-    .asPromise();
+  const db = await mongoose.createConnection(uri, dbConf).asPromise();
   try {
     return await fn(db);
   } finally {
     await db.close();
   }
-}
-
-/** Answers when the database is reachable; throws otherwise. */
-export function pingDatabase(uri: string): Promise<void> {
-  return withDb(uri, async (db) => {
-    await db.db!.admin().ping();
-  });
 }

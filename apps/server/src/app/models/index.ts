@@ -1,13 +1,13 @@
 /**
- * Models are bound to the per-request connection from withDb (db.ts), not to the
+ * Models are bound to the per-request connection from withDb (database/db.ts), not to the
  * global mongoose instance, so they are built from schemas on each connection.
  */
 import type { Connection } from "mongoose";
-import { posSchema } from "./pos";
-import { productSchema } from "./product";
-import { purchaseSchema } from "./purchase";
-import { shopSchema } from "./shop";
-import { userSchema } from "./user";
+import { posSchema } from "./pos.model";
+import { productSchema } from "./product.model";
+import { purchaseSchema } from "./purchase.model";
+import { shopSchema } from "./shop.model";
+import { userSchema } from "./user.model";
 
 export function models(db: Connection) {
   return {

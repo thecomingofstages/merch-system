@@ -71,12 +71,12 @@ Leave these as `TODO(<question>)` until the project lead answers:
 ### F3. Server skeleton on Workers
 - **Size:** M · **Depends on:** F1, I2 · **Owner:** DO · **shared**
 - **Read:** BACKEND.md "Stack", "Hosting", "Folder layout", "Environment"
-- **Files:** `apps/server/wrangler.jsonc`, `apps/server/src/index.ts`, `src/app.ts`, `src/env.ts`, `src/db.ts`, `.dev.vars.example`
+- **Files:** `apps/server/wrangler.jsonc`, `apps/server/src/index.ts`, `src/app/server.ts`, `src/app/config/`, `src/app/database/db.ts`, `src/app/routes/health.route.ts`, `.dev.vars.example`
 - **Do:**
   - Express on Workers with `nodejs_compat` listed explicitly.
   - Read and check the environment at start; list every secret in `.dev.vars.example` with empty values.
   - Connect to the merch database on the new cluster.
-  - Check that Mongoose works on Workers. If it doesn't, switch `db.ts` to the official `mongodb` driver and tell BE before S1.
+  - Check that Mongoose works on Workers. If it doesn't, switch `database/db.ts` to the official `mongodb` driver and tell BE before S1.
   - The error format from BACKEND.md "API".
 - **Done when:** `npx wrangler dev` starts the server locally, and `GET /health` reads from MongoDB.
 
@@ -98,7 +98,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 ### F6. Admin auth and CORS
 - **Size:** S · **Depends on:** F3 · **Owner:** DO
 - **Read:** BACKEND.md "Auth details"
-- **Files:** `apps/server/src/middleware/adminAuth.ts`, `src/app.ts`
+- **Files:** `apps/server/src/app/middleware/Auth.ts`, `src/app/middleware/Security.ts`
 - **Done when:** every `/admin/*` route answers `401` without a valid `ADMIN_ACCESS_TOKEN`, and only the origins in `CORS_ORIGINS` are allowed.
 
 ### F7. POS token forwarding
@@ -190,7 +190,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 
 ### 2.2 Postcode lookup endpoint
 - **Size:** M · **Depends on:** F3 · **Owner:** FE1 (BE reviews)
-- **Files:** `apps/server/src/routes/address.ts`, `src/services/postcode.ts`
+- **Files:** `apps/server/src/app/routes/address.route.ts`, `src/app/controllers/address.controller.ts`, `src/app/helpers/postcode.helper.ts`
 - **Do:** choose the source: a free external API, otherwise a bundled dataset. `GET /address/postcode/:code` returns `[{ tambon, amphoe, province }]`.
 - **Done when:** a postcode that covers several tambons returns all of them.
 
@@ -211,7 +211,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 ### 2.5 Emails
 - **Size:** S · **Depends on:** F3, 2.4, I6 · **Owner:** FE3 (BE reviews)
 - **Read:** BACKEND.md "Emails"
-- **Files:** `apps/server/src/services/email.ts`
+- **Files:** `apps/server/src/app/helpers/email.helper.ts`
 - **Done when:** the order confirmation (items, total, address) and the shipping update (tracking ID) both arrive in a real inbox. A failed send is logged and never fails the order.
 
 ### 2.6 POS: sell screen
@@ -279,7 +279,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Done when:** `GET /catalog` returns only `visible_to_online` variants, each with a `sold_out` flag.
 
 ### S4. Pricing and quote
-- **Size:** S · **Sprint:** 1 · **Depends on:** S1 · **Owner:** BE · **shared** (`services/pricing.ts`)
+- **Size:** S · **Sprint:** 1 · **Depends on:** S1 · **Owner:** BE · **shared** (`helpers/pricing.helper.ts`)
 - **Read:** BACKEND.md "Business rules" 1, 2
 - **Done when:** `POST /quote` returns subtotal, shipping and total from database prices for both channels (`ONLINE` with shipping, `POS` without), lines for the same variant are merged, and a test shows client-sent prices are ignored.
 

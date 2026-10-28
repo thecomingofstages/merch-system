@@ -8,20 +8,16 @@
  * RESEND_API_KEY and EMAIL_FROM in 2.5).
  */
 import { z } from "zod";
+import { appConfSchema } from "./app.conf";
+import { appKeysSchema } from "./app.keys";
+import { dbKeysSchema } from "./db.keys";
 
-const envSchema = z.object({
-  MONGODB_URI: z.string().startsWith("mongodb"),
-  ADMIN_ACCESS_TOKEN: z.string().min(32, "use at least 32 random characters"),
-  CORS_ORIGINS: z
-    .string()
-    .transform((s) => s.split(",").map((o) => o.trim()).filter(Boolean))
-    .pipe(z.array(z.string().url()).min(1)),
-});
+const envSchema = appConfSchema.merge(appKeysSchema).merge(dbKeysSchema);
 
-export type Env = z.infer<typeof envSchema>;
+export type Config = z.infer<typeof envSchema>;
 
-export function readEnv(raw: Record<string, unknown>): Env {
-  const parsed = envSchema.safeParse(raw);
+export function initConfig(env: Record<string, unknown>): Config {
+  const parsed = envSchema.safeParse(env);
   if (!parsed.success) {
     // Names and reasons only, never the values.
     const problems = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);

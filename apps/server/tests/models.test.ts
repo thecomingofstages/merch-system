@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import { describe, expect, it } from "vitest";
-import { models } from "../src/models";
-import { purchaseSchema } from "../src/models/purchase";
-import { userSchema } from "../src/models/user";
+import { models } from "../src/app/models";
+import { purchaseSchema } from "../src/app/models/purchase.model";
+import { userSchema } from "../src/app/models/user.model";
 
 describe("models (S1)", () => {
   it("load on a connection", () => {
