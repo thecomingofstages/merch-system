@@ -10,6 +10,14 @@ describe("models (S1)", () => {
     expect(Object.keys(models(db)).sort()).toEqual(["Pos", "Product", "Purchase", "Shop", "User"]);
   });
 
+  it("users.gender takes only the enrollment values, or null", async () => {
+    const User = models(mongoose.createConnection()).User;
+    for (const gender of ["Male", "Female", "LGBTQ+", "Unspecified", null]) {
+      await expect(new User({ email: "a@example.com", gender }).validate()).resolves.toBeUndefined();
+    }
+    await expect(new User({ email: "a@example.com", gender: "Other" }).validate()).rejects.toThrow();
+  });
+
   it("users.email is unique", () => {
     expect(userSchema.indexes()).toContainEqual([{ email: 1 }, expect.objectContaining({ unique: true })]);
   });

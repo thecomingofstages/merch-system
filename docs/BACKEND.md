@@ -30,6 +30,7 @@
 - The merch server never connects to the enrollment cluster. The merch `users` collection keeps the draft schema and starts empty (D4).
 - `apps/server`'s database user: read and write on the merch database only.
 - Tests and staging use their own database (`MONGODB_URI_TEST`), never the production one.
+- **Collections and indexes are not created by the server.** `withDb` opens a connection per request, so Mongoose's `autoIndex` and `autoCreate` are off. Run `npm run db:sync -w apps/server` once for each database (with its `MONGODB_URI`), and again after any index change. Without it, the unique index on `slip_qr_data` doesn't exist and `DUPLICATE_SLIP` never fires.
 
 ## Folder layout
 Same layout as the portfolio website's `apps/server`.

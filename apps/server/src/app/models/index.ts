@@ -22,8 +22,8 @@ export function models(db: Connection) {
 export type Models = ReturnType<typeof models>;
 
 /**
- * Creates the declared indexes and drops ones no longer declared. autoIndex is off
- * (config/db.conf.ts), so run this once per database and after any index change.
+ * Creates each collection and its declared indexes, and drops indexes no longer declared.
+ * autoIndex and autoCreate are off (config/db.conf.ts); `npm run db:sync` runs this.
  */
 export async function syncAllIndexes(db: Connection) {
   for (const model of Object.values(models(db))) {

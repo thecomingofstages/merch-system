@@ -13,8 +13,7 @@ export const userSchema = new Schema(
     email: { type: String, required: true, lowercase: true, trim: true },
     phone: { type: String, default: null },
     role: { type: String, enum: ["user", "admin"], default: "user" },
-    // TODO(enrollment schema): the draft lists gender as an enum without its values.
-    gender: { type: String, default: null },
+    gender: { type: String, enum: ["Male", "Female", "LGBTQ+", "Unspecified", null], default: null },
     interests: { type: [String], default: [] },
     profile_image_url: { type: String, default: null },
     education_level: { type: String, default: null },

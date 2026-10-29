@@ -4,8 +4,10 @@ export const dbConf = {
   maxPoolSize: 1,
   serverSelectionTimeoutMS: 5000,
   /**
-   * Indexes are built once per database with syncAllIndexes (models/index.ts), not by
-   * Mongoose on every new connection, which here means on every request.
+   * Collections and indexes are created once per database by `npm run db:sync -w apps/server`
+   * (scripts/sync-db.ts), not by Mongoose on every new connection, which here means
+   * on every request.
    */
   autoIndex: false,
+  autoCreate: false,
 } as const;
