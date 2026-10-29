@@ -53,8 +53,8 @@ export const purchaseSchema = new Schema(
     tracking_provider: { type: String, default: null },
     tracking_id: { type: String, default: null },
     status: { type: String, enum: ["ORDERED", "SHIPPING", "ARRIVED"], default: "ORDERED" },
+    created_at: { type: Date, default: Date.now, immutable: true },
   },
-  { timestamps: { createdAt: "created_at", updatedAt: false } },
 );
 
 // One slip pays one order. Partial, not sparse: a sparse index still indexes an

@@ -21,8 +21,8 @@ export const userSchema = new Schema(
     institution: { type: String, default: null },
     line_id: { type: String, default: null },
     address: { type: addressSchema, default: null },
+    created_at: { type: Date, default: Date.now, immutable: true },
   },
-  { timestamps: { createdAt: "created_at", updatedAt: false } },
 );
 
 userSchema.index({ email: 1 }, { unique: true });
