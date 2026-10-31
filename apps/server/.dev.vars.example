@@ -6,9 +6,14 @@ MONGODB_URI=
 # At least 32 random characters, e.g. `openssl rand -hex 32`
 ADMIN_ACCESS_TOKEN=
 
+# Used by S4
+PROMPTPAY_ID=
+# Flat fee per online order, whole baht
+SHIPPING_FEE=
+# Optional: a separate database for the integration tests (never production)
+MONGODB_URI_TEST=
+
 # Added by later tasks
-# PROMPTPAY_ID=        (S4)
-# SHIPPING_FEE=        (S4)
 # GOOGLE_CLIENT_ID=    (S6)
 # SESSION_SECRET=      (S6)
 # RESEND_API_KEY=      (2.5)

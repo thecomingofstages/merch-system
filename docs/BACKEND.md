@@ -96,21 +96,21 @@ From the draft schema plus the additions on POC page 4. D1 (proposed by BE): a s
 
 ## API
 
-Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHORIZED`, `OUT_OF_STOCK`, `DUPLICATE_SLIP`, `NOT_FOUND`, `IN_USE`, `NOT_VERIFIED`.
+Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHORIZED`, `OUT_OF_STOCK`, `DUPLICATE_SLIP`, `NOT_FOUND`, `IN_USE`, `NOT_VERIFIED`, `BUY_LIMIT`. A malformed id in a path answers `404` like an unknown one.
 
 | Method & path | Auth | Used by | Task |
 |---|---|---|---|
 | `GET /health` | – | ops | F3 |
-| `GET /catalog` | – | client | S3 |
-| `POST /quote` `{ channel, pos_id?, items }` → `{ subtotal, shipping_fee, total, promptpay_id }` | – | client, POS | S4 |
+| `GET /catalog` → `{ shops: [{ _id, shop_name, products: [{ ..., variants: [{ ..., online_stock, buy_limit, sold_out }] }] }] }` | – | client | S3 |
+| `POST /quote` `{ channel, pos_id?, items }` → `{ lines, subtotal, shipping_fee, total, promptpay_id }` | – | client, POS | S4 |
 | `POST /auth/google` `{ id_token }` | – | client | S6 |
 | `GET /me` → autofill fields | session | client | S6 |
 | `GET /address/postcode/:code` | – | client | 2.2 |
 | `POST /orders` | session (from Sprint 2) | client | S5, S6 |
-| `GET/POST/PATCH/DELETE /admin/shops[/:id]` | admin | dashboard | S2 |
-| `GET/POST/PATCH/DELETE /admin/products[/:id]` | admin | dashboard | S2 |
+| `GET/POST/PATCH/DELETE /admin/shops[/:id]` (`?archived=true` lists archived too) | admin | dashboard | S2 |
+| `GET/POST/PATCH/DELETE /admin/products[/:id]` (`?shop_id=`, `?archived=true`) | admin | dashboard | S2 |
 | `POST/PATCH/DELETE /admin/products/:id/variants[/:vid]` | admin | dashboard | S2 |
-| `POST /admin/products/:id/variants/:vid/stock` `{ amount }` | admin | dashboard | S2 |
+| `POST /admin/products/:id/variants/:vid/stock` `{ amount }`: a non-zero whole number; negative removes stock but never below 0 (`409 OUT_OF_STOCK`) | admin | dashboard | S2 |
 | `GET /admin/orders?status=&page=` | admin | dashboard | S7 |
 | `GET /admin/orders/count?status=ORDERED` | admin | dashboard | S7 |
 | `GET /admin/orders/:id` | admin | dashboard | S7 |
@@ -122,7 +122,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 | `POST /pos/:id/sales` | admin (D6) | POS | S9 |
 
 ## Shared zod schemas
-`packages/shared/src/schemas/` holds one file per collection (`shop`, `product`, `purchase`, `pos`, `user`) plus request bodies (`QuoteRequest`, `CreateOrderRequest`, `CreatePosSaleRequest`, `TransferRequest`). Express validates each body with them, and the apps import the inferred types. FE2 writes the first version (F4) and BE reviews it. After that, a change to a schema is a change to the API contract, so BE and the FE leads review it.
+`packages/shared/src/schemas/` holds one file per collection (`common`, `shop`, `product`, `catalog` and `quote` exist, written by BE with S2–S4; F4 adds the rest) (`shop`, `product`, `purchase`, `pos`, `user`) plus request bodies (`QuoteRequest`, `CreateOrderRequest`, `CreatePosSaleRequest`, `TransferRequest`). Express validates each body with them, and the apps import the inferred types. FE2 writes the first version (F4) and BE reviews it. After that, a change to a schema is a change to the API contract, so BE and the FE leads review it.
 
 ## Auth details
 - **Buyer:** the client sends the Google ID token to `POST /auth/google`. The server verifies the audience (`GOOGLE_CLIENT_ID`) and `email_verified`, looks up `users` by email, and sets an httpOnly, `Secure`, `SameSite=Lax` cookie. Routes that use the session accept only `Content-Type: application/json` (`415` otherwise) and an `Origin` from `CORS_ORIGINS`: a cross-site form can't send JSON without a CORS preflight, so this closes CSRF. With no user for that email, the server creates one with the email and name from Google (D4). Placing an order saves the buyer's details to their user, so the next sign-in autofills them. The client and the server must be on one parent domain, or the cookie isn't sent (see Hosting).

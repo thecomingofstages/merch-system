@@ -13,7 +13,9 @@ export const ErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const send = (status: number, code: string, message: string) => res.status(status).json({ error: { code, message } });
 
   if (err instanceof ApiError) return send(err.status, err.code, err.message);
-  if (err instanceof ZodError) {
+  // By shape too: @merch/shared and the server can each get their own copy of zod
+  // (the root has zod 4 for eslint), and then instanceof fails across them.
+  if (err instanceof ZodError || (err?.name === "ZodError" && Array.isArray(err.issues))) {
     const issue = err.issues[0];
     return send(400, "VALIDATION", issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid request");
   }

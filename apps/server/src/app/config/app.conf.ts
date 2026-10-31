@@ -7,6 +7,8 @@ export const appConfSchema = z.object({
     .string()
     .transform((s) => s.split(",").map((o) => o.trim()).filter(Boolean))
     .pipe(z.array(z.string().url()).min(1)),
+  /** Flat shipping per online order, whole baht (S4). Shortcut until the per-shop setting is built. */
+  SHIPPING_FEE: z.string().trim().regex(/^\d+$/, "a whole number of baht").transform(Number),
 });
 
 /** Fixed settings that are not environment values. */
