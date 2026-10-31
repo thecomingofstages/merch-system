@@ -5,3 +5,4 @@ export * from "./schemas/shop";
 export * from "./schemas/product";
 export * from "./schemas/catalog";
 export * from "./schemas/quote";
+export * from "./schemas/order";

@@ -6,6 +6,7 @@ import { Router } from "express";
 import { Auth } from "../middleware/Auth";
 import { adminCatalogRoute } from "./admin/catalog.route";
 import { healthRoute } from "./health.route";
+import { orderRoute } from "./order.route";
 import { publicRoute } from "./public.route";
 
 export function initRoutes(): Router {
@@ -13,6 +14,7 @@ export function initRoutes(): Router {
 
   api.use(healthRoute);
   api.use(publicRoute);
+  api.use(orderRoute);
 
   // Admin (F6): every /admin/* path needs ADMIN_ACCESS_TOKEN, even ones that do not exist.
   // Admin routers mount after Auth (S2, S7, S8).
