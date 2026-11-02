@@ -106,7 +106,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 | `POST /auth/google` `{ id_token }` | – | client | S6 |
 | `GET /me` → autofill fields | session | client | S6 |
 | `GET /address/postcode/:code` | – | client | 2.2 |
-| `POST /orders` | session (from Sprint 2) | client | S5, S6 |
+| `POST /orders` `{ items, recipient, shipping_address, slip_qr_data }` → `{ _id, status, payment_status, subtotal, shipping_fee, total, created_at }` | session (from Sprint 2) | client | S5, S6 |
 | `GET/POST/PATCH/DELETE /admin/shops[/:id]` (`?archived=true` lists archived too) | admin | dashboard | S2 |
 | `GET/POST/PATCH/DELETE /admin/products[/:id]` (`?shop_id=`, `?archived=true`) | admin | dashboard | S2 |
 | `POST/PATCH/DELETE /admin/products/:id/variants[/:vid]` | admin | dashboard | S2 |

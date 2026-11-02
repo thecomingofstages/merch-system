@@ -4,7 +4,7 @@
  * the QR amount is the charged amount. Prices sent by a client are never read.
  */
 import type { CartItem, QuoteLine, QuoteRequest } from "@merch/shared";
-import { Types } from "mongoose";
+import { type ClientSession, Types } from "mongoose";
 import type { Config } from "../config/init";
 import type { Models } from "../models";
 import { ApiError } from "../utils/ApiError";
@@ -32,16 +32,24 @@ export function mergeLines(items: CartItem[]): CartItem[] {
  * - ONLINE: visible_to_online variants only, against online_stock, plus SHIPPING_FEE once.
  * - POS: variants of that POS's shops only, against its pos_stock, no shipping.
  * Answers 409 BUY_LIMIT or OUT_OF_STOCK when a line can't be had. This is a check, not a
- * reservation: S5 and S9 deduct stock in a transaction and can still fail.
+ * reservation: S5 and S9 deduct stock in a transaction and can still fail. Pass their
+ * `session` so these reads are part of it.
  */
-export async function priceCart(m: Models, input: QuoteRequest, config: Pick<Config, "SHIPPING_FEE">): Promise<PricedCart> {
+export async function priceCart(
+  m: Models,
+  input: QuoteRequest,
+  config: Pick<Config, "SHIPPING_FEE">,
+  session: ClientSession | null = null,
+): Promise<PricedCart> {
   const items = mergeLines(input.items);
   const products = await m.Product.find({
     _id: { $in: items.map((i) => new Types.ObjectId(i.product_id)) },
     archived: false,
-  }).lean();
+  })
+    .session(session)
+    .lean();
 
-  const pos = input.channel === "POS" ? await m.Pos.findById(input.pos_id).lean() : null;
+  const pos = input.channel === "POS" ? await m.Pos.findById(input.pos_id).session(session).lean() : null;
   if (input.channel === "POS" && !pos) throw ApiError.notFound("POS not found");
 
   const lines = items.map((item, i): QuoteLine => {
