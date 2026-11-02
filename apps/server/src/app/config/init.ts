@@ -4,8 +4,7 @@
  * (docs/BACKEND.md "Environment").
  *
  * Only the settings used so far are checked. Each later task adds its own
- * (GOOGLE_CLIENT_ID and SESSION_SECRET in S6,
- * RESEND_API_KEY and EMAIL_FROM in 2.5).
+ * (RESEND_API_KEY and EMAIL_FROM in 2.5).
  */
 import { z } from "zod";
 import { appConfSchema } from "./app.conf";

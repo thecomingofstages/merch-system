@@ -11,6 +11,8 @@ export const testConfig: Config = {
   CORS_ORIGINS: ["http://client.test", "http://dashboard.test"],
   SHIPPING_FEE: 60,
   PROMPTPAY_ID: "0000000000",
+  GOOGLE_CLIENT_ID: "test-client-id",
+  SESSION_SECRET: "test-session-secret-test-session-secret",
 };
 
 export const buildTestApp = () => buildApp(testConfig);

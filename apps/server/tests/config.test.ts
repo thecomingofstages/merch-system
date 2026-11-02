@@ -7,6 +7,8 @@ const good = {
   CORS_ORIGINS: "http://a.test",
   SHIPPING_FEE: "60",
   PROMPTPAY_ID: "0000000000",
+  GOOGLE_CLIENT_ID: "test-client-id",
+  SESSION_SECRET: "test-session-secret-test-session-secret",
 };
 
 describe("initConfig", () => {
