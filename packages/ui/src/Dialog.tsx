@@ -35,12 +35,16 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg bg-house p-6 text-ink shadow-xl backdrop:bg-ink/50"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg bg-house p-0 text-ink shadow-xl backdrop:bg-ink/50"
     >
-      <h2 id={titleId} className="mb-4 font-display text-h3">
-        {title}
-      </h2>
-      {children}
+      {/* The padding lives here, not on <dialog>: a tap on the dialog's own padding
+          would have the <dialog> as its target and close it by mistake. */}
+      <div className="p-6">
+        <h2 id={titleId} className="mb-4 font-display text-h3">
+          {title}
+        </h2>
+        {children}
+      </div>
     </dialog>
   );
 }
