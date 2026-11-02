@@ -6,3 +6,6 @@ export * from "./schemas/product";
 export * from "./schemas/catalog";
 export * from "./schemas/quote";
 export * from "./schemas/order";
+export * from "./schemas/user";
+export * from "./schemas/purchase";
+export * from "./schemas/pos";
