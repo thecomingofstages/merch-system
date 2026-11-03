@@ -68,7 +68,7 @@ export async function createOrder(
 }
 
 /** The order's `products` shape: one entry per product, its variants inside. */
-function groupByProduct(lines: QuoteLine[]) {
+export function groupByProduct(lines: QuoteLine[]) {
   const products = new Map<string, { products_id: string; product_name: string; variants: object[] }>();
   for (const l of lines) {
     const p = products.get(l.product_id) ?? { products_id: l.product_id, product_name: l.product_name, variants: [] };
@@ -78,5 +78,5 @@ function groupByProduct(lines: QuoteLine[]) {
   return [...products.values()];
 }
 
-const isDuplicateSlip = (err: unknown) =>
+export const isDuplicateSlip = (err: unknown) =>
   (err as { code?: number })?.code === 11000 && "slip_qr_data" in ((err as { keyPattern?: object }).keyPattern ?? {});
