@@ -7,13 +7,15 @@ type DialogProps = {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  /** A bottom sheet with 16px top corners (the product popup) instead of a centred box. */
+  sheet?: boolean;
 };
 
 /**
  * A modal on the native <dialog>: the browser traps focus, closes on Escape and
  * restores focus to the opener. Clicking the backdrop also closes it.
  */
-export function Dialog({ open, onClose, title, children }: DialogProps) {
+export function Dialog({ open, onClose, title, children, sheet = false }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -35,7 +37,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg bg-house p-0 text-ink shadow-xl backdrop:bg-ink/50"
+      className={`${sheet ? "mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-xl rounded-t-2xl" : "m-auto w-[calc(100%-2rem)] max-w-md rounded-lg"} bg-house p-0 text-ink shadow-xl backdrop:bg-ink/50`}
     >
       {/* The padding lives here, not on <dialog>: a tap on the dialog's own padding
           would have the <dialog> as its target and close it by mistake. */}

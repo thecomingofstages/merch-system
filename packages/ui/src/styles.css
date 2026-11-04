@@ -22,6 +22,15 @@
   --text-h3: 1.5625rem;
   --text-h2: 1.9375rem;
   --text-h1: 2.4375rem;
+
+  /* The cart ticket's total when it changes: one Spotlight fill, ink text on top */
+  --animate-flash: flash 0.8s ease-out;
+  @keyframes flash {
+    from {
+      background-color: var(--color-spotlight);
+      color: var(--color-ink);
+    }
+  }
 }
 
 @layer base {
