@@ -9,16 +9,18 @@ export type GoogleProfile = { email: string; given_name: string | null; family_n
 
 /**
  * Checks the ID token's signature, expiry and audience, and that Google verified the
- * email. 401 for a bad token; a failure to reach Google's keys is not the token's fault,
- * so it stays an error (500).
+ * email. 401 for a bad token. Google's keys are fetched first, outside the try: failing to
+ * reach them is not the token's fault, so it stays an error (500) and is logged.
+ * verifyIdToken reuses the fetched keys.
  */
 export async function verifyGoogleToken(idToken: string, clientId: string): Promise<GoogleProfile> {
+  const client = new OAuth2Client({ clientId });
+  await client.getFederatedSignonCertsAsync();
   let payload;
   try {
-    const ticket = await new OAuth2Client({ clientId }).verifyIdToken({ idToken, audience: clientId });
+    const ticket = await client.verifyIdToken({ idToken, audience: clientId });
     payload = ticket.getPayload();
-  } catch (err) {
-    if ((err as Error)?.name === "GaxiosError") throw err;
+  } catch {
     throw ApiError.unauthorized("Invalid Google sign-in");
   }
   if (!payload?.email || !payload.email_verified) throw ApiError.unauthorized("Google has not verified this email");

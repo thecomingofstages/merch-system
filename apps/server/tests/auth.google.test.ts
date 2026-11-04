@@ -4,9 +4,11 @@
  */
 import { createSign, generateKeyPairSync } from "node:crypto";
 import { OAuth2Client } from "google-auth-library";
+import request from "supertest";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { verifyGoogleToken } from "../src/app/helpers/auth.helper";
 import { createSessionToken, readSessionToken } from "../src/app/helpers/session.helper";
+import { buildTestApp, testConfig } from "./helpers/app";
 
 const clientId = "test-client-id";
 const google = generateKeyPairSync("rsa", { modulusLength: 2048 });
@@ -49,6 +51,27 @@ describe("verifyGoogleToken", () => {
     ["not a token at all", () => "nope"],
   ])("rejects a token that is %s", async (_name, token) => {
     await expect(verifyGoogleToken(token(), clientId)).rejects.toMatchObject({ status: 401, code: "UNAUTHORIZED" });
+  });
+
+  it("keeps a failure to reach Google's keys from looking like a bad token", async () => {
+    const down = new Error("connect ECONNREFUSED");
+    vi.mocked(OAuth2Client.prototype.getFederatedSignonCertsAsync).mockRejectedValueOnce(down);
+    await expect(verifyGoogleToken(jwt({}), clientId)).rejects.toBe(down);
+  });
+
+  it("answers 500 and logs it through the route when Google's keys can't be reached", async () => {
+    vi.mocked(OAuth2Client.prototype.getFederatedSignonCertsAsync).mockRejectedValueOnce(new Error("Google 503"));
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const res = await request(buildTestApp())
+      .post("/auth/google")
+      .set("Origin", testConfig.CORS_ORIGINS[0]!)
+      .send({ id_token: jwt({}) });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error.code).toBe("INTERNAL");
+    expect(log).toHaveBeenCalled();
+    log.mockRestore();
   });
 });
 
