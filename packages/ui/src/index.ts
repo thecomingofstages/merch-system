@@ -5,3 +5,4 @@ export { Input } from "./Input";
 export { Price } from "./Price";
 export { QuantityStepper } from "./QuantityStepper";
 export { Select } from "./Select";
+export { useCart } from "./useCart";
