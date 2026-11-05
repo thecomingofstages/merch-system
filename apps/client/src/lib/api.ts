@@ -5,13 +5,16 @@ import {
   ErrorBody,
   type ErrorCode,
   FixtureError,
-  fixtureCatalog,
+  fixtureProducts,
+  fixtureShops,
   GoogleAuthRequest,
   MeResponse,
   mockQuoteForFixtures,
   objectId,
   PostcodeLookupResponse,
+  toCatalog,
   type CatalogResponse,
+  type Product,
   type QuoteRequest,
   type QuoteResponse,
 } from "@merch/shared";
@@ -126,15 +129,15 @@ async function requestJson<T>(
 }
 
 // Stored in-memory copy of fixtureProducts so createOrder in fixtures mode deducts stock during dev and resets on reload.
-let memoryClientProducts = structuredClone(fixtureCatalog);
+let memoryClientProducts: Product[] = structuredClone(fixtureProducts);
 
 export function resetClientFixtures(): void {
-  memoryClientProducts = structuredClone(fixtureCatalog);
+  memoryClientProducts = structuredClone(fixtureProducts);
 }
 
 export async function getCatalog(): Promise<CatalogResponse> {
   if (isFixturesMode()) {
-    return structuredClone(memoryClientProducts);
+    return toCatalog(fixtureShops, memoryClientProducts);
   }
   return requestJson("/catalog", { method: "GET" }, catalogResponseSchema);
 }
@@ -143,7 +146,7 @@ export async function quote(body: QuoteRequest): Promise<QuoteResponse> {
   if (isFixturesMode()) {
     // Fixtures mode only. In real mode the amount always comes from POST /quote.
     try {
-      return mockQuoteForFixtures(body);
+      return mockQuoteForFixtures(body, memoryClientProducts);
     } catch (err) {
       if (err instanceof FixtureError) {
         throw new ApiError(err.status, err.code, err.message);
@@ -162,7 +165,14 @@ export async function createOrder(body: CreateOrderRequest): Promise<CreateOrder
       throw new ApiError(400, "VALIDATION", issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid order");
     }
     try {
-      const priced = mockQuoteForFixtures({ channel: "ONLINE", items: parsed.data.items });
+      const priced = mockQuoteForFixtures({ channel: "ONLINE", items: parsed.data.items }, memoryClientProducts);
+      for (const line of priced.lines) {
+        const prod = memoryClientProducts.find((p) => p._id === line.product_id);
+        const variant = prod?.variants.find((v) => v._id === line.variant_id);
+        if (variant) {
+          variant.online_stock -= line.count;
+        }
+      }
       return {
         _id: "64d000000000000000000001",
         status: "ORDERED",
