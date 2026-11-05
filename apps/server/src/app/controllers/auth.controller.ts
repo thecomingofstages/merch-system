@@ -1,4 +1,4 @@
-/** POST /auth/google and GET /me (S6). */
+/** POST /auth/google, POST /auth/logout and GET /me (S6). */
 import { GoogleAuthRequest } from "@merch/shared";
 import type { RequestHandler } from "express";
 import { appConf } from "../config/app.conf";
@@ -7,6 +7,8 @@ import { createSessionToken } from "../helpers/session.helper";
 import { getConfig } from "../utils/config";
 import { withModels } from "../utils/models";
 
+const cookieOptions = { httpOnly: true, secure: true, sameSite: "lax", path: "/" } as const;
+
 export const AuthController = {
   google: (async (req, res) => {
     const { id_token } = GoogleAuthRequest.parse(req.body);
@@ -14,13 +16,19 @@ export const AuthController = {
     const profile = await verifyGoogleToken(id_token, config.GOOGLE_CLIENT_ID);
     const { id, me } = await withModels(req, (m) => signIn(m, profile));
     res.cookie(appConf.sessionCookie, createSessionToken(id, config.SESSION_SECRET), {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
+      ...cookieOptions,
       maxAge: appConf.sessionMaxAgeSeconds * 1000,
     });
     res.json(me);
+  }) satisfies RequestHandler,
+
+  /**
+   * Clears the cookie in this browser. Sessions are stateless (session.helper.ts), so a
+   * copy of the token taken earlier stays valid until it expires.
+   */
+  logout: ((_req, res) => {
+    res.clearCookie(appConf.sessionCookie, cookieOptions);
+    res.status(204).end();
   }) satisfies RequestHandler,
 
   me: (async (req, res) => {

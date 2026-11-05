@@ -104,6 +104,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 | `GET /catalog` → `{ shops: [{ _id, shop_name, products: [{ ..., variants: [{ ..., online_stock, buy_limit, sold_out }] }] }] }` | – | client | S3 |
 | `POST /quote` `{ channel, pos_id?, items }` → `{ lines, subtotal, shipping_fee, total, promptpay_id }` | – | client, POS | S4 |
 | `POST /auth/google` `{ id_token }` | – | client | S6 |
+| `POST /auth/logout` → `204`, clears the session cookie (needs an `Origin` from `CORS_ORIGINS`) | – | client | S6 |
 | `GET /me` → autofill fields | session | client | S6 |
 | `GET /address/postcode/:code` | – | client | 2.2 |
 | `POST /orders` `{ items, recipient, shipping_address, slip_qr_data }` → `{ _id, status, payment_status, subtotal, shipping_fee, total, created_at }` | session | client | S5, S6 |

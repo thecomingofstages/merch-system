@@ -26,10 +26,18 @@ export const Session: RequestHandler = (req, res, next) => {
   next();
 };
 
-export const SameOriginJson: RequestHandler = (req, _res, next) => {
+/** For a cookie route with no body, such as logout. */
+export const SameOrigin: RequestHandler = (req, _res, next) => {
   if (!getConfig(req).CORS_ORIGINS.includes(req.get("origin") ?? "")) {
     return next(new ApiError(403, "FORBIDDEN", "Origin not allowed"));
   }
-  if (!req.is("application/json")) return next(new ApiError(415, "VALIDATION", "Send JSON"));
   next();
+};
+
+export const SameOriginJson: RequestHandler = (req, res, next) => {
+  SameOrigin(req, res, (err?: unknown) => {
+    if (err) return next(err);
+    if (!req.is("application/json")) return next(new ApiError(415, "VALIDATION", "Send JSON"));
+    next();
+  });
 };
