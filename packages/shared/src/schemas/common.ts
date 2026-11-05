@@ -55,6 +55,7 @@ export type ShippingAddress = Address;
 export const ErrorCode = z.enum([
   "VALIDATION",
   "UNAUTHORIZED",
+  "FORBIDDEN",
   "OUT_OF_STOCK",
   "DUPLICATE_SLIP",
   "NOT_FOUND",

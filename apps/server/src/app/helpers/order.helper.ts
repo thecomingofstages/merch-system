@@ -1,6 +1,6 @@
 /**
  * Online orders (S5). One transaction: price from the database, take the stock, save
- * the order. If any step fails, nothing is kept (docs/BACKEND.md "Business rules").
+ * the order, save the buyer's details. If any step fails, nothing is kept (docs/BACKEND.md "Business rules").
  */
 import type { CreateOrderRequest, CreateOrderResponse, QuoteLine } from "@merch/shared";
 import type { Connection } from "mongoose";
@@ -16,6 +16,7 @@ type Order = z.output<typeof CreateOrderRequest>;
 export async function createOrder(
   m: Models,
   db: Connection,
+  userId: string,
   body: Order,
   config: Pick<Config, "SHIPPING_FEE">,
 ): Promise<CreateOrderResponse> {
@@ -24,16 +25,19 @@ export async function createOrder(
     // withTransaction retries the whole callback on a write conflict, so when two
     // orders race for the last item the loser re-runs, finds no stock, and gets 409.
     return await session.withTransaction(async () => {
+      const user = await m.User.findById(userId).session(session);
+      if (!user) throw ApiError.unauthorized("Please sign in");
       const priced = await priceCart(m, { channel: "ONLINE", items: body.items }, config, session);
       await deductOnlineStock(m, priced.lines, session);
       const [order] = await m.Purchase.create(
         [
           {
-            users: null, // TODO(S6): the signed-in buyer
+            users: user._id,
             products: groupByProduct(priced.lines),
             original_price: priced.subtotal,
             shipping_fee: priced.shipping_fee,
-            recipient: body.recipient,
+            // The email is the signed-in one, whatever was sent (the form's field is read-only).
+            recipient: { ...body.recipient, email: user.email },
             shipping_address: body.shipping_address,
             slip_qr_data: body.slip_qr_data,
             verify_method: "QR",
@@ -41,6 +45,10 @@ export async function createOrder(
         ],
         { session },
       );
+      // Autofill for the next sign-in. Only the buyer's own order changes these (S6).
+      const { first_name, last_name, nickname, phone, line_id } = body.recipient;
+      user.set({ first_name, last_name, nickname, phone, line_id, address: body.shipping_address });
+      await user.save({ session });
       return {
         _id: String(order!._id),
         status: "ORDERED",
