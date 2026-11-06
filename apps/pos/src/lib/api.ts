@@ -12,6 +12,7 @@ import {
   fixtureProducts,
   mockQuoteForFixtures,
   Pos,
+  PosSummary,
   CreatePosSaleResponse,
   QuoteResponse,
   SHOP_MAIN_ID,
@@ -43,7 +44,7 @@ function isFixturesMode(): boolean {
   return process.env.NEXT_PUBLIC_USE_FIXTURES === "true";
 }
 
-const posListSchema = z.array(Pos);
+const posListSchema = z.array(PosSummary);
 
 // Temporary in-memory POS instances derived from product fixtures for fixtures mode only.
 let memoryPosList: Pos[] = [
@@ -128,7 +129,7 @@ async function requestPos<T>(
   return parsed.data;
 }
 
-export async function getPosList(): Promise<Pos[]> {
+export async function getPosList(): Promise<PosSummary[]> {
   if (isFixturesMode()) {
     return structuredClone(memoryPosList);
   }
