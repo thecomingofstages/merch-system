@@ -14,6 +14,7 @@ export const appConfSchema = z.object({
 /** Fixed settings that are not environment values. */
 export const appConf = {
   jsonLimit: "100kb",
+  ordersPageSize: 20,
   sessionCookie: "merch_session",
   sessionMaxAgeSeconds: 30 * 24 * 60 * 60,
 } as const;

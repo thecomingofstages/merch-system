@@ -61,6 +61,7 @@ export const ErrorCode = z.enum([
   "NOT_FOUND",
   "IN_USE",
   "NOT_VERIFIED",
+  "NOT_PENDING",
   "BUY_LIMIT",
   "UNAVAILABLE",
   "INTERNAL",

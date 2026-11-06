@@ -20,11 +20,10 @@ export async function createOrder(
   body: Order,
   config: Pick<Config, "SHIPPING_FEE">,
 ): Promise<CreateOrderResponse> {
-  const session = await db.startSession();
   try {
     // withTransaction retries the whole callback on a write conflict, so when two
     // orders race for the last item the loser re-runs, finds no stock, and gets 409.
-    return await session.withTransaction(async () => {
+    return await db.transaction(async (session) => {
       const user = await m.User.findById(userId).session(session);
       if (!user) throw ApiError.unauthorized("Please sign in");
       const priced = await priceCart(m, { channel: "ONLINE", items: body.items }, config, session);
@@ -62,13 +61,11 @@ export async function createOrder(
   } catch (err) {
     if (isDuplicateSlip(err)) throw ApiError.conflict("DUPLICATE_SLIP", "This slip has already been used for an order");
     throw err;
-  } finally {
-    await session.endSession();
   }
 }
 
 /** The order's `products` shape: one entry per product, its variants inside. */
-function groupByProduct(lines: QuoteLine[]) {
+export function groupByProduct(lines: QuoteLine[]) {
   const products = new Map<string, { products_id: string; product_name: string; variants: object[] }>();
   for (const l of lines) {
     const p = products.get(l.product_id) ?? { products_id: l.product_id, product_name: l.product_name, variants: [] };
@@ -78,5 +75,5 @@ function groupByProduct(lines: QuoteLine[]) {
   return [...products.values()];
 }
 
-const isDuplicateSlip = (err: unknown) =>
+export const isDuplicateSlip = (err: unknown) =>
   (err as { code?: number })?.code === 11000 && "slip_qr_data" in ((err as { keyPattern?: object }).keyPattern ?? {});

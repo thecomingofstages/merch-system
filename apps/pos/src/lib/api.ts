@@ -12,7 +12,7 @@ import {
   fixtureProducts,
   mockQuoteForFixtures,
   Pos,
-  PosSaleResponse,
+  CreatePosSaleResponse,
   QuoteResponse,
   SHOP_MAIN_ID,
   SHOP_STAGE_ID,
@@ -178,7 +178,7 @@ export async function quote(body: { channel?: "POS"; pos_id: string; items: Cart
   return requestPos("/quote", { method: "POST", body: JSON.stringify(payload) }, QuoteResponse);
 }
 
-export async function createSale(posId: string, body: CreatePosSaleRequest): Promise<PosSaleResponse> {
+export async function createSale(posId: string, body: CreatePosSaleRequest): Promise<CreatePosSaleResponse> {
   if (isFixturesMode()) {
     const parsed = CreatePosSaleRequest.safeParse(body);
     if (!parsed.success) {
@@ -207,7 +207,7 @@ export async function createSale(posId: string, body: CreatePosSaleRequest): Pro
   return requestPos(
     `/pos/${encodeURIComponent(posId)}/sales`,
     { method: "POST", body: JSON.stringify(body) },
-    PosSaleResponse,
+    CreatePosSaleResponse,
   );
 }
 
