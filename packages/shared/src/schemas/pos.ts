@@ -68,3 +68,14 @@ export const CreatePosSaleRequest = z
     },
   );
 export type CreatePosSaleRequest = z.infer<typeof CreatePosSaleRequest>;
+
+export const CreatePosSaleResponse = z.object({
+  _id: objectId,
+  verify_method: VerifyMethod,
+  payment_status: z.literal("VERIFIED"),
+  subtotal: baht,
+  shipping_fee: baht,
+  total: baht,
+  created_at: IsoDateTime,
+});
+export type CreatePosSaleResponse = z.infer<typeof CreatePosSaleResponse>;
