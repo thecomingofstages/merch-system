@@ -9,3 +9,4 @@ export * from "./schemas/user";
 export * from "./schemas/purchase";
 export * from "./schemas/pos";
 export * from "./address";
+export * from "./fixtures";

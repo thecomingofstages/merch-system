@@ -36,6 +36,10 @@ export const Pos = z.object({
 });
 export type Pos = z.infer<typeof Pos>;
 
+/** GET /admin/pos leaves out stock_log, which only grows; GET /admin/pos/:id has it. */
+export const PosSummary = Pos.omit({ stock_log: true });
+export type PosSummary = z.infer<typeof PosSummary>;
+
 /** POST /admin/pos */
 export const CreatePosRequest = z.object({
   name: z.string().trim().min(1),
