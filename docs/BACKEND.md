@@ -111,8 +111,8 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 | `GET/POST/PATCH/DELETE /admin/products[/:id]` (`?shop_id=`, `?archived=true`) | admin | dashboard | S2 |
 | `POST/PATCH/DELETE /admin/products/:id/variants[/:vid]` | admin | dashboard | S2 |
 | `POST /admin/products/:id/variants/:vid/stock` `{ amount }`: a non-zero whole number; negative removes stock but never below 0 (`409 OUT_OF_STOCK`) | admin | dashboard | S2 |
-| `GET /admin/orders?status=&payment_status=&page=`: online orders only, 20 per page | admin | dashboard | S7 |
-| `GET /admin/orders/count?status=ORDERED&payment_status=`: online orders only | admin | dashboard | S7 |
+| `GET /admin/orders?status=&payment_status=&page=`: online orders only, 20 per page; rejected orders only with `payment_status=REJECTED` | admin | dashboard | S7 |
+| `GET /admin/orders/count?status=ORDERED&payment_status=`: online orders only, not rejected ones unless asked | admin | dashboard | S7 |
 | `GET /admin/orders/:id` | admin | dashboard | S7 |
 | `PATCH /admin/orders/:id/payment` `{ payment_status: 'VERIFIED' \| 'REJECTED' }`: only from `PENDING_CHECK`, once (`409 NOT_PENDING`) | admin | dashboard | S7 |
 | `PATCH /admin/orders/:id/tracking` `{ tracking_id }` (`409 NOT_VERIFIED` unless verified) | admin | dashboard | S7 |

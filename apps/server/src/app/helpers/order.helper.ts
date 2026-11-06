@@ -20,11 +20,10 @@ export async function createOrder(
   body: Order,
   config: Pick<Config, "SHIPPING_FEE">,
 ): Promise<CreateOrderResponse> {
-  const session = await db.startSession();
   try {
     // withTransaction retries the whole callback on a write conflict, so when two
     // orders race for the last item the loser re-runs, finds no stock, and gets 409.
-    return await session.withTransaction(async () => {
+    return await db.transaction(async (session) => {
       const user = await m.User.findById(userId).session(session);
       if (!user) throw ApiError.unauthorized("Please sign in");
       const priced = await priceCart(m, { channel: "ONLINE", items: body.items }, config, session);
@@ -62,8 +61,6 @@ export async function createOrder(
   } catch (err) {
     if (isDuplicateSlip(err)) throw ApiError.conflict("DUPLICATE_SLIP", "This slip has already been used for an order");
     throw err;
-  } finally {
-    await session.endSession();
   }
 }
 

@@ -229,7 +229,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 - **Size:** M · **Depends on:** 1.8, S7, 2.4 · **Owner:** FE2
 - **Read:** POC page 3, Orders
 - **Done when:** the list shows the new-order badge, the detail shows buyer and address, and saving a tracking ID changes the status to SHIPPING.
-- **If D10 is accepted:** the detail shows the transaction reference from `slip_qr_data` and the expected total, with Verify and Reject buttons; the tracking field is disabled until the order is verified.
+- **If D10 is accepted:** the detail shows the transaction reference from `slip_qr_data` and the expected total, with Verify and Reject buttons; the tracking field is disabled until the order is verified. Reject asks for confirmation first: a rejection can't be undone, and the buyer can't reuse that slip.
 
 ### 2.9 Dashboard: POS page
 - **Size:** M · **Depends on:** 1.9, S8 · **Owner:** FE2

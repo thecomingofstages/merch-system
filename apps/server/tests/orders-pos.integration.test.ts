@@ -114,6 +114,18 @@ describe.skipIf(!uri)("admin orders, POS management, POS sales (S7–S9)", { tim
       expect((await tracking(id)).body.error.code).toBe("NOT_VERIFIED");
     });
 
+    it("a rejected order leaves the new-order count and list, unless asked for", async () => {
+      const count = async (q = "status=ORDERED") => (await request(app).get(`/admin/orders/count?${q}`).set(admin)).body.count;
+      const id = await placeOrder("badge");
+      const before = await count();
+      await payment(id, "REJECTED");
+      expect(await count()).toBe(before - 1);
+      const listed = (q: string) => request(app).get(`/admin/orders?${q}`).set(admin);
+      const ids = (res: request.Response) => res.body.orders.map((o: { _id: string }) => o._id);
+      expect(ids(await listed("status=ORDERED"))).not.toContain(id);
+      expect(ids(await listed("payment_status=REJECTED"))).toContain(id);
+    });
+
     it("a decided order can't be decided again", async () => {
       const id = await placeOrder("decided");
       await payment(id, "VERIFIED");
