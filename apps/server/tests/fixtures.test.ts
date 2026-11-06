@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   baht,
+  CatalogResponse,
   FAKE_SHIPPING_FEE,
   FixtureError,
   fixtureCatalog,
@@ -8,13 +9,16 @@ import {
   fixtureShops,
   mockQuoteForFixtures,
   objectId,
+  Product,
   PRODUCT_ARCHIVED_ID,
   PRODUCT_CAP_ID,
   PRODUCT_SHIRT_ID,
   ProductRequest,
+  QuoteResponse,
   Shop,
   SHOP_MAIN_ID,
   toCatalog,
+  Variant,
   VARIANT_CAP_ONSITE_HIDDEN_ID,
   VARIANT_CAP_RED_LIMIT_ID,
   VARIANT_KEYCHAIN_ARCHIVED_ID,
@@ -34,7 +38,7 @@ describe("fixtures (F5)", () => {
     }
 
     for (const product of fixtureProducts) {
-      expect(() => objectId.parse(product._id)).not.toThrow();
+      expect(() => Product.parse(product)).not.toThrow();
       expect(() =>
         ProductRequest.parse({
           shop_id: product.shop_id,
@@ -52,7 +56,7 @@ describe("fixtures (F5)", () => {
       ).not.toThrow();
 
       for (const variant of product.variants) {
-        expect(() => objectId.parse(variant._id)).not.toThrow();
+        expect(() => Variant.parse(variant)).not.toThrow();
         expect(() => baht.parse(variant.online_stock)).not.toThrow();
         expect(() =>
           VariantRequest.parse({
@@ -65,6 +69,8 @@ describe("fixtures (F5)", () => {
         ).not.toThrow();
       }
     }
+
+    expect(() => CatalogResponse.parse(fixtureCatalog)).not.toThrow();
   });
 
   it("includes a sold-out variant, a variant with buy_limit > 0, a hidden variant, and an archived item", () => {
@@ -103,6 +109,7 @@ describe("fixtures (F5)", () => {
         { product_id: PRODUCT_SHIRT_ID, variant_id: VARIANT_SHIRT_S_ID, count: 2 },
       ],
     });
+    expect(() => QuoteResponse.parse(onlineQuote)).not.toThrow();
     expect(onlineQuote.lines).toHaveLength(1);
     expect(onlineQuote.lines[0]?.count).toBe(3);
     expect(onlineQuote.subtotal).toBe(750);

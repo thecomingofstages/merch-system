@@ -41,23 +41,25 @@ export type ProductPatch = z.input<typeof ProductPatch>;
 export const StockRequest = z.object({ amount: z.number().int().refine((n) => n !== 0, "must not be 0") });
 export type StockRequest = z.infer<typeof StockRequest>;
 
-export type Variant = {
-  _id: string;
-  name: string;
-  price: number;
-  image: string | null;
-  online_stock: number;
-  buy_limit: number;
-  visible_to_online: boolean;
-  archived: boolean;
-};
+export const Variant = z.object({
+  _id: objectId,
+  name: z.string(),
+  price: baht,
+  image: z.string().nullable(),
+  online_stock: baht,
+  buy_limit: baht,
+  visible_to_online: z.boolean(),
+  archived: z.boolean(),
+});
+export type Variant = z.infer<typeof Variant>;
 
-export type Product = {
-  _id: string;
-  shop_id: string;
-  name: string;
-  description: string;
-  image: string[];
-  archived: boolean;
-  variants: Variant[];
-};
+export const Product = z.object({
+  _id: objectId,
+  shop_id: objectId,
+  name: z.string(),
+  description: z.string(),
+  image: z.array(z.string()),
+  archived: z.boolean(),
+  variants: z.array(Variant),
+});
+export type Product = z.infer<typeof Product>;

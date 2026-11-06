@@ -3,7 +3,7 @@
  * price (docs/BACKEND.md "Business rules" 1).
  */
 import { z } from "zod";
-import { count, objectId } from "./common";
+import { baht, count, objectId } from "./common";
 
 export const CartItem = z.object({
   product_id: objectId,
@@ -20,19 +20,21 @@ export const QuoteRequest = z.discriminatedUnion("channel", [
 ]);
 export type QuoteRequest = z.infer<typeof QuoteRequest>;
 
-export type QuoteLine = {
-  product_id: string;
-  product_name: string;
-  variant_id: string;
-  variant_name: string;
-  count: number;
-  unit_price: number;
-};
+export const QuoteLine = z.object({
+  product_id: objectId,
+  product_name: z.string(),
+  variant_id: objectId,
+  variant_name: z.string(),
+  count,
+  unit_price: baht,
+});
+export type QuoteLine = z.infer<typeof QuoteLine>;
 
-export type QuoteResponse = {
-  lines: QuoteLine[];
-  subtotal: number;
-  shipping_fee: number;
-  total: number;
-  promptpay_id: string;
-};
+export const QuoteResponse = z.object({
+  lines: z.array(QuoteLine),
+  subtotal: baht,
+  shipping_fee: baht,
+  total: baht,
+  promptpay_id: z.string(),
+});
+export type QuoteResponse = z.infer<typeof QuoteResponse>;

@@ -1,5 +1,5 @@
 import {
-  baht,
+  CatalogResponse,
   CreateOrderRequest,
   CreateOrderResponse,
   ErrorBody,
@@ -10,15 +10,13 @@ import {
   GoogleAuthRequest,
   MeResponse,
   mockQuoteForFixtures,
-  objectId,
   PostcodeLookupResponse,
+  QuoteResponse,
   toCatalog,
-  type CatalogResponse,
   type Product,
   type QuoteRequest,
-  type QuoteResponse,
 } from "@merch/shared";
-import { z } from "zod";
+import type { z } from "zod";
 
 export type ClientErrorCode = ErrorCode | "UNKNOWN" | "NETWORK";
 
@@ -41,51 +39,6 @@ function isFixturesMode(): boolean {
 function getBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
 }
-
-const catalogResponseSchema: z.ZodType<CatalogResponse> = z.object({
-  shops: z.array(
-    z.object({
-      _id: objectId,
-      shop_name: z.string(),
-      products: z.array(
-        z.object({
-          _id: objectId,
-          name: z.string(),
-          description: z.string(),
-          image: z.array(z.string()),
-          variants: z.array(
-            z.object({
-              _id: objectId,
-              name: z.string(),
-              price: baht,
-              image: z.string().nullable(),
-              online_stock: baht,
-              buy_limit: baht,
-              sold_out: z.boolean(),
-            }),
-          ),
-        }),
-      ),
-    }),
-  ),
-});
-
-const quoteResponseSchema: z.ZodType<QuoteResponse> = z.object({
-  lines: z.array(
-    z.object({
-      product_id: objectId,
-      product_name: z.string(),
-      variant_id: objectId,
-      variant_name: z.string(),
-      count: z.number().int().min(1),
-      unit_price: baht,
-    }),
-  ),
-  subtotal: baht,
-  shipping_fee: baht,
-  total: baht,
-  promptpay_id: z.string(),
-});
 
 async function requestJson<T>(
   endpoint: string,
@@ -139,7 +92,7 @@ export async function getCatalog(): Promise<CatalogResponse> {
   if (isFixturesMode()) {
     return toCatalog(fixtureShops, memoryClientProducts);
   }
-  return requestJson("/catalog", { method: "GET" }, catalogResponseSchema);
+  return requestJson("/catalog", { method: "GET" }, CatalogResponse);
 }
 
 export async function quote(body: QuoteRequest): Promise<QuoteResponse> {
@@ -154,7 +107,7 @@ export async function quote(body: QuoteRequest): Promise<QuoteResponse> {
       throw err;
     }
   }
-  return requestJson("/quote", { method: "POST", body: JSON.stringify(body) }, quoteResponseSchema);
+  return requestJson("/quote", { method: "POST", body: JSON.stringify(body) }, QuoteResponse);
 }
 
 export async function createOrder(body: CreateOrderRequest): Promise<CreateOrderResponse> {

@@ -1,10 +1,9 @@
 import {
-  baht,
   ErrorBody,
   type ErrorCode,
   fixtureProducts,
   fixtureShops,
-  objectId,
+  Product,
   ProductPatch,
   ProductRequest,
   Shop,
@@ -12,8 +11,6 @@ import {
   StockRequest,
   VariantPatch,
   VariantRequest,
-  type Product,
-  type Variant,
 } from "@merch/shared";
 import { z } from "zod";
 
@@ -81,29 +78,8 @@ function requireAdminToken(): string {
   return token;
 }
 
-const variantSchema: z.ZodType<Variant> = z.object({
-  _id: objectId,
-  name: z.string(),
-  price: baht,
-  image: z.string().nullable(),
-  online_stock: baht,
-  buy_limit: baht,
-  visible_to_online: z.boolean(),
-  archived: z.boolean(),
-});
-
-const productSchema: z.ZodType<Product> = z.object({
-  _id: objectId,
-  shop_id: objectId,
-  name: z.string(),
-  description: z.string(),
-  image: z.array(z.string()),
-  archived: z.boolean(),
-  variants: z.array(variantSchema),
-});
-
 const shopListSchema = z.array(Shop);
-const productListSchema = z.array(productSchema);
+const productListSchema = z.array(Product);
 
 // In-memory deep-cloned copies for fixtures mode so mutations work during dev and reset on reload.
 let memoryShops: Shop[] = structuredClone(fixtureShops);
@@ -261,7 +237,7 @@ export async function getProduct(id: string): Promise<Product> {
     if (!product) throw new ApiError(404, "NOT_FOUND", "Product not found");
     return structuredClone(product);
   }
-  return requestAdmin(`/admin/products/${encodeURIComponent(id)}`, { method: "GET" }, productSchema);
+  return requestAdmin(`/admin/products/${encodeURIComponent(id)}`, { method: "GET" }, Product);
 }
 
 export async function createProduct(body: ProductRequest): Promise<Product> {
@@ -291,7 +267,7 @@ export async function createProduct(body: ProductRequest): Promise<Product> {
     memoryProducts.push(created);
     return structuredClone(created);
   }
-  return requestAdmin("/admin/products", { method: "POST", body: JSON.stringify(body) }, productSchema);
+  return requestAdmin("/admin/products", { method: "POST", body: JSON.stringify(body) }, Product);
 }
 
 export async function updateProduct(id: string, body: ProductPatch): Promise<Product> {
@@ -313,7 +289,7 @@ export async function updateProduct(id: string, body: ProductPatch): Promise<Pro
   return requestAdmin(
     `/admin/products/${encodeURIComponent(id)}`,
     { method: "PATCH", body: JSON.stringify(body) },
-    productSchema,
+    Product,
   );
 }
 
@@ -355,7 +331,7 @@ export async function createVariant(productId: string, body: VariantRequest): Pr
   return requestAdmin(
     `/admin/products/${encodeURIComponent(productId)}/variants`,
     { method: "POST", body: JSON.stringify(body) },
-    productSchema,
+    Product,
   );
 }
 
@@ -376,7 +352,7 @@ export async function updateVariant(productId: string, variantId: string, body: 
   return requestAdmin(
     `/admin/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}`,
     { method: "PATCH", body: JSON.stringify(body) },
-    productSchema,
+    Product,
   );
 }
 
@@ -415,7 +391,7 @@ export async function addStock(productId: string, variantId: string, body: Stock
   return requestAdmin(
     `/admin/products/${encodeURIComponent(productId)}/variants/${encodeURIComponent(variantId)}/stock`,
     { method: "POST", body: JSON.stringify(body) },
-    productSchema,
+    Product,
   );
 }
 

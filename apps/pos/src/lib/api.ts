@@ -5,23 +5,20 @@
  * ADMIN_ACCESS_TOKEN from the VM's environment and forwards the request (F7, D6).
  */
 import {
-  baht,
   CreatePosSaleRequest,
   ErrorBody,
   type ErrorCode,
   FixtureError,
   fixtureProducts,
   mockQuoteForFixtures,
-  objectId,
   Pos,
+  PosSaleResponse,
+  QuoteResponse,
   SHOP_MAIN_ID,
   SHOP_STAGE_ID,
-  VerifyMethod,
-  IsoDateTime,
   type CartItem,
   type Product,
   type QuoteRequest,
-  type QuoteResponse,
 } from "@merch/shared";
 import { z } from "zod";
 
@@ -41,49 +38,12 @@ export class ApiError extends Error {
   }
 }
 
-export type PosSaleResponse = {
-  _id: string;
-  verify_method: z.infer<typeof VerifyMethod>;
-  payment_status: "VERIFIED";
-  subtotal: number;
-  shipping_fee: number;
-  total: number;
-  created_at: string;
-};
-
 // NEXT_PUBLIC_ values are baked in at build time, so changing the flag requires a rebuild.
 function isFixturesMode(): boolean {
   return process.env.NEXT_PUBLIC_USE_FIXTURES === "true";
 }
 
 const posListSchema = z.array(Pos);
-
-const quoteResponseSchema: z.ZodType<QuoteResponse> = z.object({
-  lines: z.array(
-    z.object({
-      product_id: objectId,
-      product_name: z.string(),
-      variant_id: objectId,
-      variant_name: z.string(),
-      count: z.number().int().min(1),
-      unit_price: baht,
-    }),
-  ),
-  subtotal: baht,
-  shipping_fee: baht,
-  total: baht,
-  promptpay_id: z.string(),
-});
-
-const posSaleResponseSchema: z.ZodType<PosSaleResponse> = z.object({
-  _id: objectId,
-  verify_method: VerifyMethod,
-  payment_status: z.literal("VERIFIED"),
-  subtotal: baht,
-  shipping_fee: baht,
-  total: baht,
-  created_at: IsoDateTime,
-});
 
 // Temporary in-memory POS instances derived from product fixtures for fixtures mode only.
 let memoryPosList: Pos[] = [
@@ -215,7 +175,7 @@ export async function quote(body: { channel?: "POS"; pos_id: string; items: Cart
       throw err;
     }
   }
-  return requestPos("/quote", { method: "POST", body: JSON.stringify(payload) }, quoteResponseSchema);
+  return requestPos("/quote", { method: "POST", body: JSON.stringify(payload) }, QuoteResponse);
 }
 
 export async function createSale(posId: string, body: CreatePosSaleRequest): Promise<PosSaleResponse> {
@@ -247,7 +207,7 @@ export async function createSale(posId: string, body: CreatePosSaleRequest): Pro
   return requestPos(
     `/pos/${encodeURIComponent(posId)}/sales`,
     { method: "POST", body: JSON.stringify(body) },
-    posSaleResponseSchema,
+    PosSaleResponse,
   );
 }
 
