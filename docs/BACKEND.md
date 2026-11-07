@@ -131,7 +131,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 - **POS (D6):** `ADMIN_ACCESS_TOKEN` is set in the POS's env on the VM. The POS browser calls the POS's own Next.js server, which adds the token and forwards the call (F7). The token never reaches the tablet's browser. Because the POS uses the admin token, anyone with access to the POS VM has full admin access; Tailscale is what limits that.
 
 ## Emails (2.5, S10)
-`helpers/email.helper.ts` exposes `sendOrderConfirmation(order)` and `sendShippingUpdate(order)`. They are called after the database write succeeds. A failed send is logged and never rolls back the order. The tracking link is not included yet (tracking provider is still open).
+`helpers/email.helper.ts` exposes `sendOrderConfirmation(order, config)` and `sendShippingUpdate(order, config)`. The confirmation is sent once per order, after the transaction commits; the shipping update once per tracking save. All wording is in `emailCopy`, as placeholders until the approved text exists (`TODO(email copy)`). Buyer-supplied text is HTML-escaped, and the log names the order, never the email address. A failed send is logged and never rolls back the order. The tracking link is not included yet (tracking provider is still open).
 
 ## Tests that must exist
 - Pricing: client-sent prices ignored; shipping added once per online order and never on a POS sale.

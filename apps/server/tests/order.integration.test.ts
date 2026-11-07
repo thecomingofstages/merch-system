@@ -4,12 +4,15 @@
  */
 import mongoose, { type Connection } from "mongoose";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { dbConf } from "../src/app/config/db.conf";
 import { createSessionToken } from "../src/app/helpers/session.helper";
 import { models, syncAllIndexes, type Models } from "../src/app/models";
 import { buildApp } from "../src/app/server";
 import { testConfig } from "./helpers/app";
+
+vi.mock("../src/app/helpers/email.helper", () => ({ sendOrderConfirmation: vi.fn(), sendShippingUpdate: vi.fn() }));
+const { sendOrderConfirmation, sendShippingUpdate } = await import("../src/app/helpers/email.helper");
 
 const uri = process.env.MONGODB_URI_TEST;
 
@@ -85,6 +88,9 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
     expect(saved!.products[0]!.variants[0]).toMatchObject({ variant_name: "M", count: 2, unit_price: 250 });
     expect(saved!.recipient!.email).toBe(`${tag}@example.com`);
     expect(await stockOf(shirt)).toBe(8);
+    // S10: one confirmation, for this order, after it was saved
+    expect(sendOrderConfirmation).toHaveBeenCalledTimes(1);
+    expect(String(vi.mocked(sendOrderConfirmation).mock.calls[0]![0]._id)).toBe(res.body._id);
   });
 
   it("rejects a slip that already paid an order, and keeps the stock", async () => {
@@ -93,8 +99,10 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
     expect((await post(order(items, slip))).status).toBe(201);
     const before = await stockOf(shirt);
 
+    vi.mocked(sendOrderConfirmation).mockClear();
     const again = await post(order(items, slip));
     expect(again.status).toBe(409);
+    expect(sendOrderConfirmation).not.toHaveBeenCalled();
     expect(again.body.error.code).toBe("DUPLICATE_SLIP");
     expect(await stockOf(shirt)).toBe(before);
   });

@@ -9,6 +9,8 @@ export const appConfSchema = z.object({
     .pipe(z.array(z.string().url()).min(1)),
   /** Flat shipping per online order, whole baht (S4). Shortcut until the per-shop setting is built. */
   SHIPPING_FEE: z.string().trim().regex(/^\d+$/, "a whole number of baht").transform(Number),
+  /** Sender of the buyer's emails, on the domain verified in Resend (I6), e.g. `Shop <shop@example.com>`. */
+  EMAIL_FROM: z.string().trim().min(3),
 });
 
 /** Fixed settings that are not environment values. */

@@ -3,8 +3,7 @@
  * setting stops the server at start instead of failing on some request
  * (docs/BACKEND.md "Environment").
  *
- * Only the settings used so far are checked. Each later task adds its own
- * (RESEND_API_KEY and EMAIL_FROM in 2.5).
+ * Only the settings used so far are checked; each later task adds its own.
  */
 import { z } from "zod";
 import { appConfSchema } from "./app.conf";

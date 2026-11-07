@@ -8,6 +8,7 @@ import type { Connection, Types } from "mongoose";
 import { appConf } from "../config/app.conf";
 import type { Models } from "../models";
 import { ApiError } from "../utils/ApiError";
+import { type EmailConfig, sendShippingUpdate } from "./email.helper";
 import { returnOnlineStock } from "./stock.helper";
 
 type Id = Types.ObjectId;
@@ -64,14 +65,20 @@ export async function setPayment(m: Models, db: Connection, id: Id, payment_stat
   });
 }
 
-/** Saving a tracking ID sends the order: status SHIPPING. Verified online orders only. */
-export async function setTracking(m: Models, id: Id, tracking_id: string) {
+/**
+ * Saving a tracking ID sends the order: status SHIPPING. Verified online orders only.
+ * Each save emails the buyer once (S10), so a corrected ID reaches them too.
+ */
+export async function setTracking(m: Models, id: Id, tracking_id: string, config: EmailConfig) {
   const order = await m.Purchase.findOneAndUpdate(
     { _id: id, pos_id: null, payment_status: "VERIFIED" },
     { $set: { tracking_id, status: "SHIPPING" } },
     { new: true },
   ).lean();
-  if (order) return order;
+  if (order) {
+    await sendShippingUpdate(order, config);
+    return order;
+  }
   const exists = await m.Purchase.findById(id).lean();
   if (!exists) throw ApiError.notFound("Order not found");
   if (exists.pos_id) throw ApiError.validation("A POS sale can't get a tracking ID");

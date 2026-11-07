@@ -10,6 +10,11 @@ ADMIN_ACCESS_TOKEN=
 PROMPTPAY_ID=
 # Flat fee per online order, whole baht
 SHIPPING_FEE=
+# Used by 2.5 and S10 (emails)
+RESEND_API_KEY=
+# A sender on the domain verified in Resend, e.g. Shop <shop@example.com>
+EMAIL_FROM=
+
 # Used by S6
 GOOGLE_CLIENT_ID=
 # At least 32 random characters, e.g. `openssl rand -hex 32`

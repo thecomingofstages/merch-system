@@ -13,6 +13,8 @@ export const testConfig: Config = {
   PROMPTPAY_ID: "0000000000",
   GOOGLE_CLIENT_ID: "test-client-id",
   SESSION_SECRET: "test-session-secret-test-session-secret",
+  RESEND_API_KEY: "test-resend-key",
+  EMAIL_FROM: "Shop <shop@example.test>",
 };
 
 export const buildTestApp = () => buildApp(testConfig);
