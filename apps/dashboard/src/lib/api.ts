@@ -15,6 +15,20 @@ import {
 import { z } from "zod";
 
 const ADMIN_TOKEN_STORAGE_KEY = "admin_token";
+const adminTokenListeners = new Set<() => void>();
+
+function notifyAdminTokenListeners(): void {
+  for (const listener of adminTokenListeners) {
+    listener();
+  }
+}
+
+export function subscribeAdminToken(listener: () => void): () => void {
+  adminTokenListeners.add(listener);
+  return () => {
+    adminTokenListeners.delete(listener);
+  };
+}
 
 export type DashboardErrorCode = ErrorCode | "UNKNOWN" | "NETWORK";
 
@@ -45,6 +59,7 @@ export function setAdminToken(token: string): void {
   } catch {
     // Ignore storage errors in restricted environments.
   }
+  notifyAdminTokenListeners();
 }
 
 export function clearAdminToken(): void {
@@ -54,6 +69,7 @@ export function clearAdminToken(): void {
   } catch {
     // Ignore storage errors in restricted environments.
   }
+  notifyAdminTokenListeners();
 }
 
 export function hasAdminToken(): boolean {
@@ -62,7 +78,7 @@ export function hasAdminToken(): boolean {
 }
 
 // NEXT_PUBLIC_ values are baked in at build time, so changing the flag requires a rebuild.
-function isFixturesMode(): boolean {
+export function isFixturesMode(): boolean {
   return process.env.NEXT_PUBLIC_USE_FIXTURES === "true";
 }
 
@@ -147,6 +163,10 @@ async function requestAdmin<T>(
 }
 
 // Shops
+
+export async function verifyAdminToken(): Promise<void> {
+  await listShops();
+}
 
 export async function listShops(options?: { includeArchived?: boolean }): Promise<Shop[]> {
   if (isFixturesMode()) {
@@ -403,6 +423,9 @@ export const dashboardApi = {
   setAdminToken,
   clearAdminToken,
   hasAdminToken,
+  subscribeAdminToken,
+  isFixturesMode,
+  verifyAdminToken,
   resetDashboardFixtures,
   listShops,
   createShop,
