@@ -19,15 +19,17 @@ type ProductPopupProps<V extends ShopVariant> = {
   product: ShopProduct<V> | null;
   /** Client passes `online_stock`, POS passes `pos_stock`. */
   stockOf: (variant: V) => number;
+  /** Quantity of this variant already in the cart, used to enforce the total buy limit. */
+  inCart?: (variantId: string) => number;
   onAdd: (variantId: string, count: number) => void;
   onClose: () => void;
 };
 
-export function ProductPopup<V extends ShopVariant>({ product, stockOf, onAdd, onClose }: ProductPopupProps<V>) {
+export function ProductPopup<V extends ShopVariant>({ product, stockOf, inCart, onAdd, onClose }: ProductPopupProps<V>) {
   return (
     <Dialog open={product !== null} onClose={onClose} title={product?.name ?? ""} sheet>
       {/* key: a new product starts with its own first variant and an amount of 1 */}
-      {product ? <PopupBody key={product._id} product={product} stockOf={stockOf} onAdd={onAdd} /> : null}
+      {product ? <PopupBody key={product._id} product={product} stockOf={stockOf} inCart={inCart} onAdd={onAdd} /> : null}
     </Dialog>
   );
 }
@@ -35,13 +37,17 @@ export function ProductPopup<V extends ShopVariant>({ product, stockOf, onAdd, o
 function PopupBody<V extends ShopVariant>({
   product,
   stockOf,
+  inCart,
   onAdd,
-}: Pick<ProductPopupProps<V>, "stockOf" | "onAdd"> & { product: ShopProduct<V> }) {
+}: Pick<ProductPopupProps<V>, "stockOf" | "inCart" | "onAdd"> & { product: ShopProduct<V> }) {
   const firstInStock = product.variants.find((v) => stockOf(v) > 0) ?? product.variants[0];
   const [variantId, setVariantId] = useState(firstInStock?._id ?? "");
   const [count, setCount] = useState(1);
   const variant = product.variants.find((v) => v._id === variantId);
-  const max = variant ? maxCount(variant.buy_limit, stockOf(variant)) : 0;
+  const max = variant
+    ? remainingCount(maxCount(variant.buy_limit, stockOf(variant)), inCart?.(variant._id) ?? 0)
+    : 0;
+  const selectedCount = Math.min(count, max);
   const image = variant?.image ?? product.image[0];
 
   return (
@@ -70,17 +76,22 @@ function PopupBody<V extends ShopVariant>({
         <>
           <div className="flex items-center justify-between">
             <span className="font-medium">Amount</span>
-            <QuantityStepper value={count} onChange={setCount} max={max} />
+            <QuantityStepper value={selectedCount} onChange={setCount} max={max} />
           </div>
           <p className="flex items-center justify-between">
             <span>Total price</span>
-            <Price amount={variant.price * count} />
+            <Price amount={variant.price * selectedCount} />
           </p>
-          <Button onClick={() => onAdd(variant._id, Math.min(count, max))}>ใส่ตะกร้า</Button>
+          <Button onClick={() => onAdd(variant._id, selectedCount)}>ใส่ตะกร้า</Button>
         </>
       ) : (
         <p className="text-curtain">สินค้าหมด</p>
       )}
     </div>
   );
+}
+
+/** Remaining amount that may be added after enforcing stock, buy_limit, and cart contents. */
+export function remainingCount(max: number, inCartCount: number): number {
+  return Math.max(max - Math.max(inCartCount, 0), 0);
 }
