@@ -9,4 +9,4 @@ export { ProductCard, type ShopProduct, type ShopVariant } from "./ProductCard";
 export { ProductPopup, maxCount } from "./ProductPopup";
 export { QuantityStepper } from "./QuantityStepper";
 export { Select } from "./Select";
-export { useCart } from "./useCart";
+export { CartProvider, useCart } from "./useCart";
