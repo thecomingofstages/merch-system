@@ -34,6 +34,309 @@ interface DialogCommonProps {
   onRedirect: (path: string) => void;
 }
 
+// Shared helpers & subcomponents for Product / Variant forms
+
+interface ImageUrlRow {
+  key: number;
+  url: string;
+}
+
+function createInitialImageRows(urls?: string[]): ImageUrlRow[] {
+  if (urls && urls.length > 0) {
+    return urls.map((url, idx) => ({ key: idx + 1, url }));
+  }
+  return [{ key: 1, url: "" }];
+}
+
+function useImageUrlRows(initialUrls?: string[]) {
+  const [imageRows, setImageRows] = useState<ImageUrlRow[]>(() =>
+    createInitialImageRows(initialUrls),
+  );
+  const [nextImageKey, setNextImageKey] = useState(
+    (initialUrls ? initialUrls.length : 0) + 2,
+  );
+  const [imageErrors, setImageErrors] = useState<Record<number, string>>({});
+
+  function addRow() {
+    setImageRows((prev) => [...prev, { key: nextImageKey, url: "" }]);
+    setNextImageKey((k) => k + 1);
+  }
+
+  function changeRow(rowKey: number, value: string) {
+    setImageRows((prev) => prev.map((r) => (r.key === rowKey ? { ...r, url: value } : r)));
+    if (imageErrors[rowKey]) {
+      setImageErrors((prev) => {
+        const next = { ...prev };
+        delete next[rowKey];
+        return next;
+      });
+    }
+  }
+
+  function removeRow(rowKey: number) {
+    setImageRows((prev) =>
+      prev.length <= 1
+        ? [{ key: nextImageKey, url: "" }]
+        : prev.filter((r) => r.key !== rowKey),
+    );
+    if (imageRows.length <= 1) {
+      setNextImageKey((k) => k + 1);
+    }
+    setImageErrors((prev) => {
+      const next = { ...prev };
+      delete next[rowKey];
+      return next;
+    });
+  }
+
+  return {
+    imageRows,
+    imageErrors,
+    setImageErrors,
+    addRow,
+    changeRow,
+    removeRow,
+  };
+}
+
+function validateImageUrlRows(rows: ImageUrlRow[]): {
+  urls: string[];
+  errors: Record<number, string>;
+  hasError: boolean;
+} {
+  const urls: string[] = [];
+  const errors: Record<number, string> = {};
+  let hasError = false;
+
+  for (const row of rows) {
+    const trimmed = row.url.trim();
+    if (!trimmed) continue;
+    if (!isValidHttpUrl(trimmed)) {
+      errors[row.key] = COPY.invalidImageUrl;
+      hasError = true;
+    } else {
+      urls.push(trimmed);
+    }
+  }
+
+  return { urls, errors, hasError };
+}
+
+function ImageUrlRowsField({
+  rows,
+  errors,
+  disabled,
+  showRemoveWhenSingle,
+  onAddRow,
+  onChangeRow,
+  onRemoveRow,
+}: {
+  rows: ImageUrlRow[];
+  errors: Record<number, string>;
+  disabled: boolean;
+  showRemoveWhenSingle?: boolean;
+  onAddRow: () => void;
+  onChangeRow: (rowKey: number, value: string) => void;
+  onRemoveRow: (rowKey: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-small font-medium text-ink">{COPY.productImagesLabel}</span>
+        <Button type="button" variant="secondary" disabled={disabled} onClick={onAddRow}>
+          {COPY.addImageRow}
+        </Button>
+      </div>
+      {rows.map((row, idx) => (
+        <div key={row.key} className="flex items-end gap-2">
+          <div className="pb-0.5">
+            <ImagePreview
+              url={row.url}
+              alt={`${COPY.productImagesLabel} ${idx + 1}`}
+              sizeClass="h-11 w-11"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <Input
+              label={`${COPY.productImagesLabel} #${idx + 1}`}
+              value={row.url}
+              disabled={disabled}
+              error={errors[row.key]}
+              placeholder="https://..."
+              onChange={(e) => onChangeRow(row.key, e.target.value)}
+            />
+          </div>
+          {showRemoveWhenSingle || rows.length > 1 ? (
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={disabled}
+              onClick={() => onRemoveRow(row.key)}
+            >
+              {COPY.removeImageRow}
+            </Button>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface VariantFormFields {
+  name: string;
+  price: string;
+  image: string;
+  buy_limit: string;
+  visible_to_online: boolean;
+}
+
+interface VariantDraftRow extends VariantFormFields {
+  rowKey: number;
+}
+
+interface VariantDraftRowErrors {
+  name?: string;
+  price?: string;
+  image?: string;
+  buy_limit?: string;
+}
+
+function createEmptyVariantDraft(rowKey: number): VariantDraftRow {
+  return {
+    rowKey,
+    name: "",
+    price: "",
+    image: "",
+    buy_limit: "0",
+    visible_to_online: true,
+  };
+}
+
+function parseVariantFormFields(fields: VariantFormFields): {
+  data: VariantRequest | null;
+  errors: VariantDraftRowErrors;
+} {
+  const errors: VariantDraftRowErrors = {};
+  if (!fields.name.trim()) {
+    errors.name = COPY.requiredField;
+  }
+  const priceNum = parseStrictInt(fields.price);
+  if (priceNum === null || priceNum < 0) {
+    errors.price = COPY.invalidNonNegativeInt;
+  }
+  const buyLimitNum = parseStrictInt(fields.buy_limit);
+  if (buyLimitNum === null || buyLimitNum < 0) {
+    errors.buy_limit = COPY.invalidNonNegativeInt;
+  }
+  const trimmedImg = fields.image.trim();
+  if (trimmedImg && !isValidHttpUrl(trimmedImg)) {
+    errors.image = COPY.invalidImageUrl;
+  }
+
+  if (Object.keys(errors).length > 0 || priceNum === null || buyLimitNum === null) {
+    return { data: null, errors };
+  }
+
+  const parsed = VariantRequest.safeParse({
+    name: fields.name,
+    price: priceNum,
+    image: trimmedImg ? trimmedImg : null,
+    buy_limit: buyLimitNum,
+    visible_to_online: fields.visible_to_online,
+  });
+
+  if (!parsed.success) {
+    return { data: null, errors: { name: COPY.requiredField } };
+  }
+
+  return { data: parsed.data, errors: {} };
+}
+
+function VariantFieldsInputs({
+  fields,
+  errors,
+  disabled,
+  idPrefix,
+  imageAlt,
+  onChangeField,
+}: {
+  fields: VariantFormFields;
+  errors: VariantDraftRowErrors;
+  disabled: boolean;
+  idPrefix?: string;
+  imageAlt: string;
+  onChangeField: <K extends keyof VariantFormFields>(
+    field: K,
+    value: VariantFormFields[K],
+  ) => void;
+}) {
+  return (
+    <>
+      <Input
+        id={idPrefix ? `${idPrefix}-name-input` : undefined}
+        label={COPY.variantNameLabel}
+        value={fields.name}
+        disabled={disabled}
+        error={errors.name}
+        onChange={(e) => onChangeField("name", e.target.value)}
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Input
+          id={idPrefix ? `${idPrefix}-price-input` : undefined}
+          label={COPY.variantPriceLabel}
+          type="number"
+          min={0}
+          step={1}
+          value={fields.price}
+          disabled={disabled}
+          error={errors.price}
+          onChange={(e) => onChangeField("price", e.target.value)}
+        />
+        <Input
+          id={idPrefix ? `${idPrefix}-buy-limit-input` : undefined}
+          label={COPY.variantBuyLimitLabel}
+          type="number"
+          min={0}
+          step={1}
+          value={fields.buy_limit}
+          disabled={disabled}
+          error={errors.buy_limit}
+          onChange={(e) => onChangeField("buy_limit", e.target.value)}
+        />
+      </div>
+
+      <div className="flex items-end gap-2">
+        <div className="pb-0.5">
+          <ImagePreview url={fields.image} alt={imageAlt} sizeClass="h-11 w-11" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <Input
+            id={idPrefix ? `${idPrefix}-image-input` : undefined}
+            label={COPY.variantImageLabel}
+            value={fields.image}
+            disabled={disabled}
+            error={errors.image}
+            placeholder="https://..."
+            onChange={(e) => onChangeField("image", e.target.value)}
+          />
+        </div>
+      </div>
+
+      <label className="flex items-center gap-2 text-small text-ink">
+        <input
+          type="checkbox"
+          checked={fields.visible_to_online}
+          disabled={disabled}
+          onChange={(e) => onChangeField("visible_to_online", e.target.checked)}
+          className="h-4 w-4 accent-ink"
+        />
+        <span>{COPY.variantVisibleLabel}</span>
+      </label>
+    </>
+  );
+}
+
 // 1. Shop Dialog (Create / Rename)
 
 export function ShopFormDialog({
@@ -139,33 +442,6 @@ function ShopFormBody({
 
 // 2. Create Product Dialog (with embedded variants)
 
-interface VariantDraftRow {
-  rowKey: number;
-  name: string;
-  price: string;
-  image: string;
-  buy_limit: string;
-  visible_to_online: boolean;
-}
-
-interface VariantDraftRowErrors {
-  name?: string;
-  price?: string;
-  image?: string;
-  buy_limit?: string;
-}
-
-function createEmptyVariantDraft(rowKey: number): VariantDraftRow {
-  return {
-    rowKey,
-    name: "",
-    price: "0",
-    image: "",
-    buy_limit: "0",
-    visible_to_online: true,
-  };
-}
-
 export function CreateProductDialog({
   open,
   shopId,
@@ -201,10 +477,14 @@ function CreateProductFormBody({
 }: DialogCommonProps & { shopId: string }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [imageRows, setImageRows] = useState<Array<{ key: number; url: string }>>([
-    { key: 1, url: "" },
-  ]);
-  const [nextImageKey, setNextImageKey] = useState(2);
+  const {
+    imageRows,
+    imageErrors,
+    setImageErrors,
+    addRow: handleAddImageRow,
+    changeRow: handleChangeImageRow,
+    removeRow: handleRemoveImageRow,
+  } = useImageUrlRows();
 
   // Start with 2 variant rows so an admin creating a product with two variants can fill them right away.
   const [variantRows, setVariantRows] = useState<VariantDraftRow[]>([
@@ -214,31 +494,9 @@ function CreateProductFormBody({
   const [nextVariantKey, setNextVariantKey] = useState(3);
 
   const [nameError, setNameError] = useState<string | undefined>(undefined);
-  const [imageErrors, setImageErrors] = useState<Record<number, string>>({});
   const [variantErrors, setVariantErrors] = useState<Record<number, VariantDraftRowErrors>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  function handleAddImageRow() {
-    setImageRows((prev) => [...prev, { key: nextImageKey, url: "" }]);
-    setNextImageKey((k) => k + 1);
-  }
-
-  function handleRemoveImageRow(rowKey: number) {
-    setImageRows((prev) =>
-      prev.length <= 1
-        ? [{ key: nextImageKey, url: "" }]
-        : prev.filter((r) => r.key !== rowKey),
-    );
-    if (imageRows.length <= 1) {
-      setNextImageKey((k) => k + 1);
-    }
-    setImageErrors((prev) => {
-      const next = { ...prev };
-      delete next[rowKey];
-      return next;
-    });
-  }
 
   function handleAddVariantRow() {
     setVariantRows((prev) => [...prev, createEmptyVariantDraft(nextVariantKey)]);
@@ -255,10 +513,10 @@ function CreateProductFormBody({
     });
   }
 
-  function updateVariantField<K extends keyof VariantDraftRow>(
+  function updateVariantField<K extends keyof VariantFormFields>(
     rowKey: number,
     field: K,
-    value: VariantDraftRow[K],
+    value: VariantFormFields[K],
   ) {
     setVariantRows((prev) =>
       prev.map((row) => (row.rowKey === rowKey ? { ...row, [field]: value } : row)),
@@ -287,19 +545,11 @@ function CreateProductFormBody({
       hasClientError = true;
     }
 
-    const nonEmptyImages: string[] = [];
-    const nextImgErrors: Record<number, string> = {};
-    for (const row of imageRows) {
-      const trimmed = row.url.trim();
-      if (!trimmed) continue;
-      if (!isValidHttpUrl(trimmed)) {
-        nextImgErrors[row.key] = COPY.invalidImageUrl;
-        hasClientError = true;
-      } else {
-        nonEmptyImages.push(trimmed);
-      }
+    const imageCheck = validateImageUrlRows(imageRows);
+    setImageErrors(imageCheck.errors);
+    if (imageCheck.hasError) {
+      hasClientError = true;
     }
-    setImageErrors(nextImgErrors);
 
     if (variantRows.length === 0) {
       setGeneralError(COPY.atLeastOneVariant);
@@ -310,40 +560,12 @@ function CreateProductFormBody({
     const parsedVariants: VariantRequest[] = [];
 
     for (const row of variantRows) {
-      const rowErr: VariantDraftRowErrors = {};
-      if (!row.name.trim()) {
-        rowErr.name = COPY.requiredField;
-      }
-      const priceNum = parseStrictInt(row.price);
-      if (priceNum === null || priceNum < 0) {
-        rowErr.price = COPY.invalidNonNegativeInt;
-      }
-      const buyLimitNum = parseStrictInt(row.buy_limit);
-      if (buyLimitNum === null || buyLimitNum < 0) {
-        rowErr.buy_limit = COPY.invalidNonNegativeInt;
-      }
-      const trimmedVarImg = row.image.trim();
-      if (trimmedVarImg && !isValidHttpUrl(trimmedVarImg)) {
-        rowErr.image = COPY.invalidImageUrl;
-      }
-
-      if (Object.keys(rowErr).length > 0) {
-        nextVarErrors[row.rowKey] = rowErr;
+      const { data, errors } = parseVariantFormFields(row);
+      if (!data) {
+        nextVarErrors[row.rowKey] = errors;
         hasClientError = true;
-      } else if (priceNum !== null && buyLimitNum !== null) {
-        const vParsed = VariantRequest.safeParse({
-          name: row.name,
-          price: priceNum,
-          image: trimmedVarImg ? trimmedVarImg : null,
-          buy_limit: buyLimitNum,
-          visible_to_online: row.visible_to_online,
-        });
-        if (!vParsed.success) {
-          nextVarErrors[row.rowKey] = { name: COPY.requiredField };
-          hasClientError = true;
-        } else {
-          parsedVariants.push(vParsed.data);
-        }
+      } else {
+        parsedVariants.push(data);
       }
     }
     setVariantErrors(nextVarErrors);
@@ -354,7 +576,7 @@ function CreateProductFormBody({
       shop_id: shopId,
       name,
       description,
-      image: nonEmptyImages,
+      image: imageCheck.urls,
       variants: parsedVariants,
     });
 
@@ -408,63 +630,14 @@ function CreateProductFormBody({
         />
       </div>
 
-      {/* Product image URL rows */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-small font-medium text-ink">{COPY.productImagesLabel}</span>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={submitting}
-            onClick={handleAddImageRow}
-          >
-            {COPY.addImageRow}
-          </Button>
-        </div>
-        {imageRows.map((row, idx) => (
-          <div key={row.key} className="flex items-end gap-2">
-            <div className=" pb-0.5">
-              <ImagePreview
-                url={row.url}
-                alt={`${COPY.productImagesLabel} ${idx + 1}`}
-                sizeClass="h-11 w-11"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <Input
-                label={`${COPY.productImagesLabel} #${idx + 1}`}
-                value={row.url}
-                disabled={submitting}
-                error={imageErrors[row.key]}
-                placeholder="https://..."
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setImageRows((prev) =>
-                    prev.map((r) => (r.key === row.key ? { ...r, url: val } : r)),
-                  );
-                  if (imageErrors[row.key]) {
-                    setImageErrors((prev) => {
-                      const next = { ...prev };
-                      delete next[row.key];
-                      return next;
-                    });
-                  }
-                }}
-              />
-            </div>
-            {imageRows.length > 1 ? (
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={submitting}
-                onClick={() => handleRemoveImageRow(row.key)}
-              >
-                {COPY.removeImageRow}
-              </Button>
-            ) : null}
-          </div>
-        ))}
-      </div>
+      <ImageUrlRowsField
+        rows={imageRows}
+        errors={imageErrors}
+        disabled={submitting}
+        onAddRow={handleAddImageRow}
+        onChangeRow={handleChangeImageRow}
+        onRemoveRow={handleRemoveImageRow}
+      />
 
       {/* Embedded variants rows */}
       <div className="flex flex-col gap-3 border-t border-rigging pt-3">
@@ -503,69 +676,15 @@ function CreateProductFormBody({
                 ) : null}
               </div>
 
-              <Input
-                label={COPY.variantNameLabel}
-                value={row.name}
+              <VariantFieldsInputs
+                fields={row}
+                errors={errs}
                 disabled={submitting}
-                error={errs.name}
-                onChange={(e) => updateVariantField(row.rowKey, "name", e.target.value)}
+                imageAlt={`${COPY.variantImageLabel} ${index + 1}`}
+                onChangeField={(field, value) =>
+                  updateVariantField(row.rowKey, field, value)
+                }
               />
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Input
-                  label={COPY.variantPriceLabel}
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={row.price}
-                  disabled={submitting}
-                  error={errs.price}
-                  onChange={(e) => updateVariantField(row.rowKey, "price", e.target.value)}
-                />
-                <Input
-                  label={COPY.variantBuyLimitLabel}
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={row.buy_limit}
-                  disabled={submitting}
-                  error={errs.buy_limit}
-                  onChange={(e) => updateVariantField(row.rowKey, "buy_limit", e.target.value)}
-                />
-              </div>
-
-              <div className="flex items-end gap-2">
-                <div className="pb-0.5">
-                  <ImagePreview
-                    url={row.image}
-                    alt={`${COPY.variantImageLabel} ${index + 1}`}
-                    sizeClass="h-11 w-11"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Input
-                    label={COPY.variantImageLabel}
-                    value={row.image}
-                    disabled={submitting}
-                    error={errs.image}
-                    placeholder="https://..."
-                    onChange={(e) => updateVariantField(row.rowKey, "image", e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <label className="flex items-center gap-2 text-small text-ink">
-                <input
-                  type="checkbox"
-                  checked={row.visible_to_online}
-                  disabled={submitting}
-                  onChange={(e) =>
-                    updateVariantField(row.rowKey, "visible_to_online", e.target.checked)
-                  }
-                  className="h-4 w-4 accent-ink"
-                />
-                <span>{COPY.variantVisibleLabel}</span>
-              </label>
             </div>
           );
         })}
@@ -626,37 +745,17 @@ function EditProductFormBody({
 }: DialogCommonProps & { product: Product }) {
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description);
-  const [imageRows, setImageRows] = useState<Array<{ key: number; url: string }>>(() =>
-    product.image.length > 0
-      ? product.image.map((url, idx) => ({ key: idx + 1, url }))
-      : [{ key: 1, url: "" }],
-  );
-  const [nextImageKey, setNextImageKey] = useState(product.image.length + 2);
+  const {
+    imageRows,
+    imageErrors,
+    setImageErrors,
+    addRow: handleAddImageRow,
+    changeRow: handleChangeImageRow,
+    removeRow: handleRemoveImageRow,
+  } = useImageUrlRows(product.image);
   const [nameError, setNameError] = useState<string | undefined>(undefined);
-  const [imageErrors, setImageErrors] = useState<Record<number, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  function handleAddImageRow() {
-    setImageRows((prev) => [...prev, { key: nextImageKey, url: "" }]);
-    setNextImageKey((k) => k + 1);
-  }
-
-  function handleRemoveImageRow(rowKey: number) {
-    setImageRows((prev) =>
-      prev.length <= 1
-        ? [{ key: nextImageKey, url: "" }]
-        : prev.filter((r) => r.key !== rowKey),
-    );
-    if (imageRows.length <= 1) {
-      setNextImageKey((k) => k + 1);
-    }
-    setImageErrors((prev) => {
-      const next = { ...prev };
-      delete next[rowKey];
-      return next;
-    });
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -672,25 +771,17 @@ function EditProductFormBody({
       hasClientError = true;
     }
 
-    const nonEmptyImages: string[] = [];
-    const nextImgErrors: Record<number, string> = {};
-    for (const row of imageRows) {
-      const trimmed = row.url.trim();
-      if (!trimmed) continue;
-      if (!isValidHttpUrl(trimmed)) {
-        nextImgErrors[row.key] = COPY.invalidImageUrl;
-        hasClientError = true;
-      } else {
-        nonEmptyImages.push(trimmed);
-      }
+    const imageCheck = validateImageUrlRows(imageRows);
+    setImageErrors(imageCheck.errors);
+    if (imageCheck.hasError) {
+      hasClientError = true;
     }
-    setImageErrors(nextImgErrors);
     if (hasClientError) return;
 
     const parsed = ProductPatch.safeParse({
       name,
       description,
-      image: nonEmptyImages,
+      image: imageCheck.urls,
     });
     if (!parsed.success) {
       setGeneralError(parsed.error.issues[0]?.message ?? COPY.requiredField);
@@ -742,60 +833,15 @@ function EditProductFormBody({
         />
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-small font-medium text-ink">{COPY.productImagesLabel}</span>
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={submitting}
-            onClick={handleAddImageRow}
-          >
-            {COPY.addImageRow}
-          </Button>
-        </div>
-        {imageRows.map((row, idx) => (
-          <div key={row.key} className="flex items-end gap-2">
-            <div className="pb-0.5">
-              <ImagePreview
-                url={row.url}
-                alt={`${COPY.productImagesLabel} ${idx + 1}`}
-                sizeClass="h-11 w-11"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <Input
-                label={`${COPY.productImagesLabel} #${idx + 1}`}
-                value={row.url}
-                disabled={submitting}
-                error={imageErrors[row.key]}
-                placeholder="https://..."
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setImageRows((prev) =>
-                    prev.map((r) => (r.key === row.key ? { ...r, url: val } : r)),
-                  );
-                  if (imageErrors[row.key]) {
-                    setImageErrors((prev) => {
-                      const next = { ...prev };
-                      delete next[row.key];
-                      return next;
-                    });
-                  }
-                }}
-              />
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={submitting}
-              onClick={() => handleRemoveImageRow(row.key)}
-            >
-              {COPY.removeImageRow}
-            </Button>
-          </div>
-        ))}
-      </div>
+      <ImageUrlRowsField
+        rows={imageRows}
+        errors={imageErrors}
+        disabled={submitting}
+        showRemoveWhenSingle
+        onAddRow={handleAddImageRow}
+        onChangeRow={handleChangeImageRow}
+        onRemoveRow={handleRemoveImageRow}
+      />
 
       {generalError ? (
         <p role="alert" className="text-small text-curtain">
@@ -855,15 +901,31 @@ function VariantFormBody({
   onSuccess,
   onRedirect,
 }: DialogCommonProps & { productId: string; variant: Variant | null }) {
-  const [name, setName] = useState(variant?.name ?? "");
-  const [price, setPrice] = useState(variant ? String(variant.price) : "0");
-  const [image, setImage] = useState(variant?.image ?? "");
-  const [buyLimit, setBuyLimit] = useState(variant ? String(variant.buy_limit) : "0");
-  const [visibleToOnline, setVisibleToOnline] = useState(variant?.visible_to_online ?? true);
+  const [fields, setFields] = useState<VariantFormFields>({
+    name: variant?.name ?? "",
+    price: variant ? String(variant.price) : "",
+    image: variant?.image ?? "",
+    buy_limit: variant ? String(variant.buy_limit) : "0",
+    visible_to_online: variant?.visible_to_online ?? true,
+  });
 
   const [errors, setErrors] = useState<VariantDraftRowErrors>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  function updateField<K extends keyof VariantFormFields>(
+    field: K,
+    value: VariantFormFields[K],
+  ) {
+    setFields((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => {
+      const errKey = field as keyof VariantDraftRowErrors;
+      if (!prev[errKey]) return prev;
+      const next = { ...prev };
+      delete next[errKey];
+      return next;
+    });
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -872,38 +934,17 @@ function VariantFormBody({
     setErrors({});
     setApiError(null);
 
-    const nextErrs: VariantDraftRowErrors = {};
-    if (!name.trim()) {
-      nextErrs.name = COPY.requiredField;
-    }
-    const priceNum = parseStrictInt(price);
-    if (priceNum === null || priceNum < 0) {
-      nextErrs.price = COPY.invalidNonNegativeInt;
-    }
-    const buyLimitNum = parseStrictInt(buyLimit);
-    if (buyLimitNum === null || buyLimitNum < 0) {
-      nextErrs.buy_limit = COPY.invalidNonNegativeInt;
-    }
-    const trimmedImg = image.trim();
-    if (trimmedImg && !isValidHttpUrl(trimmedImg)) {
-      nextErrs.image = COPY.invalidImageUrl;
-    }
+    const { data, errors: fieldErrors } = parseVariantFormFields(fields);
 
-    if (Object.keys(nextErrs).length > 0 || priceNum === null || buyLimitNum === null) {
-      setErrors(nextErrs);
+    if (!data) {
+      setErrors(fieldErrors);
       return;
     }
 
     setSubmitting(true);
     try {
       if (variant) {
-        const parsed = VariantPatch.safeParse({
-          name,
-          price: priceNum,
-          image: trimmedImg ? trimmedImg : null,
-          buy_limit: buyLimitNum,
-          visible_to_online: visibleToOnline,
-        });
+        const parsed = VariantPatch.safeParse(data);
         if (!parsed.success) {
           setApiError(parsed.error.issues[0]?.message ?? COPY.requiredField);
           setSubmitting(false);
@@ -911,19 +952,7 @@ function VariantFormBody({
         }
         await updateVariant(productId, variant._id, parsed.data);
       } else {
-        const parsed = VariantRequest.safeParse({
-          name,
-          price: priceNum,
-          image: trimmedImg ? trimmedImg : null,
-          buy_limit: buyLimitNum,
-          visible_to_online: visibleToOnline,
-        });
-        if (!parsed.success) {
-          setApiError(parsed.error.issues[0]?.message ?? COPY.requiredField);
-          setSubmitting(false);
-          return;
-        }
-        await createVariant(productId, parsed.data);
+        await createVariant(productId, data);
       }
       await onSuccess();
       onClose();
@@ -937,79 +966,14 @@ function VariantFormBody({
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-      <Input
-        id="variant-name-input"
-        label={COPY.variantNameLabel}
-        value={name}
+      <VariantFieldsInputs
+        fields={fields}
+        errors={errors}
         disabled={submitting}
-        error={errors.name}
-        onChange={(e) => {
-          setName(e.target.value);
-          if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
-        }}
+        idPrefix="variant"
+        imageAlt={COPY.variantImageLabel}
+        onChangeField={updateField}
       />
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input
-          id="variant-price-input"
-          label={COPY.variantPriceLabel}
-          type="number"
-          min={0}
-          step={1}
-          value={price}
-          disabled={submitting}
-          error={errors.price}
-          onChange={(e) => {
-            setPrice(e.target.value);
-            if (errors.price) setErrors((prev) => ({ ...prev, price: undefined }));
-          }}
-        />
-        <Input
-          id="variant-buy-limit-input"
-          label={COPY.variantBuyLimitLabel}
-          type="number"
-          min={0}
-          step={1}
-          value={buyLimit}
-          disabled={submitting}
-          error={errors.buy_limit}
-          onChange={(e) => {
-            setBuyLimit(e.target.value);
-            if (errors.buy_limit) setErrors((prev) => ({ ...prev, buy_limit: undefined }));
-          }}
-        />
-      </div>
-
-      <div className="flex items-end gap-2">
-        <div className="pb-0.5">
-          <ImagePreview url={image} alt={COPY.variantImageLabel} sizeClass="h-11 w-11" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <Input
-            id="variant-image-input"
-            label={COPY.variantImageLabel}
-            value={image}
-            disabled={submitting}
-            error={errors.image}
-            placeholder="https://..."
-            onChange={(e) => {
-              setImage(e.target.value);
-              if (errors.image) setErrors((prev) => ({ ...prev, image: undefined }));
-            }}
-          />
-        </div>
-      </div>
-
-      <label className="flex items-center gap-2 text-small text-ink">
-        <input
-          type="checkbox"
-          checked={visibleToOnline}
-          disabled={submitting}
-          onChange={(e) => setVisibleToOnline(e.target.checked)}
-          className="h-4 w-4 accent-ink"
-        />
-        <span>{COPY.variantVisibleLabel}</span>
-      </label>
 
       {apiError ? (
         <p role="alert" className="text-small text-curtain">

@@ -85,7 +85,6 @@ export const COPY = {
   invalidImageUrl: "Must be a valid http:// or https:// URL",
   atLeastOneVariant: "Add at least one variant",
   nothingToUpdate: "Nothing to change",
-  inUseError: "Still has stock: move stock to 0 before archiving",
   notFoundError: "Item not found",
   networkError: "Cannot reach the server, try again",
 } as const;

@@ -33,8 +33,6 @@ export function mapDashboardError(
   }
   if (err instanceof ApiError) {
     switch (err.code) {
-      case "IN_USE":
-        return COPY.inUseError;
       case "OUT_OF_STOCK":
         return COPY.stockBelowZeroError;
       case "NOT_FOUND":

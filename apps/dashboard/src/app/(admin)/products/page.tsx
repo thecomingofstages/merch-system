@@ -63,25 +63,7 @@ export default function ProductsPage() {
   }>({ open: false, productId: "", variant: null });
   const [archiveTarget, setArchiveTarget] = useState<ArchiveTarget | null>(null);
 
-  const fetchCatalog = useCallback(
-    async (includeArchived: boolean) => {
-      try {
-        const [fetchedShops, fetchedProducts] = await Promise.all([
-          listShops({ includeArchived }),
-          listProducts({ includeArchived }),
-        ]);
-        setShops(fetchedShops);
-        setProducts(fetchedProducts);
-        setPageError(null);
-      } catch (err) {
-        const msg = mapDashboardError(err, handleRedirect);
-        if (msg) setPageError(msg);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [handleRedirect],
-  );
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -107,17 +89,14 @@ export default function ProductsPage() {
     return () => {
       active = false;
     };
-  }, [handleRedirect, showArchived]);
+  }, [handleRedirect, showArchived, reloadNonce]);
 
-  const refreshData = useCallback(
-    async (createdShopId?: string) => {
-      await fetchCatalog(showArchived);
-      if (createdShopId) {
-        setSelectedShopId(createdShopId);
-      }
-    },
-    [fetchCatalog, showArchived],
-  );
+  const refreshData = useCallback(async (createdShopId?: string) => {
+    setReloadNonce((n) => n + 1);
+    if (createdShopId) {
+      setSelectedShopId(createdShopId);
+    }
+  }, []);
 
   // Derive active shop selection so we don't need synchronous setState inside useEffect.
   const activeShop =
@@ -176,7 +155,7 @@ export default function ProductsPage() {
             variant="secondary"
             onClick={() => {
               setLoading(true);
-              void fetchCatalog(showArchived);
+              setReloadNonce((n) => n + 1);
             }}
           >
             {COPY.retry}
