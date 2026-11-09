@@ -64,7 +64,7 @@ export function Sidebar() {
       <nav
         id="dashboard-nav"
         aria-label="Dashboard"
-        className={`${mobileOpen ? "flex" : "hidden"} flex-col justify-between gap-6 border-t border-rigging p-4 md:flex md:min-h-screen md:border-t-0`}
+        className={`${mobileOpen ? "flex" : "hidden"} flex-col justify-between gap-6 border-t border-rigging p-4 md:sticky md:top-0 md:flex md:h-screen md:border-t-0`}
       >
         <ul className="flex flex-col gap-1">
           {NAV_ITEMS.map((item) => {
