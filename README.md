@@ -29,6 +29,19 @@ npm run dev -w apps/client
 
 The full list of commands is in [AGENTS.md](AGENTS.md) "Commands".
 
+## Run the dashboard and POS on the VM (pm2)
+
+[ecosystem.config.cjs](ecosystem.config.cjs) runs `merch-dashboard` on port 3001 and `merch-pos` on port 3002. Each app's `NEXT_PUBLIC_*` values go in `apps/<app>/.env.production.local` **before** building, because Next.js writes them into the build.
+
+```bash
+npm ci
+npm run build -w apps/dashboard -w apps/pos
+pm2 start ecosystem.config.cjs
+pm2 save
+```
+
+The POS starts with one instance. Change the count with `pm2 scale merch-pos <n>`, then `pm2 save`. To update: `git pull`, `npm ci`, build again, then `pm2 reload ecosystem.config.cjs`.
+
 ## File structure
 
 ```
