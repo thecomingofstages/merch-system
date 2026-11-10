@@ -1,10 +1,13 @@
-# Local secrets for `npx wrangler dev`. Copy to .dev.vars (never committed) and fill in.
-# In production these are set with `npx wrangler secret put <NAME>` (docs/BACKEND.md "Environment").
+# Local settings for `npx wrangler dev`. Copy to .dev.vars (never committed) and fill in.
+# In production every key here is a Secret in the Cloudflare dashboard, or
+# `npx wrangler secret put <NAME>` (docs/BACKEND.md "Environment").
 
 # Used now (F3, F6)
 MONGODB_URI=
 # At least 32 random characters, e.g. `openssl rand -hex 32`
 ADMIN_ACCESS_TOKEN=
+# Comma-separated origins of the client and the dashboard; locally http://localhost:3000,http://localhost:3001
+CORS_ORIGINS=
 
 # Used by S4
 PROMPTPAY_ID=
