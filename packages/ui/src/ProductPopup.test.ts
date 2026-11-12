@@ -1,5 +1,7 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { maxCount, remainingCount } from "./ProductPopup";
+import { ProductPopup, maxCount, remainingCount } from "./ProductPopup";
 
 describe("maxCount", () => {
   it("caps by stock when there is no buy_limit (0)", () => {
@@ -35,5 +37,31 @@ describe("remainingCount", () => {
 
   it("never returns a negative amount", () => {
     expect(remainingCount(maxCount(2, 7), 3)).toBe(0);
+  });
+});
+
+describe("ProductPopup availability", () => {
+  it.each([
+    { stock: 7, buy_limit: 2, in_cart: 2, message: "TODO(Thai copy for buy limit reached)", can_add: false },
+    { stock: 0, buy_limit: 2, in_cart: 2, message: "สินค้าหมด", can_add: false },
+    { stock: -1, buy_limit: 0, in_cart: 0, message: "สินค้าหมด", can_add: false },
+    { stock: 3, buy_limit: 0, in_cart: 3, message: "สินค้าหมด", can_add: false },
+    { stock: 2, buy_limit: 2, in_cart: 2, message: "สินค้าหมด", can_add: false },
+    { stock: 7, buy_limit: 2, in_cart: 1, message: "", can_add: true },
+  ])("shows the correct availability for $stock stock, $buy_limit limit, $in_cart in cart", ({ stock, buy_limit, in_cart, message, can_add }) => {
+    const html = renderToStaticMarkup(createElement(ProductPopup, {
+      product: {
+        _id: "a".repeat(24), name: "", description: "", image: [],
+        variants: [{ _id: "b".repeat(24), name: "", price: 0, image: "", buy_limit }],
+      },
+      stockOf: () => stock,
+      inCart: () => in_cart,
+      onAdd: () => {},
+      onClose: () => {},
+    }));
+
+    expect(html.includes("ใส่ตะกร้า")).toBe(can_add);
+    if (message) expect(html).toContain(`<p class="text-curtain">${message}</p>`);
+    expect(html.includes("TODO(Thai copy for buy limit reached)")).toBe(message.startsWith("TODO("));
   });
 });

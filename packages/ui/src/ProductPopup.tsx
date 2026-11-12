@@ -85,7 +85,11 @@ function PopupBody<V extends ShopVariant>({
           <Button onClick={() => onAdd(variant._id, selectedCount)}>ใส่ตะกร้า</Button>
         </>
       ) : (
-        <p className="text-curtain">สินค้าหมด</p>
+        <p className="text-curtain">
+          {variant && stockOf(variant) > (inCart?.(variant._id) ?? 0)
+            ? "TODO(Thai copy for buy limit reached)"
+            : "สินค้าหมด"}
+        </p>
       )}
     </div>
   );
