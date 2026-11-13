@@ -13,4 +13,6 @@ export const appKeysSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().trim().min(1),
   /** Signs the session cookie (S6). Rotating it signs everyone out. */
   SESSION_SECRET: z.string().min(32, "use at least 32 random characters"),
+  /** Sends the buyer's emails (2.5, S10). */
+  RESEND_API_KEY: z.string().trim().min(1),
 });

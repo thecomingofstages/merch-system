@@ -2,6 +2,7 @@
 import { AdminOrdersCountQuery, AdminOrdersQuery, UpdateOrderPaymentRequest, UpdateOrderTrackingRequest } from "@merch/shared";
 import type { RequestHandler } from "express";
 import * as orders from "../../helpers/adminOrder.helper";
+import { getConfig } from "../../utils/config";
 import { idParam } from "../../utils/id";
 import { withModels } from "../../utils/models";
 
@@ -30,6 +31,6 @@ export const AdminOrderController = {
   tracking: (async (req, res) => {
     const id = idParam(req.params.id);
     const { tracking_id } = UpdateOrderTrackingRequest.parse(req.body);
-    res.json(await withModels(req, (m) => orders.setTracking(m, id, tracking_id)));
+    res.json(await withModels(req, (m) => orders.setTracking(m, id, tracking_id, getConfig(req))));
   }) satisfies RequestHandler,
 };

@@ -4,12 +4,15 @@
  */
 import mongoose, { type Connection } from "mongoose";
 import request from "supertest";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { dbConf } from "../src/app/config/db.conf";
 import { createSessionToken } from "../src/app/helpers/session.helper";
 import { models, syncAllIndexes, type Models } from "../src/app/models";
 import { buildApp } from "../src/app/server";
 import { testConfig } from "./helpers/app";
+
+vi.mock("../src/app/helpers/email.helper", () => ({ sendOrderConfirmation: vi.fn(), sendShippingUpdate: vi.fn() }));
+const { sendOrderConfirmation, sendShippingUpdate } = await import("../src/app/helpers/email.helper");
 
 const uri = process.env.MONGODB_URI_TEST;
 
@@ -91,8 +94,10 @@ describe.skipIf(!uri)("admin orders, POS management, POS sales (S7–S9)", { tim
 
     it("tracking is refused before verification, then sets SHIPPING", async () => {
       const id = await placeOrder("ship");
+      vi.mocked(sendShippingUpdate).mockClear();
       const early = await tracking(id);
       expect(early.status).toBe(409);
+      expect(sendShippingUpdate).not.toHaveBeenCalled();
       expect(early.body.error.code).toBe("NOT_VERIFIED");
 
       const verified = await payment(id, "VERIFIED");
@@ -101,6 +106,11 @@ describe.skipIf(!uri)("admin orders, POS management, POS sales (S7–S9)", { tim
 
       const shipped = await tracking(id);
       expect(shipped.body).toMatchObject({ status: "SHIPPING", tracking_id: "TH123" });
+      // S10: once per tracking save, with the saved order
+      expect(sendShippingUpdate).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(sendShippingUpdate).mock.calls[0]![0]).toMatchObject({ tracking_id: "TH123" });
+      await tracking(id);
+      expect(sendShippingUpdate).toHaveBeenCalledTimes(2);
     });
 
     it("rejecting returns the stock exactly once, even when two admins reject at once", async () => {

@@ -8,6 +8,7 @@ import type { z } from "zod";
 import type { Config } from "../config/init";
 import type { Models } from "../models";
 import { ApiError } from "../utils/ApiError";
+import { sendOrderConfirmation } from "./email.helper";
 import { priceCart } from "./pricing.helper";
 import { deductOnlineStock } from "./stock.helper";
 
@@ -18,12 +19,12 @@ export async function createOrder(
   db: Connection,
   userId: string,
   body: Order,
-  config: Pick<Config, "SHIPPING_FEE">,
+  config: Pick<Config, "SHIPPING_FEE" | "RESEND_API_KEY" | "EMAIL_FROM">,
 ): Promise<CreateOrderResponse> {
   try {
     // withTransaction retries the whole callback on a write conflict, so when two
     // orders race for the last item the loser re-runs, finds no stock, and gets 409.
-    return await db.transaction(async (session) => {
+    const { response, order } = await db.transaction(async (session) => {
       const user = await m.User.findById(userId).session(session);
       if (!user) throw ApiError.unauthorized("Please sign in");
       const priced = await priceCart(m, { channel: "ONLINE", items: body.items }, config, session);
@@ -48,7 +49,7 @@ export async function createOrder(
       const { first_name, last_name, nickname, phone, line_id } = body.recipient;
       user.set({ first_name, last_name, nickname, phone, line_id, address: body.shipping_address });
       await user.save({ session });
-      return {
+      const response: CreateOrderResponse = {
         _id: String(order!._id),
         status: "ORDERED",
         payment_status: "PENDING_CHECK",
@@ -57,7 +58,11 @@ export async function createOrder(
         total: priced.total,
         created_at: order!.created_at.toISOString(),
       };
+      return { response, order: order!.toObject() };
     });
+    // After the commit, so a retried transaction can't send it twice (S10). Never throws.
+    await sendOrderConfirmation(order, config);
+    return response;
   } catch (err) {
     if (isDuplicateSlip(err)) throw ApiError.conflict("DUPLICATE_SLIP", "This slip has already been used for an order");
     throw err;
