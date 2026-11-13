@@ -28,7 +28,7 @@ apps/
 |---|---|---|---|
 | `Button`, `Input`, `Select`, `Dialog`, `QuantityStepper`, `Price` | standard | all | F8 |
 | `ProductCard` | `product`, `stockOf(variant)`, `onOpen` | client, POS | 1.1 |
-| `ProductPopup` | `product`, `stockOf(variant)`, `onAdd(variantId, count)`; caps the amount by `buy_limit` and stock | client, POS | 1.1 |
+| `ProductPopup` | `product`, `stockOf(variant)`, optional `inCart(variantId)`, `onAdd(variantId, count)`; caps additions by stock, `buy_limit`, and the quantity already in the cart | client, POS | 1.1 |
 | `CartSummary` | `lines`, `shippingFee?`, `total?` (shipping hidden on POS) | client, POS | 1.1 |
 | `useCart()` | add / setCount / remove / clear; lines grouped by product | client, POS | 1.2 |
 | `PaymentQR` | `promptpayId`, `amount` | client, POS | 1.6 |
