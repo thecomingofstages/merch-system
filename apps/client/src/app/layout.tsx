@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CartProvider } from "@merch/ui";
 import { Anuphan, Chonburi } from "next/font/google";
 import "./globals.css";
 
@@ -14,7 +15,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="th">
-      <body className={`${chonburi.variable} ${anuphan.variable} antialiased`}>{children}</body>
+      <body className={`${chonburi.variable} ${anuphan.variable} antialiased`}>
+        <CartProvider>{children}</CartProvider>
+      </body>
     </html>
   );
 }
