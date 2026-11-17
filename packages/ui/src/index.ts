@@ -4,6 +4,7 @@ export { CartSummary } from "./CartSummary";
 export { CartTicket } from "./CartTicket";
 export { Dialog } from "./Dialog";
 export { Input } from "./Input";
+export { PaymentQR } from "./PaymentQR";
 export { Price } from "./Price";
 export { ProductCard, type ShopProduct, type ShopVariant } from "./ProductCard";
 export { ProductPopup, maxCount } from "./ProductPopup";
