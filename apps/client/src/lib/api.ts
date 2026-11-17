@@ -179,8 +179,7 @@ export async function getMe(): Promise<MeResponse> {
   return requestJson("/me", { method: "GET" }, MeResponse);
 }
 
-export async function getPostcode(code: string): Promise<unknown> {
-  // TODO(task 2.2)
+export async function getPostcode(code: string): Promise<PostcodeLookupResponse> {
   if (isFixturesMode()) {
     return [];
   }

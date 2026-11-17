@@ -4,6 +4,7 @@
  */
 import { Router } from "express";
 import { Auth } from "../middleware/Auth";
+import { addressRoute } from "./address.route";
 import { adminCatalogRoute } from "./admin/catalog.route";
 import { adminOrderRoute } from "./admin/order.route";
 import { adminPosRoute } from "./admin/pos.route";
@@ -18,6 +19,7 @@ export function initRoutes(): Router {
 
   api.use(healthRoute);
   api.use(publicRoute);
+  api.use(addressRoute);
   api.use(authRoute);
   api.use(orderRoute);
   api.use(posRoute);
