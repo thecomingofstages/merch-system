@@ -24,6 +24,11 @@ describe("initConfig", () => {
     for (const SHIPPING_FEE of ["", "60.5", "-1"]) expect(() => initConfig({ ...good, SHIPPING_FEE })).toThrow("SHIPPING_FEE");
   });
 
+  it("rejects a PROMPTPAY_ID that can't make a PromptPay QR", () => {
+    for (const PROMPTPAY_ID of ["+66812345678", "081234567", "abc"]) expect(() => initConfig({ ...good, PROMPTPAY_ID })).toThrow("PROMPTPAY_ID");
+    expect(() => initConfig({ ...good, PROMPTPAY_ID: "081-234-5678" })).not.toThrow();
+  });
+
   it("names the bad settings without printing their values", () => {
     const bad = () => initConfig({ MONGODB_URI: "postgres://secret", ADMIN_ACCESS_TOKEN: "short" });
     for (const name of ["MONGODB_URI", "ADMIN_ACCESS_TOKEN", "CORS_ORIGINS", "SHIPPING_FEE", "PROMPTPAY_ID"]) expect(bad).toThrow(name);

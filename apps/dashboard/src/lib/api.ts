@@ -1,14 +1,22 @@
 import {
+  AdminOrdersCountQuery,
+  AdminOrdersCountResponse,
+  AdminOrdersQuery,
+  AdminOrdersResponse,
   ErrorBody,
   type ErrorCode,
+  fixtureOrders,
   fixtureProducts,
   fixtureShops,
   Product,
   ProductPatch,
   ProductRequest,
+  Purchase,
   Shop,
   ShopRequest,
   StockRequest,
+  UpdateOrderPaymentRequest,
+  UpdateOrderTrackingRequest,
   VariantPatch,
   VariantRequest,
 } from "@merch/shared";
@@ -100,6 +108,7 @@ const productListSchema = z.array(Product);
 // In-memory deep-cloned copies for fixtures mode so mutations work during dev and reset on reload.
 let memoryShops: Shop[] = structuredClone(fixtureShops);
 let memoryProducts: Product[] = structuredClone(fixtureProducts);
+let memoryOrders: Purchase[] = structuredClone(fixtureOrders);
 let nextFixtureCounter = 100;
 
 function makeFixtureId(prefixHex2: string): string {
@@ -110,13 +119,14 @@ function makeFixtureId(prefixHex2: string): string {
 export function resetDashboardFixtures(): void {
   memoryShops = structuredClone(fixtureShops);
   memoryProducts = structuredClone(fixtureProducts);
+  memoryOrders = structuredClone(fixtureOrders);
 }
 
-async function requestAdmin<T>(
+async function requestAdmin<S extends z.ZodTypeAny>(
   endpoint: string,
   init: RequestInit,
-  schema: z.ZodType<T>,
-): Promise<T> {
+  schema: S,
+): Promise<z.output<S>> {
   const token = requireAdminToken();
   let res: Response;
   try {
@@ -415,7 +425,141 @@ export async function addStock(productId: string, variantId: string, body: Stock
   );
 }
 
-// TODO(2.8): Admin orders endpoints (list, count, detail, verify/reject payment, submit tracking).
+// Orders (2.8)
+
+const ORDERS_PAGE_SIZE = 20;
+
+function matchesOnlineOrdersFilter(order: Purchase, q?: AdminOrdersCountQuery): boolean {
+  if (order.pos_id !== null) return false;
+  if (q?.status && order.status !== q.status) return false;
+  if (q?.payment_status) {
+    return order.payment_status === q.payment_status;
+  }
+  return order.payment_status !== "REJECTED";
+}
+
+export async function listOrders(query?: AdminOrdersQuery): Promise<AdminOrdersResponse> {
+  if (isFixturesMode()) {
+    requireAdminToken();
+    const parsedQuery = query ? AdminOrdersQuery.parse(query) : {};
+    const page = parsedQuery.page ?? 1;
+    const filtered = memoryOrders
+      .filter((o) => matchesOnlineOrdersFilter(o, parsedQuery))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    const start = (page - 1) * ORDERS_PAGE_SIZE;
+    const orders = structuredClone(filtered.slice(start, start + ORDERS_PAGE_SIZE));
+    return {
+      orders,
+      total: filtered.length,
+      page,
+      page_size: ORDERS_PAGE_SIZE,
+    };
+  }
+  const params = new URLSearchParams();
+  if (query?.status) params.set("status", query.status);
+  if (query?.payment_status) params.set("payment_status", query.payment_status);
+  if (query?.page) params.set("page", String(query.page));
+  const qs = params.toString();
+  return requestAdmin(
+    `/admin/orders${qs ? `?${qs}` : ""}`,
+    { method: "GET" },
+    AdminOrdersResponse,
+  );
+}
+
+export async function countOrders(query?: AdminOrdersCountQuery): Promise<AdminOrdersCountResponse> {
+  if (isFixturesMode()) {
+    requireAdminToken();
+    const parsedQuery = query ? AdminOrdersCountQuery.parse(query) : {};
+    const count = memoryOrders.filter((o) => matchesOnlineOrdersFilter(o, parsedQuery)).length;
+    return { count };
+  }
+  const params = new URLSearchParams();
+  if (query?.status) params.set("status", query.status);
+  if (query?.payment_status) params.set("payment_status", query.payment_status);
+  const qs = params.toString();
+  return requestAdmin(
+    `/admin/orders/count${qs ? `?${qs}` : ""}`,
+    { method: "GET" },
+    AdminOrdersCountResponse,
+  );
+}
+
+export async function getOrder(id: string): Promise<Purchase> {
+  if (isFixturesMode()) {
+    requireAdminToken();
+    const order = memoryOrders.find((o) => o._id === id);
+    if (!order) throw new ApiError(404, "NOT_FOUND", "Order not found");
+    return structuredClone(order);
+  }
+  return requestAdmin(`/admin/orders/${encodeURIComponent(id)}`, { method: "GET" }, Purchase);
+}
+
+export async function updateOrderPayment(
+  id: string,
+  body: UpdateOrderPaymentRequest,
+): Promise<Purchase> {
+  if (isFixturesMode()) {
+    requireAdminToken();
+    const parsed = UpdateOrderPaymentRequest.parse(body);
+    const order = memoryOrders.find((o) => o._id === id);
+    if (!order) throw new ApiError(404, "NOT_FOUND", "Order not found");
+    if (order.pos_id !== null) {
+      throw new ApiError(400, "VALIDATION", "A POS sale has no payment check");
+    }
+    if (order.payment_status !== "PENDING_CHECK") {
+      throw new ApiError(409, "NOT_PENDING", `This order is already ${order.payment_status}`);
+    }
+    order.payment_status = parsed.payment_status;
+    if (parsed.payment_status === "VERIFIED") {
+      order.verified_at = new Date().toISOString();
+    } else if (parsed.payment_status === "REJECTED") {
+      for (const line of order.products) {
+        const product = memoryProducts.find((p) => p._id === line.products_id);
+        if (!product) continue;
+        for (const vLine of line.variants) {
+          const variant = product.variants.find((v) => v._id === vLine.variants_id);
+          if (variant) {
+            variant.online_stock += vLine.count;
+          }
+        }
+      }
+    }
+    return structuredClone(order);
+  }
+  return requestAdmin(
+    `/admin/orders/${encodeURIComponent(id)}/payment`,
+    { method: "PATCH", body: JSON.stringify(body) },
+    Purchase,
+  );
+}
+
+export async function updateOrderTracking(
+  id: string,
+  body: UpdateOrderTrackingRequest,
+): Promise<Purchase> {
+  if (isFixturesMode()) {
+    requireAdminToken();
+    const parsed = UpdateOrderTrackingRequest.parse(body);
+    const order = memoryOrders.find((o) => o._id === id);
+    if (!order) throw new ApiError(404, "NOT_FOUND", "Order not found");
+    if (order.pos_id !== null) {
+      throw new ApiError(400, "VALIDATION", "A POS sale can't get a tracking ID");
+    }
+    if (order.payment_status !== "VERIFIED") {
+      throw new ApiError(409, "NOT_VERIFIED", "Verify the payment before shipping");
+    }
+    order.tracking_id = parsed.tracking_id;
+    order.status = "SHIPPING";
+    return structuredClone(order);
+  }
+  return requestAdmin(
+    `/admin/orders/${encodeURIComponent(id)}/tracking`,
+    { method: "PATCH", body: JSON.stringify(body) },
+    Purchase,
+  );
+}
+
 // TODO(2.9): Admin POS management endpoints (list, create, get, transfer stock, end sale).
 
 export const dashboardApi = {
@@ -440,4 +584,9 @@ export const dashboardApi = {
   updateVariant,
   archiveVariant,
   addStock,
+  listOrders,
+  countOrders,
+  getOrder,
+  updateOrderPayment,
+  updateOrderTracking,
 };
