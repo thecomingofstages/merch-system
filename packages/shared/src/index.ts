@@ -11,3 +11,4 @@ export * from "./schemas/pos";
 export * from "./address";
 export * from "./fixtures";
 export * from "./cart";
+export * from "./promptpay";
