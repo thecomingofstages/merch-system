@@ -5,8 +5,10 @@ import {
   FAKE_SHIPPING_FEE,
   FixtureError,
   fixtureCatalog,
+  fixtureOrders,
   fixtureProducts,
   fixtureShops,
+  formatThaiAddress,
   mockQuoteForFixtures,
   objectId,
   Product,
@@ -14,6 +16,7 @@ import {
   PRODUCT_CAP_ID,
   PRODUCT_SHIRT_ID,
   ProductRequest,
+  Purchase,
   QuoteResponse,
   Shop,
   SHOP_MAIN_ID,
@@ -141,5 +144,75 @@ describe("fixtures (F5)", () => {
         ],
       }),
     ).toThrowError(/at most 2 per order/);
+  });
+
+  it("fixtureOrders (2.8) parses with Purchase schema, covers all required states, and has unique slip_qr_data", () => {
+    expect(fixtureOrders.length).toBeGreaterThanOrEqual(5);
+
+    const productIds = new Set(fixtureProducts.map((p) => p._id));
+    const variantIds = new Set(fixtureProducts.flatMap((p) => p.variants.map((v) => v._id)));
+    const slips: string[] = [];
+
+    for (const order of fixtureOrders) {
+      expect(() => Purchase.parse(order)).not.toThrow();
+      expect(() => objectId.parse(order._id)).not.toThrow();
+
+      for (const line of order.products) {
+        expect(productIds.has(line.products_id)).toBe(true);
+        for (const v of line.variants) {
+          expect(variantIds.has(v.variants_id)).toBe(true);
+        }
+      }
+
+      if (order.slip_qr_data !== undefined) {
+        slips.push(order.slip_qr_data);
+      } else {
+        expect("slip_qr_data" in order).toBe(false);
+      }
+    }
+
+    // Unique slip_qr_data
+    expect(new Set(slips).size).toBe(slips.length);
+
+    // State coverage
+    expect(fixtureOrders.some((o) => o.payment_status === "PENDING_CHECK")).toBe(true);
+    expect(
+      fixtureOrders.some((o) => o.payment_status === "VERIFIED" && o.status === "ORDERED" && o.pos_id === null),
+    ).toBe(true);
+    expect(fixtureOrders.some((o) => o.payment_status === "REJECTED")).toBe(true);
+    expect(fixtureOrders.some((o) => o.status === "SHIPPING" && Boolean(o.tracking_id))).toBe(true);
+
+    // POS sale coverage
+    const posSale = fixtureOrders.find((o) => o.pos_id !== null);
+    expect(posSale).toBeDefined();
+    expect(posSale?.users).toBeNull();
+    expect(posSale?.verify_method).toBe("MANUAL");
+    expect(posSale && "slip_qr_data" in posSale).toBe(false);
+    expect(posSale?.recipient).toBeNull();
+    expect(posSale?.shipping_address).toBeNull();
+
+    // Multi-product & multi-variant order, Bangkok vs non-Bangkok address, line_id: null
+    expect(
+      fixtureOrders.some(
+        (o) => o.products.length > 1 && o.products.some((p) => p.variants.length > 1),
+      ),
+    ).toBe(true);
+    expect(
+      fixtureOrders.some(
+        (o) =>
+          o.shipping_address !== null &&
+          formatThaiAddress(o.shipping_address).includes("แขวง") &&
+          formatThaiAddress(o.shipping_address).includes("เขต"),
+      ),
+    ).toBe(true);
+    expect(
+      fixtureOrders.some(
+        (o) =>
+          o.shipping_address !== null &&
+          formatThaiAddress(o.shipping_address).includes("ตำบล") &&
+          formatThaiAddress(o.shipping_address).includes("อำเภอ"),
+      ),
+    ).toBe(true);
+    expect(fixtureOrders.some((o) => o.recipient !== null && o.recipient.line_id === null)).toBe(true);
   });
 });
