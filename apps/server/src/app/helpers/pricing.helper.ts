@@ -33,13 +33,14 @@ export function mergeLines(items: CartItem[]): CartItem[] {
  * - POS: variants of that POS's shops only, against its pos_stock, no shipping.
  * Answers 409 BUY_LIMIT or OUT_OF_STOCK when a line can't be had. This is a check, not a
  * reservation: S5 and S9 deduct stock in a transaction and can still fail. Pass their
- * `session` so these reads are part of it.
+ * `session` so these reads are part of it. `checkStock: false` only prices (a REFUND_DUE record).
  */
 export async function priceCart(
   m: Models,
   input: QuoteRequest,
   config: Pick<Config, "SHIPPING_FEE">,
   session: ClientSession | null = null,
+  checkStock = true,
 ): Promise<PricedCart> {
   const items = mergeLines(input.items);
   const products = await m.Product.find({
@@ -73,7 +74,7 @@ export async function priceCart(
     if (variant.buy_limit > 0 && item.count > variant.buy_limit) {
       throw ApiError.conflict("BUY_LIMIT", `${label}: at most ${variant.buy_limit} per order`);
     }
-    if (item.count > stock) throw ApiError.conflict("OUT_OF_STOCK", `${label}: not enough stock`);
+    if (checkStock && item.count > stock) throw ApiError.conflict("OUT_OF_STOCK", `${label}: not enough stock`);
 
     return {
       product_id: String(product._id),

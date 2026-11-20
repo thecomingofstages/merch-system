@@ -28,6 +28,7 @@ export const COPY = {
   paymentPendingCheck: "PENDING_CHECK",
   paymentVerified: "VERIFIED",
   paymentRejected: "REJECTED",
+  paymentRefundDue: "REFUND_DUE",
 
   // Badge
   newOrdersBadgeLabel: (n: number) => `${n} new orders`,
@@ -92,6 +93,9 @@ export const COPY = {
   verifiedAtLabel: "Verified at",
   posPaidOnSite: "Paid on site (POS)",
   noSlipData: "No slip QR data on this order.",
+  refundDueInstruction:
+    "The buyer paid, but the stock ran out before the order was saved. Nothing will ship. Check the payment against the bank account, refund the buyer over LINE, then mark it refunded.",
+  markRefundedButton: "Mark refunded",
 
   // Confirm dialogs
   verifyConfirmTitle: "Verify payment",
@@ -100,6 +104,8 @@ export const COPY = {
   rejectConfirmTitle: "Reject payment",
   rejectConfirmBody:
     "Items will be returned to online stock, and this page has no undo. The buyer cannot reuse this slip.",
+  refundConfirmTitle: "Mark refunded",
+  refundConfirmBody: "Have you refunded the buyer? This order then counts as rejected, and this page has no undo.",
 
   // Tracking section
   trackingSectionTitle: "Shipping & tracking",
@@ -139,5 +145,7 @@ export function formatPaymentStatus(status: PaymentStatus): string {
       return COPY.paymentVerified;
     case "REJECTED":
       return COPY.paymentRejected;
+    case "REFUND_DUE":
+      return COPY.paymentRefundDue;
   }
 }

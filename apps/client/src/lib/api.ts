@@ -150,6 +150,7 @@ export async function createOrder(body: CreateOrderRequest): Promise<CreateOrder
         }
       }
       fixtureSlips.add(parsed.data.slip_qr_data);
+
       return {
         _id: "64d000000000000000000001",
         status: "ORDERED",
@@ -161,6 +162,8 @@ export async function createOrder(body: CreateOrderRequest): Promise<CreateOrder
       };
     } catch (err) {
       if (err instanceof FixtureError) {
+        // The server keeps a paid order that ran out of stock (REFUND_DUE), and so its slip.
+        if (err.code === "OUT_OF_STOCK") fixtureSlips.add(parsed.data.slip_qr_data);
         throw new ApiError(err.status, err.code, err.message);
       }
       throw err;

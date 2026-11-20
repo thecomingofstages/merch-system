@@ -116,6 +116,23 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
     expect(await stockOf(last)).toBe(0);
   });
 
+  it("keeps a paid order that ran out of stock as REFUND_DUE, without its stock, and holds its slip (D11)", async () => {
+    const slip = `${tag}-refund`;
+    const items = [{ product_id: productId, variant_id: last, count: 1 }];
+    vi.mocked(sendOrderConfirmation).mockClear();
+
+    const res = await post(order(items, slip));
+    expect(res.body.error.code).toBe("OUT_OF_STOCK");
+    const saved = await m.Purchase.findOne({ slip_qr_data: slip }).lean();
+    expect(saved).toMatchObject({ payment_status: "REFUND_DUE", status: "ORDERED", original_price: 100 });
+    expect(saved!.recipient!.email).toBe(`${tag}@example.com`);
+    expect(await stockOf(last)).toBe(0);
+    expect(sendOrderConfirmation).not.toHaveBeenCalled();
+
+    const shirtItems = [{ product_id: productId, variant_id: shirt, count: 1 }];
+    expect((await post(order(shirtItems, slip))).body.error.code).toBe("DUPLICATE_SLIP");
+  });
+
   it("enforces buy_limit, also when a variant is split over two lines", async () => {
     const line = { product_id: productId, variant_id: shirt, count: 2 };
     const res = await post(order([line, { ...line, count: 1 }]));

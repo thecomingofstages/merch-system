@@ -41,6 +41,7 @@ export function PaymentCheck({
 
   const posSale = isPosSale(order);
   const expectedTotal = orderTotal(order);
+  const refundDue = order.payment_status === "REFUND_DUE";
 
   async function handleCopySlip() {
     if (!order.slip_qr_data) return;
@@ -119,7 +120,9 @@ export function PaymentCheck({
         </span>
       </div>
 
-      <p className="text-small text-ink/80">{COPY.paymentCheckInstruction}</p>
+      <p className="text-small text-ink/80">
+        {refundDue ? COPY.refundDueInstruction : COPY.paymentCheckInstruction}
+      </p>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="flex flex-col gap-2 rounded-lg border border-rigging bg-rigging/15 p-3 md:col-span-2">
@@ -154,7 +157,21 @@ export function PaymentCheck({
         </div>
       </div>
 
-      {canCheckPayment(order) ? (
+      {refundDue ? (
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <Button
+            type="button"
+            variant="primary"
+            disabled={submitting}
+            onClick={() => {
+              setError(null);
+              setConfirmAction("REJECTED");
+            }}
+          >
+            {COPY.markRefundedButton}
+          </Button>
+        </div>
+      ) : canCheckPayment(order) ? (
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <Button
             type="button"
@@ -211,7 +228,9 @@ export function PaymentCheck({
           title={
             confirmAction === "VERIFIED"
               ? COPY.verifyConfirmTitle
-              : COPY.rejectConfirmTitle
+              : refundDue
+                ? COPY.refundConfirmTitle
+                : COPY.rejectConfirmTitle
           }
         >
           {confirmAction === "VERIFIED" ? (
@@ -260,7 +279,9 @@ export function PaymentCheck({
             </div>
           ) : confirmAction === "REJECTED" ? (
             <div className="flex flex-col gap-4">
-              <p className="text-body text-ink">{COPY.rejectConfirmBody}</p>
+              <p className="text-body text-ink">
+                {refundDue ? COPY.refundConfirmBody : COPY.rejectConfirmBody}
+              </p>
 
               {error ? (
                 <p role="alert" aria-live="polite" className="text-small text-curtain">
@@ -283,7 +304,7 @@ export function PaymentCheck({
                   disabled={submitting}
                   onClick={handleConfirmDecision}
                 >
-                  {submitting ? COPY.saving : COPY.rejectButton}
+                  {submitting ? COPY.saving : refundDue ? COPY.markRefundedButton : COPY.rejectButton}
                 </Button>
               </div>
             </div>

@@ -40,9 +40,9 @@ The draft `promotions` only supports **x% off** and **x ฿ off** a product or v
 ## 5. Payment
 20. Which PromptPay ID receives the money: one for all shops, or one per shop?
 21. Who verifies slips? Is manual checking against the stored QR payload enough, or is paid automatic verification (a slip-check API) wanted?
-22. If a slip shows the **wrong amount** (too little or too much), what happens? Ask for the difference, refund the excess, or reject the order?
-23. If a buyer has paid but the item is out of stock (or the order is cancelled), how is the refund made, and who does it?
-24. How long does a buyer have to pay before an unpaid order is cancelled and its stock released?
+22. If a slip shows the **wrong amount** (too little or too much), what happens? Ask for the difference, refund the excess, or reject the order? **Answered (D11):** the shop contacts the buyer outside the system.
+23. If a buyer has paid but the item is out of stock (or the order is cancelled), how is the refund made, and who does it? **Answered (D11):** outside the system; the shop contacts the buyer by LINE ID.
+24. How long does a buyer have to pay before an unpaid order is cancelled and its stock released? **Answered (D12):** within one checkout session; the buyer pays before the order exists.
 25. POS: is cash accepted on site, or PromptPay only? Does the POS need to record the buyer's name/phone, or is it anonymous? `purchases.users` is NULL for POS.
 26. Are receipts or tax invoices needed?
 

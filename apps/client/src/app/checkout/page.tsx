@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import {
   CreateOrderRequest,
   formatThaiAddress,
+  stockShortfalls,
   type CartLine,
   type MeResponse,
   type PostcodeLookupResponse,
@@ -23,6 +24,13 @@ type CheckedDetails = z.output<typeof detailsSchema>;
 const OUT_OF_STOCK = "สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า";
 const DUPLICATE_SLIP = "สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้";
 const QR_NOT_READ = "อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น";
+// TODO(Thai copy for stock running out during checkout)
+const PAID_OUT_OF_STOCK =
+  "Some items sold out before your order was saved. The shop will contact you on LINE to refund this payment.";
+const cartUpdated = (names: string) => `Some items sold out, so your cart was updated: ${names}`;
+
+// How often the checkout re-checks stock (the server has no push; see docs/FRONTEND.md "apps/client").
+const STOCK_CHECK_MS = 15_000;
 
 const EMPTY = {
   first_name: "", last_name: "", nickname: "", phone: "", line_id: "",
@@ -48,8 +56,12 @@ function focusStep(step: number) {
 
 export default function Checkout() {
   const router = useRouter();
-  const { lines, count, clear } = useCart();
-  const [pricing, setPricing] = useState<{ cart: CartLine[]; quote?: QuoteResponse; error?: string } | null>(null);
+  const { lines, count, clear, setCount } = useCart();
+  // `run` bumps on the way to payment, so the QR always shows a fresh quote.
+  const [quoteRun, setQuoteRun] = useState(0);
+  const [pricing, setPricing] = useState<{ cart: CartLine[]; run: number; quote?: QuoteResponse; error?: string } | null>(null);
+  const [stockRun, setStockRun] = useState(0);
+  const cart = useRef({ lines, setCount });
   // undefined while GET /me is loading, null when signed out.
   const [me, setMe] = useState<MeResponse | null>();
   const [values, setValues] = useState<Details>(EMPTY);
@@ -67,7 +79,7 @@ export default function Checkout() {
   const [notice, setNotice] = useState<string | null>(null);
 
   // A previous quote must disappear as soon as the cart changes.
-  const currentPricing = pricing?.cart === lines ? pricing : null;
+  const currentPricing = pricing?.cart === lines && pricing.run === quoteRun ? pricing : null;
   const quote = currentPricing?.quote;
   const currentPlaces = places?.code === values.postal_code ? places : undefined;
   const placeList = currentPlaces?.list ?? [];
@@ -85,11 +97,40 @@ export default function Checkout() {
       channel: "ONLINE",
       items: lines.map(({ product_id, variant_id, count }) => ({ product_id, variant_id, count })),
     }).then(
-      (quote) => { if (!cancelled) setPricing({ cart: lines, quote }); },
-      (cause: unknown) => { if (!cancelled) setPricing({ cart: lines, error: errorText(cause) }); },
+      (quote) => { if (!cancelled) setPricing({ cart: lines, run: quoteRun, quote }); },
+      (cause: unknown) => { if (!cancelled) setPricing({ cart: lines, run: quoteRun, error: errorText(cause) }); },
     );
     return () => { cancelled = true; };
-  }, [lines]);
+  }, [lines, quoteRun]);
+
+  useEffect(() => {
+    cart.current = { lines, setCount };
+  });
+
+  // Re-checks stock while the buyer is in checkout, and takes what sold out out of the cart
+  // (the quote, and so the QR, follow). Also right away after an order ran out of stock.
+  const hasLines = lines.length > 0;
+  useEffect(() => {
+    if (!hasLines) return;
+    let cancelled = false;
+    const check = () => {
+      if (document.hidden) return;
+      clientApi.getCatalog().then((catalog) => {
+        if (cancelled) return;
+        const short = stockShortfalls(cart.current.lines, catalog);
+        if (short.length === 0) return;
+        for (const { line, available } of short) cart.current.setCount(line.variant_id, available);
+        const names = short.map(({ line }) => `${line.product_name} (${line.variant_name})`).join(", ");
+        setNotice((prev) => [prev, cartUpdated(names)].filter(Boolean).join(" "));
+      }, () => {}); // a failed check waits for the next one
+    };
+    if (stockRun > 0) check();
+    const timer = setInterval(check, STOCK_CHECK_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [hasLines, stockRun]);
 
   useEffect(() => {
     let cancelled = false;
@@ -163,6 +204,7 @@ export default function Checkout() {
       return;
     }
     setChecked(parsed.data);
+    setQuoteRun((run) => run + 1);
     go(2);
   }
 
@@ -196,6 +238,13 @@ export default function Checkout() {
         setSlip(undefined);
         setSlipKey((key) => key + 1); // empties the file input
         setNotice(DUPLICATE_SLIP);
+        go(2);
+      } else if (cause instanceof ApiError && cause.code === "OUT_OF_STOCK") {
+        // Already paid: the server kept it as REFUND_DUE, and that slip is spent.
+        setSlip(undefined);
+        setSlipKey((key) => key + 1);
+        setNotice(PAID_OUT_OF_STOCK);
+        setStockRun((run) => run + 1);
         go(2);
       } else if (cause instanceof ApiError && cause.status === 401) {
         setMe(null);

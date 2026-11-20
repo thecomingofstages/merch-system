@@ -507,13 +507,15 @@ export async function updateOrderPayment(
     if (order.pos_id !== null) {
       throw new ApiError(400, "VALIDATION", "A POS sale has no payment check");
     }
-    if (order.payment_status !== "PENDING_CHECK") {
+    // Same rule as the server: a REFUND_DUE order can only be rejected, and never took stock.
+    const refundDue = order.payment_status === "REFUND_DUE" && parsed.payment_status === "REJECTED";
+    if (order.payment_status !== "PENDING_CHECK" && !refundDue) {
       throw new ApiError(409, "NOT_PENDING", `This order is already ${order.payment_status}`);
     }
     order.payment_status = parsed.payment_status;
     if (parsed.payment_status === "VERIFIED") {
       order.verified_at = new Date().toISOString();
-    } else if (parsed.payment_status === "REJECTED") {
+    } else if (!refundDue) {
       for (const line of order.products) {
         const product = memoryProducts.find((p) => p._id === line.products_id);
         if (!product) continue;

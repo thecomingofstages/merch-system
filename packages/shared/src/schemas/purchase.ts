@@ -5,7 +5,8 @@ import { CartItem } from "./quote";
 export const VerifyMethod = z.enum(["QR", "MANUAL"]);
 export type VerifyMethod = z.infer<typeof VerifyMethod>;
 
-export const PaymentStatus = z.enum(["PENDING_CHECK", "VERIFIED", "REJECTED"]);
+/** REFUND_DUE: the buyer paid, but the stock ran out before the order was saved (refunded over LINE, outside the system). */
+export const PaymentStatus = z.enum(["PENDING_CHECK", "VERIFIED", "REJECTED", "REFUND_DUE"]);
 export type PaymentStatus = z.infer<typeof PaymentStatus>;
 
 export const OrderStatus = z.enum(["ORDERED", "SHIPPING", "ARRIVED"]);
@@ -109,7 +110,7 @@ export const AdminOrdersCountResponse = z.object({
 });
 export type AdminOrdersCountResponse = z.infer<typeof AdminOrdersCountResponse>;
 
-/** PATCH /admin/orders/:id/payment { payment_status: 'VERIFIED' | 'REJECTED' } */
+/** PATCH /admin/orders/:id/payment { payment_status: 'VERIFIED' | 'REJECTED' }; a REFUND_DUE order can only go to REJECTED (refunded). */
 export const VerifyPaymentStatus = z.enum(["VERIFIED", "REJECTED"]);
 export type VerifyPaymentStatus = z.infer<typeof VerifyPaymentStatus>;
 

@@ -47,7 +47,7 @@ export const purchaseSchema = new Schema(
     // No default: a sale without a slip leaves the field out, never null (see the index below).
     slip_qr_data: { type: String },
     verify_method: { type: String, enum: ["QR", "MANUAL"], required: true },
-    payment_status: { type: String, enum: ["PENDING_CHECK", "VERIFIED", "REJECTED"], default: "PENDING_CHECK" },
+    payment_status: { type: String, enum: ["PENDING_CHECK", "VERIFIED", "REJECTED", "REFUND_DUE"], default: "PENDING_CHECK" },
     verified_at: { type: Date, default: null },
     pos_id: { type: Schema.Types.ObjectId, ref: "Pos", default: null },
     tracking_provider: { type: String, default: null },
