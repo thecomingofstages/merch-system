@@ -124,7 +124,8 @@ export default function Checkout() {
     clientApi.googleSignIn({ id_token: idToken }).then(
       (user) => {
         setMe(user);
-        setValues(toDetails(user));
+        // After an expired session, keep what the buyer already typed.
+        setValues((v) => (v === EMPTY ? toDetails(user) : v));
       },
       (cause: unknown) => setNotice(errorText(cause)),
     );
