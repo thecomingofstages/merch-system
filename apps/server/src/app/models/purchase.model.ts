@@ -36,10 +36,36 @@ const recipientSchema = new Schema(
   { _id: false },
 );
 
+// A set (D13): its own price, and copies of the pieces chosen.
+const setSchema = new Schema(
+  {
+    promotions_id: { type: Schema.Types.ObjectId, ref: "Promotion", required: true },
+    promotion_name: { type: String, required: true },
+    price: { type: Number, required: true, min: 0, validate: Number.isInteger },
+    variants: {
+      type: [
+        new Schema(
+          {
+            products_id: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+            product_name: { type: String, required: true },
+            variants_id: { type: Schema.Types.ObjectId, required: true },
+            variant_name: { type: String, required: true },
+            count: { type: Number, required: true, min: 1, validate: Number.isInteger },
+          },
+          { _id: false },
+        ),
+      ],
+      required: true,
+    },
+  },
+  { _id: false },
+);
+
 export const purchaseSchema = new Schema(
   {
     users: { type: Schema.Types.ObjectId, ref: "User", default: null }, // null = POS
     products: { type: [lineSchema], required: true },
+    promotions: { type: [setSchema], default: [] },
     original_price: { type: Number, required: true, min: 0, validate: Number.isInteger },
     shipping_fee: { type: Number, required: true, min: 0, validate: Number.isInteger },
     recipient: { type: recipientSchema, default: null },

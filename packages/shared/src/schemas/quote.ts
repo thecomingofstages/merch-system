@@ -12,11 +12,23 @@ export const CartItem = z.object({
 });
 export type CartItem = z.infer<typeof CartItem>;
 
-const items = z.array(CartItem).min(1);
+/**
+ * One promotion set in the cart (D13). `picks[i]` fills the set's item i: variants of that
+ * item, mixed freely, whose counts add up to the item's count.
+ */
+export const PromotionCartItem = z.object({
+  promotion_id: objectId,
+  picks: z.array(z.array(z.object({ variant_id: objectId, count })).min(1)).min(1),
+});
+export type PromotionCartItem = z.infer<typeof PromotionCartItem>;
+
+// A cart may hold only sets, so items can be empty; the server answers VALIDATION when both are.
+const items = z.array(CartItem);
+const promotions = z.array(PromotionCartItem).optional();
 
 export const QuoteRequest = z.discriminatedUnion("channel", [
-  z.object({ channel: z.literal("ONLINE"), items }),
-  z.object({ channel: z.literal("POS"), pos_id: objectId, items }),
+  z.object({ channel: z.literal("ONLINE"), items, promotions }),
+  z.object({ channel: z.literal("POS"), pos_id: objectId, items, promotions }),
 ]);
 export type QuoteRequest = z.infer<typeof QuoteRequest>;
 
@@ -30,11 +42,27 @@ export const QuoteLine = z.object({
 });
 export type QuoteLine = z.infer<typeof QuoteLine>;
 
+/** A piece of a set: a line without a unit price (the set has one price). */
+export const SetPick = QuoteLine.omit({ unit_price: true });
+export type SetPick = z.infer<typeof SetPick>;
+
+/** A priced set; `picks[i]` are the pieces chosen for the set's item i. */
+export const QuotePromotion = z.object({
+  promotion_id: objectId,
+  name: z.string(),
+  price: baht,
+  picks: z.array(z.array(SetPick)),
+});
+export type QuotePromotion = z.infer<typeof QuotePromotion>;
+
 export const QuoteResponse = z.object({
   lines: z.array(QuoteLine),
+  promotions: z.array(QuotePromotion),
   subtotal: baht,
   shipping_fee: baht,
   total: baht,
   promptpay_id: z.string(),
+  /** The account name, shown under the QR (D14). */
+  promptpay_name: z.string(),
 });
 export type QuoteResponse = z.infer<typeof QuoteResponse>;

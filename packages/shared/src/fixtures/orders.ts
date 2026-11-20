@@ -66,6 +66,7 @@ export const fixtureOrders: Purchase[] = [
         ],
       },
     ],
+    promotions: [],
     original_price: 1020,
     shipping_fee: FAKE_SHIPPING_FEE,
     recipient: {
@@ -112,6 +113,7 @@ export const fixtureOrders: Purchase[] = [
         ],
       },
     ],
+    promotions: [],
     original_price: 238,
     shipping_fee: FAKE_SHIPPING_FEE,
     recipient: {
@@ -157,6 +159,7 @@ export const fixtureOrders: Purchase[] = [
         ],
       },
     ],
+    promotions: [],
     original_price: 87,
     shipping_fee: FAKE_SHIPPING_FEE,
     recipient: {
@@ -203,6 +206,7 @@ export const fixtureOrders: Purchase[] = [
         ],
       },
     ],
+    promotions: [],
     original_price: 250,
     shipping_fee: FAKE_SHIPPING_FEE,
     recipient: {
@@ -248,6 +252,7 @@ export const fixtureOrders: Purchase[] = [
         ],
       },
     ],
+    promotions: [],
     original_price: 190,
     shipping_fee: 0,
     recipient: null,

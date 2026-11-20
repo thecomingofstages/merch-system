@@ -3,14 +3,18 @@ import {
   AdminOrdersCountResponse,
   AdminOrdersQuery,
   AdminOrdersResponse,
+  deleteImpact,
   ErrorBody,
   type ErrorCode,
   fixtureOrders,
   fixtureProducts,
+  fixturePromotions,
   fixtureShops,
   Product,
   ProductPatch,
   ProductRequest,
+  Promotion,
+  PromotionRequest,
   Purchase,
   Shop,
   ShopRequest,
@@ -47,6 +51,7 @@ const productListSchema = z.array(Product);
 let memoryShops: Shop[] = structuredClone(fixtureShops);
 let memoryProducts: Product[] = structuredClone(fixtureProducts);
 let memoryOrders: Purchase[] = structuredClone(fixtureOrders);
+let memoryPromotions: Promotion[] = structuredClone(fixturePromotions);
 let nextFixtureCounter = 100;
 
 function makeFixtureId(prefixHex2: string): string {
@@ -58,6 +63,18 @@ export function resetDashboardFixtures(): void {
   memoryShops = structuredClone(fixtureShops);
   memoryProducts = structuredClone(fixtureProducts);
   memoryOrders = structuredClone(fixtureOrders);
+  memoryPromotions = structuredClone(fixturePromotions);
+}
+
+/** Fixtures mode: the server's cascade (D13) when products, or one variant, are deleted. */
+function cascadeFixtureSets(target: { productIds: string[] } | { variantId: string }) {
+  const { deleted } = deleteImpact(memoryPromotions, target);
+  for (const set of deleted) set.archived = true;
+  if ("variantId" in target) {
+    for (const set of memoryPromotions) {
+      for (const item of set.items) item.variant_ids = item.variant_ids.filter((v) => v !== target.variantId);
+    }
+  }
 }
 
 /** Calls apps/server through this dashboard's own /api route, which adds ADMIN_ACCESS_TOKEN (D15). */
@@ -162,6 +179,7 @@ export async function archiveShop(id: string): Promise<void> {
         for (const v of p.variants) v.archived = true;
       }
     }
+    cascadeFixtureSets({ productIds: shopProducts.map((p) => p._id) });
     shop.archived = true;
     return;
   }
@@ -257,6 +275,7 @@ export async function archiveProduct(id: string): Promise<void> {
     }
     product.archived = true;
     for (const v of product.variants) v.archived = true;
+    cascadeFixtureSets({ productIds: [id] });
     return;
   }
   await requestAdmin(`/admin/products/${encodeURIComponent(id)}`, { method: "DELETE" }, z.undefined());
@@ -317,6 +336,7 @@ export async function archiveVariant(productId: string, variantId: string): Prom
       throw new ApiError(409, "IN_USE", "Still has online stock: move it to 0 first");
     }
     variant.archived = true;
+    cascadeFixtureSets({ variantId });
     return;
   }
   await requestAdmin(
@@ -343,6 +363,47 @@ export async function addStock(productId: string, variantId: string, body: Stock
     { method: "POST", body: JSON.stringify(body) },
     Product,
   );
+}
+
+// Promotion sets (D13)
+
+const promotionListSchema = z.array(Promotion);
+
+export async function listPromotions(): Promise<Promotion[]> {
+  if (isFixturesMode()) {
+    return structuredClone(memoryPromotions.filter((p) => !p.archived));
+  }
+  return requestAdmin("/admin/promotions", { method: "GET" }, promotionListSchema);
+}
+
+export async function savePromotion(id: string | null, body: PromotionRequest): Promise<Promotion> {
+  if (isFixturesMode()) {
+    const parsed = PromotionRequest.parse(body);
+    if (id === null) {
+      const created: Promotion = { ...parsed, _id: makeFixtureId("6e"), archived: false };
+      memoryPromotions.push(created);
+      return structuredClone(created);
+    }
+    const existing = memoryPromotions.find((p) => p._id === id && !p.archived);
+    if (!existing) throw new ApiError(404, "NOT_FOUND", "Promotion not found");
+    Object.assign(existing, parsed);
+    return structuredClone(existing);
+  }
+  return requestAdmin(
+    id === null ? "/admin/promotions" : `/admin/promotions/${encodeURIComponent(id)}`,
+    { method: id === null ? "POST" : "PATCH", body: JSON.stringify(body) },
+    Promotion,
+  );
+}
+
+export async function archivePromotion(id: string): Promise<void> {
+  if (isFixturesMode()) {
+    const promotion = memoryPromotions.find((p) => p._id === id && !p.archived);
+    if (!promotion) throw new ApiError(404, "NOT_FOUND", "Promotion not found");
+    promotion.archived = true;
+    return;
+  }
+  await requestAdmin(`/admin/promotions/${encodeURIComponent(id)}`, { method: "DELETE" }, z.undefined());
 }
 
 // Orders (2.8)

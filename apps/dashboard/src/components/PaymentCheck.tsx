@@ -1,7 +1,7 @@
 "use client";
 
 import type { Purchase, VerifyPaymentStatus } from "@merch/shared";
-import { Button, Dialog, Price } from "@merch/ui";
+import { Button, Dialog, Price, SlipQrCode } from "@merch/ui";
 import { useEffect, useRef, useState } from "react";
 import { COPY, formatPaymentStatus } from "@/app/(admin)/orders/copy";
 import { ApiError, updateOrderPayment } from "@/lib/api";
@@ -145,6 +145,8 @@ export function PaymentCheck({
           <code className="block break-all rounded-sm border border-rigging bg-house p-2 text-small text-ink">
             {order.slip_qr_data}
           </code>
+          <SlipQrCode data={order.slip_qr_data} label={COPY.slipQrLabel} />
+          <p className="text-small text-ink/80">{COPY.slipQrInstruction}</p>
         </div>
 
         <div className="flex flex-col justify-between gap-2 rounded-lg border border-rigging bg-rigging/15 p-3">

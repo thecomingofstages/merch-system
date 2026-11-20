@@ -8,6 +8,7 @@ import { addressRoute } from "./address.route";
 import { adminCatalogRoute } from "./admin/catalog.route";
 import { adminOrderRoute } from "./admin/order.route";
 import { adminPosRoute } from "./admin/pos.route";
+import { adminPromotionRoute } from "./admin/promotion.route";
 import { authRoute } from "./auth.route";
 import { healthRoute } from "./health.route";
 import { orderRoute } from "./order.route";
@@ -30,6 +31,7 @@ export function initRoutes(): Router {
   api.use("/admin", adminCatalogRoute);
   api.use("/admin", adminOrderRoute);
   api.use("/admin", adminPosRoute);
+  api.use("/admin", adminPromotionRoute);
 
   return api;
 }

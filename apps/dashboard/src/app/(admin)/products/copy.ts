@@ -76,6 +76,9 @@ export const COPY = {
   confirmArchiveTitle: "Archive item",
   confirmArchiveBody:
     "This item will be hidden from the storefront and the POS, while past orders keep its name.",
+  checkingSets: "Checking promotion sets...",
+  setsDeletedWarning: "These promotion sets will be deleted too:",
+  setsShrunkWarning: "These promotion sets will no longer offer this variant:",
 
   // Validation & API errors
   requiredField: "This field is required",
