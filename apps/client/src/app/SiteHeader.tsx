@@ -30,6 +30,10 @@ export function SiteHeader() {
           <Image src="/logo.png" alt="The Coming of Stages" width={412} height={359} priority unoptimized className="h-10 w-auto" />
           <span className="font-display text-h4 font-medium text-fg">Merch</span>
         </Link>
+        {/* Says the new count when an item goes in: the link's label is only read on focus. */}
+        <span className="sr-only" aria-live="polite">
+          ตะกร้า {count} ชิ้น
+        </span>
         <Link
           href="/checkout"
           aria-label={`ตะกร้า ${count} ชิ้น`}
