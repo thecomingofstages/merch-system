@@ -4,6 +4,7 @@
  */
 import type { Config } from "../../src/app/config/init";
 import { buildApp } from "../../src/app/server";
+import { FakeBucket } from "./fakeBucket";
 
 export const testConfig: Config = {
   MONGODB_URI: "mongodb://test.invalid/merch",
@@ -16,6 +17,8 @@ export const testConfig: Config = {
   SESSION_SECRET: "test-session-secret-test-session-secret",
   RESEND_API_KEY: "test-resend-key",
   EMAIL_FROM: "Shop <shop@example.test>",
+  IMAGES_PUBLIC_URL: "https://images.example.test",
+  IMAGES: new FakeBucket() as unknown as R2Bucket,
 };
 
 export const buildTestApp = () => buildApp(testConfig);

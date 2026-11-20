@@ -7,27 +7,33 @@ import type { Types } from "mongoose";
 import type { z } from "zod";
 import type { Models } from "../models";
 import { ApiError } from "../utils/ApiError";
+import { type ImageStore, releaseImages, storeOptional } from "./images.helper";
 
 type Id = Types.ObjectId;
 type Body = z.output<typeof PromotionRequest>;
 
 export const listPromotions = (m: Models) => m.Promotion.find({ archived: false }).sort({ name: 1 }).lean();
 
-export async function createPromotion(m: Models, body: Body) {
+export async function createPromotion(m: Models, store: ImageStore, body: Body) {
   await assertLiveItems(m, body.items);
-  return (await m.Promotion.create(body)).toObject();
+  return (await m.Promotion.create({ ...body, image: await storeOptional(store, body.image) })).toObject();
 }
 
-export async function updatePromotion(m: Models, id: Id, body: Body) {
+export async function updatePromotion(m: Models, store: ImageStore, id: Id, body: Body) {
   await assertLiveItems(m, body.items);
-  const promotion = await m.Promotion.findOneAndUpdate({ _id: id, archived: false }, { $set: body }, { new: true, runValidators: true }).lean();
+  const before = await m.Promotion.findOne({ _id: id, archived: false }, { image: 1 }).lean();
+  if (!before) throw ApiError.notFound("Promotion not found");
+  const image = await storeOptional(store, body.image);
+  const promotion = await m.Promotion.findOneAndUpdate({ _id: id, archived: false }, { $set: { ...body, image } }, { new: true, runValidators: true }).lean();
   if (!promotion) throw ApiError.notFound("Promotion not found");
+  if (before.image !== image) await releaseImages(m, store, [before.image]);
   return promotion;
 }
 
-export async function archivePromotion(m: Models, id: Id) {
-  const res = await m.Promotion.updateOne({ _id: id, archived: false }, { $set: { archived: true } });
-  if (res.matchedCount === 0) throw ApiError.notFound("Promotion not found");
+export async function archivePromotion(m: Models, store: ImageStore, id: Id) {
+  const promotion = await m.Promotion.findOneAndUpdate({ _id: id, archived: false }, { $set: { archived: true } }).lean();
+  if (!promotion) throw ApiError.notFound("Promotion not found");
+  await releaseImages(m, store, [promotion.image]);
 }
 
 /** Each item names a live product and only live variants of it. */

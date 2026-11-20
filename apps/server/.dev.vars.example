@@ -1,6 +1,6 @@
 # Local settings for `npx wrangler dev`. Copy to .dev.vars (never committed) and fill in.
 # In production these are set in the Cloudflare dashboard: CORS_ORIGINS, SHIPPING_FEE, EMAIL_FROM,
-# PROMPTPAY_ID and PROMPTPAY_NAME as Text variables, the rest as Secrets (docs/BACKEND.md "Environment").
+# PROMPTPAY_ID, PROMPTPAY_NAME and IMAGES_PUBLIC_URL as Text variables, the rest as Secrets (docs/BACKEND.md "Environment").
 
 # Used now (F3, F6)
 MONGODB_URI=
@@ -19,6 +19,9 @@ SHIPPING_FEE=
 RESEND_API_KEY=
 # A sender on the domain verified in Resend, e.g. Shop <shop@example.com>
 EMAIL_FROM=
+# The custom domain of the R2 images bucket (D17), e.g. https://images.example.com.
+# `wrangler dev` stores uploads in a local bucket, which this domain does not serve.
+IMAGES_PUBLIC_URL=
 
 # Used by S6
 GOOGLE_CLIENT_ID=

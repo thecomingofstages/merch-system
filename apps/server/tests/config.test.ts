@@ -12,6 +12,8 @@ const good = {
   SESSION_SECRET: "test-session-secret-test-session-secret",
   RESEND_API_KEY: "test-resend-key",
   EMAIL_FROM: "Shop <shop@example.test>",
+  IMAGES_PUBLIC_URL: "https://images.example.test/",
+  IMAGES: { put: () => {} },
 };
 
 describe("initConfig", () => {
@@ -32,7 +34,7 @@ describe("initConfig", () => {
 
   it("names the bad settings without printing their values", () => {
     const bad = () => initConfig({ MONGODB_URI: "postgres://secret", ADMIN_ACCESS_TOKEN: "short" });
-    for (const name of ["MONGODB_URI", "ADMIN_ACCESS_TOKEN", "CORS_ORIGINS", "SHIPPING_FEE", "PROMPTPAY_ID", "PROMPTPAY_NAME"]) expect(bad).toThrow(name);
+    for (const name of ["MONGODB_URI", "ADMIN_ACCESS_TOKEN", "CORS_ORIGINS", "SHIPPING_FEE", "PROMPTPAY_ID", "PROMPTPAY_NAME", "IMAGES_PUBLIC_URL", "IMAGES"]) expect(bad).toThrow(name);
     expect(() => initConfig({ MONGODB_URI: "postgres://secret" })).not.toThrow(/secret/);
   });
 });

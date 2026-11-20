@@ -29,6 +29,7 @@ import {
   updateShop,
   updateVariant,
 } from "@/lib/api";
+import { UploadImageButton } from "@/components/UploadImageButton";
 import { COPY } from "./copy";
 import { ImagePreview, isValidHttpUrl, mapDashboardError, parseStrictInt } from "./helpers";
 
@@ -169,6 +170,7 @@ function ImageUrlRowsField({
               onChange={(e) => onChangeRow(row.key, e.target.value)}
             />
           </div>
+          <UploadImageButton disabled={disabled} onUploaded={(url) => onChangeRow(row.key, url)} />
           {showRemoveWhenSingle || rows.length > 1 ? (
             <Button
               type="button"
@@ -324,6 +326,7 @@ function VariantFieldsInputs({
             onChange={(e) => onChangeField("image", e.target.value)}
           />
         </div>
+        <UploadImageButton disabled={disabled} onUploaded={(url) => onChangeField("image", url)} />
       </div>
 
       <label className="flex items-center gap-2 text-small text-ink">

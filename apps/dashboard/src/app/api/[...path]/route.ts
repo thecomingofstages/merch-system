@@ -26,7 +26,7 @@ async function forward(req: NextRequest, { params }: { params: Promise<{ path: s
         Authorization: `Bearer ${token}`,
         ...(req.headers.get("content-type") && { "Content-Type": req.headers.get("content-type")! }),
       },
-      body: req.method === "GET" ? undefined : await req.text(),
+      body: req.method === "GET" ? undefined : await req.arrayBuffer(), // bytes, not text: images go through here too
       cache: "no-store",
     });
   } catch {
