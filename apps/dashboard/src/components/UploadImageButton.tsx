@@ -6,7 +6,11 @@ import { uploadImage } from "@/lib/api";
 import { shrinkImage } from "@/lib/shrinkImage";
 
 // TODO(Thai copy for the upload button)
-const COPY = { upload: "Upload from device", uploading: "Uploading..." };
+const COPY = {
+  upload: "Upload from device",
+  uploading: "Uploading...",
+  unreadable: "This photo can't be read here: use a JPEG, PNG or WebP file.",
+};
 
 /**
  * Picks a photo from the device, shrinks it, uploads it to R2 and hands back its URL (D17).
@@ -22,7 +26,10 @@ export function UploadImageButton({ onUploaded, disabled }: { onUploaded: (url: 
     setBusy(true);
     setError(null);
     try {
-      onUploaded(await uploadImage(await shrinkImage(file)));
+      // Decoding fails in the browser (e.g. an iPhone HEIC on desktop Chrome): not a server problem.
+      const small = await shrinkImage(file).catch(() => null);
+      if (!small) return setError(COPY.unreadable);
+      onUploaded(await uploadImage(small));
     } catch (err) {
       setError(mapDashboardError(err));
     } finally {
@@ -41,7 +48,7 @@ export function UploadImageButton({ onUploaded, disabled }: { onUploaded: (url: 
         <input
           id={id}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
           className="sr-only"
           disabled={disabled || busy}
           onChange={(e) => {

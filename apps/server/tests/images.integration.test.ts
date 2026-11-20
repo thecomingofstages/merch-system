@@ -67,6 +67,15 @@ describe.skipIf(!uri)("images in R2 (D17)", { timeout: 60_000 }, () => {
     expect(stored(b)).toBe(true);
   });
 
+  it("a failed R2 delete doesn't fail the archive, which is already saved", async () => {
+    const img = await upload();
+    const p = (await product({ image: [img] })).body;
+    const del = vi.spyOn(bucket, "delete").mockRejectedValueOnce(new Error("R2 down"));
+    expect((await request(app).delete(`/admin/products/${p._id}`).set(admin)).status).toBe(204);
+    expect(del).toHaveBeenCalled();
+    del.mockRestore();
+  });
+
   it("archiving a product deletes its images and its variants' images", async () => {
     const [img, vimg] = [await upload(), await upload()];
     const p = (await product({ image: [img], variants: [{ name: "S", price: 100, image: vimg }] })).body;

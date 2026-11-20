@@ -60,7 +60,8 @@ export const storeOptional = (store: ImageStore, url: string | null | undefined)
 
 /**
  * Deletes the R2 files behind these URLs that no live product, variant or set still uses
- * (two records may share one image). Call it after the change that dropped them.
+ * (two records may share one image). Call it after the change that dropped them. A failed
+ * delete is logged, not thrown: the change itself is already saved, and retrying it can't help.
  */
 export async function releaseImages(m: Models, store: ImageStore, urls: (string | null | undefined)[]) {
   for (const url of new Set(urls)) {
@@ -69,6 +70,11 @@ export async function releaseImages(m: Models, store: ImageStore, urls: (string 
     const used =
       (await m.Product.exists({ archived: false, $or: [{ image: url }, { variants: { $elemMatch: { image: url, archived: false } } }] })) ||
       (await m.Promotion.exists({ archived: false, image: url }));
-    if (!used) await store.bucket.delete(key);
+    if (used) continue;
+    try {
+      await store.bucket.delete(key);
+    } catch (err) {
+      console.error("Could not delete an unused image from R2", { key, err });
+    }
   }
 }
