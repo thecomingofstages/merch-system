@@ -21,7 +21,7 @@ const PAYMENT_OPTIONS: PaymentStatus[] = ["PENDING_CHECK", "VERIFIED", "REJECTED
 
 function StatusLabel({ text }: { text: string }) {
   return (
-    <span className="inline-flex items-center rounded-sm border border-rigging bg-rigging/30 px-2 py-0.5 text-small font-medium text-ink">
+    <span className="inline-flex items-center rounded-sm border border-line bg-raised px-2 py-0.5 text-small font-medium text-fg">
       {text}
     </span>
   );
@@ -81,11 +81,11 @@ export default function OrdersPage() {
       {/* Header with New-Order Badge */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <h1 className="text-h2 font-semibold text-ink">{COPY.pageTitle}</h1>
+          <h1 className="text-h2 font-semibold text-fg">{COPY.pageTitle}</h1>
           {newOrderCount > 0 ? (
             <span
               aria-label={COPY.newOrdersBadgeLabel(newOrderCount)}
-              className="inline-flex min-w-7 items-center justify-center rounded-sm bg-ink px-2 py-0.5 text-small font-semibold tabular-nums text-house"
+              className="inline-flex min-w-7 items-center justify-center rounded-sm bg-fg px-2 py-0.5 text-small font-semibold tabular-nums text-canvas"
             >
               {newOrderCount}
             </span>
@@ -137,7 +137,7 @@ export default function OrdersPage() {
         <div
           role="alert"
           aria-live="polite"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-curtain bg-house p-4 text-small text-curtain"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-danger bg-surface p-4 text-small text-danger"
         >
           <span>{error}</span>
           <Button
@@ -155,18 +155,18 @@ export default function OrdersPage() {
 
       {/* Orders Table / Empty / Loading */}
       {loading && orders.length === 0 ? (
-        <p className="text-small text-ink/70">{COPY.loading}</p>
+        <p className="text-small text-fg-2">{COPY.loading}</p>
       ) : orders.length === 0 ? (
-        <p className="rounded-lg border border-rigging bg-house p-6 text-small text-ink/70">
+        <p className="rounded-lg border border-line bg-surface p-6 text-small text-fg-2">
           {hasFilters ? COPY.emptyNoMatchingOrders : COPY.emptyNoOrders}
         </p>
       ) : (
         <div className="flex flex-col gap-4">
-          <div className="overflow-x-auto rounded-lg border border-rigging bg-house">
+          <div className="overflow-x-auto rounded-lg border border-line bg-surface">
             <table className="w-full border-collapse text-left text-small">
               <caption className="sr-only">{COPY.tableCaption}</caption>
               <thead>
-                <tr className="border-b border-rigging bg-rigging/30 text-ink">
+                <tr className="border-b border-line bg-raised text-fg">
                   <th scope="col" className="px-4 py-3 font-semibold">
                     {COPY.colCreatedAt}
                   </th>
@@ -190,38 +190,38 @@ export default function OrdersPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-rigging">
+              <tbody className="divide-y divide-line">
                 {orders.map((order) => {
                   const buyerText = formatBuyerSummary(order);
                   const shortId = shortOrderId(order._id);
 
                   return (
-                    <tr key={order._id} className="bg-house hover:bg-rigging/15">
-                      <td className="px-4 py-3 whitespace-nowrap text-ink">
+                    <tr key={order._id} className="bg-surface hover:bg-raised">
+                      <td className="px-4 py-3 whitespace-nowrap text-fg">
                         <div className="flex flex-col">
                           <Link
                             href={`/orders/${order._id}`}
-                            className="font-semibold text-violet underline-offset-2 hover:underline"
+                            className="font-semibold text-gold underline-offset-2 hover:underline"
                           >
                             {shortId}
                           </Link>
-                          <span className="text-ink/70">
+                          <span className="text-fg-2">
                             {formatBangkokDateTime(order.created_at)}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-ink">
+                      <td className="px-4 py-3 text-fg">
                         <Link
                           href={`/orders/${order._id}`}
-                          className="font-medium text-ink hover:text-violet hover:underline"
+                          className="font-medium text-fg hover:text-gold-hover hover:underline"
                         >
                           {buyerText}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 font-mono tabular-nums text-ink">
+                      <td className="px-4 py-3 font-mono tabular-nums text-fg">
                         {orderItemCount(order)}
                       </td>
-                      <td className="px-4 py-3 font-semibold tabular-nums text-ink">
+                      <td className="px-4 py-3 font-semibold tabular-nums text-fg">
                         <Price amount={orderTotal(order)} />
                       </td>
                       <td className="px-4 py-3">
@@ -234,7 +234,7 @@ export default function OrdersPage() {
                         <Link
                           href={`/orders/${order._id}`}
                           aria-label={`${COPY.viewOrder} ${shortId}`}
-                          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-rigging bg-house px-3 font-medium text-ink hover:bg-rigging/40"
+                          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line bg-surface px-3 font-medium text-fg hover:bg-raised"
                         >
                           {COPY.viewOrder}
                         </Link>
@@ -247,7 +247,7 @@ export default function OrdersPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-small text-ink">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-small text-fg">
             <span>{COPY.pageInfo(page, totalPages, total)}</span>
             <div className="flex items-center gap-2">
               <Button

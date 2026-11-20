@@ -9,7 +9,7 @@ import { QRCodeSVG } from "qrcode.react";
 export function SlipQrCode({ data, label }: { data: string; label: string }) {
   return (
     // Ink on House lights; marginSize keeps the 4-module quiet zone scanners need.
-    <div className="w-fit bg-house text-ink">
+    <div className="w-fit bg-surface text-fg">
       <QRCodeSVG value={data} size={200} marginSize={4} fgColor="currentColor" bgColor="transparent" role="img" aria-label={label} />
     </div>
   );

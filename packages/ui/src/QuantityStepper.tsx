@@ -22,7 +22,7 @@ export function QuantityStepper({
   const atMin = value <= min;
   const atMax = max !== undefined && value >= max;
   const button =
-    "inline-flex size-11 items-center justify-center rounded-lg border border-rigging bg-house text-h4 text-ink hover:bg-rigging/40 disabled:cursor-not-allowed disabled:opacity-40";
+    "inline-flex size-11 items-center justify-center rounded-lg border border-line bg-raised text-h4 text-fg transition-colors duration-150 hover:bg-line disabled:cursor-not-allowed disabled:opacity-40";
   return (
     <div className="inline-flex items-center gap-2">
       <button type="button" aria-label={decreaseLabel} disabled={atMin} onClick={() => onChange(value - 1)} className={button}>

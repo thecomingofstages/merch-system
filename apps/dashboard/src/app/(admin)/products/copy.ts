@@ -43,12 +43,12 @@ export const COPY = {
   createVariantTitle: "Add variant",
   editVariantTitle: "Edit variant",
   emptyVariants: "No variants.",
-  variantNameHeader: "name",
-  variantPriceHeader: "price",
-  variantImageHeader: "image",
-  variantStockHeader: "online_stock",
-  variantBuyLimitHeader: "buy_limit",
-  variantVisibleHeader: "visible_to_online",
+  variantNameHeader: "Name",
+  variantPriceHeader: "Price",
+  variantImageHeader: "Image",
+  variantStockHeader: "Online stock",
+  variantBuyLimitHeader: "Buy limit",
+  variantVisibleHeader: "Shown online",
   variantNameLabel: "Variant name",
   variantPriceLabel: "Price (baht)",
   variantImageLabel: "Image URL (optional)",
@@ -63,7 +63,7 @@ export const COPY = {
   // Stock dialog
   addStockButton: "+ Add stock",
   addStockTitle: "Add stock",
-  currentStockLabel: "Current online_stock",
+  currentStockLabel: "Current online stock",
   stockAmountLabel: "Amount to add (negative removes stock)",
 
   // Common actions

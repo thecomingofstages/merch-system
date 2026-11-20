@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Anuphan, Chonburi } from "next/font/google";
+import { Prompt, Sarabun } from "next/font/google";
 import "./globals.css";
 
-// docs/FRONTEND.md "Type": Chonburi for display, Anuphan for everything else.
-const chonburi = Chonburi({ weight: "400", subsets: ["thai", "latin"], variable: "--font-chonburi" });
-const anuphan = Anuphan({ weight: ["400", "500", "600"], subsets: ["thai", "latin"], variable: "--font-anuphan" });
+// docs/FRONTEND.md "Type": Prompt for headings, Sarabun for everything else, as on the other TCOS sites.
+// On <html>: the tokens in styles.css read these variables on :root, so they must be set there.
+const prompt = Prompt({ weight: ["500", "600"], subsets: ["thai", "latin"], variable: "--font-prompt" });
+const sarabun = Sarabun({ weight: ["400", "500", "600"], subsets: ["thai", "latin"], variable: "--font-sarabun" });
 
 export const metadata: Metadata = {
   icons: { icon: "/favicon.svg" },
@@ -13,8 +14,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th">
-      <body className={`${chonburi.variable} ${anuphan.variable} antialiased`}>{children}</body>
+    <html lang="th" className={`${prompt.variable} ${sarabun.variable}`}>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

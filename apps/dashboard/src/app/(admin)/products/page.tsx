@@ -20,7 +20,7 @@ import {
 
 function ArchivedBadge() {
   return (
-    <span className="inline-flex items-center rounded-sm border border-rigging bg-rigging/40 px-2 py-0.5 text-small font-medium text-ink/80">
+    <span className="inline-flex items-center rounded-sm border border-line bg-raised px-2 py-0.5 text-small font-medium text-fg-2">
       {COPY.archivedBadge}
     </span>
   );
@@ -109,10 +109,10 @@ export default function ProductsPage() {
     <div className="flex flex-col gap-6">
       {/* Page Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-h2 font-semibold text-ink">{COPY.pageTitle}</h1>
+        <h1 className="text-h2 font-semibold text-fg">{COPY.pageTitle}</h1>
 
         <div className="flex flex-wrap items-center gap-4">
-          <label className="flex items-center gap-2 text-small font-medium text-ink">
+          <label className="flex items-center gap-2 text-small font-medium text-fg">
             <input
               type="checkbox"
               checked={showArchived}
@@ -120,7 +120,7 @@ export default function ProductsPage() {
                 setLoading(true);
                 setShowArchived(e.target.checked);
               }}
-              className="h-4 w-4 accent-ink"
+              className="h-4 w-4 accent-gold"
             />
             <span>{COPY.showArchived}</span>
           </label>
@@ -139,7 +139,7 @@ export default function ProductsPage() {
       {pageError ? (
         <div
           role="alert"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-curtain bg-house p-4 text-small text-curtain"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-danger bg-surface p-4 text-small text-danger"
         >
           <span>{pageError}</span>
           <Button
@@ -157,14 +157,14 @@ export default function ProductsPage() {
 
       {/* Shops Section */}
       <section aria-labelledby="shops-heading" className="flex flex-col gap-3">
-        <h2 id="shops-heading" className="text-h3 font-semibold text-ink">
+        <h2 id="shops-heading" className="text-h3 font-semibold text-fg">
           {COPY.shopsHeading}
         </h2>
 
         {loading && shops.length === 0 ? (
-          <p className="text-small text-ink/70">{COPY.loading}</p>
+          <p className="text-small text-fg-2">{COPY.loading}</p>
         ) : shops.length === 0 ? (
-          <p className="rounded-lg border border-rigging bg-house p-4 text-small text-ink/70">
+          <p className="rounded-lg border border-line bg-surface p-4 text-small text-fg-2">
             {COPY.emptyShops}
           </p>
         ) : (
@@ -176,22 +176,22 @@ export default function ProductsPage() {
                   key={shop._id}
                   className={`flex flex-wrap items-center gap-2 rounded-lg border p-3 transition-colors ${
                     isSelected
-                      ? "border-violet bg-rigging/40"
-                      : "border-rigging bg-house"
+                      ? "border-gold bg-raised"
+                      : "border-line bg-surface"
                   } ${shop.archived ? "opacity-75" : ""}`}
                 >
                   <button
                     type="button"
                     aria-pressed={isSelected}
                     onClick={() => setSelectedShopId(shop._id)}
-                    className="flex min-h-11 items-center gap-2 rounded-sm px-2 py-1 text-left text-body font-semibold text-ink"
+                    className="flex min-h-11 items-center gap-2 rounded-sm px-2 py-1 text-left text-body font-semibold text-fg"
                   >
                     <span>{shop.shop_name}</span>
                     {shop.archived ? <ArchivedBadge /> : null}
                   </button>
 
                   {!shop.archived ? (
-                    <div className="flex items-center gap-2 border-l border-rigging pl-2">
+                    <div className="flex items-center gap-2 border-l border-line pl-2">
                       <Button
                         type="button"
                         variant="secondary"
@@ -222,7 +222,7 @@ export default function ProductsPage() {
         <section aria-labelledby="products-heading" className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <h2 id="products-heading" className="text-h3 font-semibold text-ink">
+              <h2 id="products-heading" className="text-h3 font-semibold text-fg">
                 {COPY.productsHeading} — {activeShop.shop_name}
               </h2>
               {activeShop.archived ? <ArchivedBadge /> : null}
@@ -240,14 +240,14 @@ export default function ProductsPage() {
           </div>
 
           {shopProducts.length === 0 ? (
-            <p className="rounded-lg border border-rigging bg-house p-4 text-small text-ink/70">
+            <p className="rounded-lg border border-line bg-surface p-4 text-small text-fg-2">
               {COPY.emptyProducts}
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-rigging bg-house">
+            <div className="overflow-x-auto rounded-lg border border-line bg-surface">
               <table className="w-full border-collapse text-left text-small">
                 <thead>
-                  <tr className="border-b border-rigging bg-rigging/30 text-ink">
+                  <tr className="border-b border-line bg-raised text-fg">
                     <th scope="col" className="px-4 py-3 font-semibold">
                       {COPY.productNameLabel}
                     </th>
@@ -265,7 +265,7 @@ export default function ProductsPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-rigging">
+                <tbody className="divide-y divide-line">
                   {shopProducts.map((product) => {
                     const visibleVariants = product.variants.filter(
                       (v) => showArchived || !v.archived,
@@ -278,7 +278,7 @@ export default function ProductsPage() {
 
                     return (
                       <Fragment key={product._id}>
-                        <tr className={product.archived ? "bg-rigging/20 text-ink/70" : "bg-house"}>
+                        <tr className={product.archived ? "bg-raised text-fg-2" : "bg-surface"}>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               <ImagePreview
@@ -286,11 +286,11 @@ export default function ProductsPage() {
                                 alt={product.name}
                               />
                               <div className="min-w-0">
-                                <div className="flex items-center gap-2 font-semibold text-ink">
+                                <div className="flex items-center gap-2 font-semibold text-fg">
                                   <span>{product.name}</span>
                                 </div>
                                 {product.description ? (
-                                  <p className="text-small text-ink/70">{product.description}</p>
+                                  <p className="text-small text-fg-2">{product.description}</p>
                                 ) : null}
                               </div>
                             </div>
@@ -305,7 +305,7 @@ export default function ProductsPage() {
                             {product.archived ? (
                               <ArchivedBadge />
                             ) : (
-                              <span className="text-small font-medium text-ink">
+                              <span className="text-small font-medium text-fg">
                                 {COPY.activeStatus}
                               </span>
                             )}
@@ -364,17 +364,17 @@ export default function ProductsPage() {
 
                         {/* Nested Variants Sub-table */}
                         {isExpanded ? (
-                          <tr className="bg-rigging/15">
+                          <tr className="bg-raised">
                             <td colSpan={5} className="p-4">
-                              <div className="overflow-x-auto rounded-lg border border-rigging bg-house">
+                              <div className="overflow-x-auto rounded-lg border border-line bg-surface">
                                 {visibleVariants.length === 0 ? (
-                                  <p className="p-3 text-small text-ink/70">
+                                  <p className="p-3 text-small text-fg-2">
                                     {COPY.emptyVariants}
                                   </p>
                                 ) : (
                                   <table className="w-full border-collapse text-left text-small">
                                     <thead>
-                                      <tr className="border-b border-rigging bg-rigging/30 text-ink">
+                                      <tr className="border-b border-line bg-raised text-fg">
                                         <th scope="col" className="px-3 py-2 font-semibold">
                                           {COPY.variantNameHeader}
                                         </th>
@@ -401,12 +401,12 @@ export default function ProductsPage() {
                                         </th>
                                       </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-rigging">
+                                    <tbody className="divide-y divide-line">
                                       {visibleVariants.map((variant) => (
                                         <tr
                                           key={variant._id}
                                           className={
-                                            variant.archived ? "text-ink/60" : "text-ink"
+                                            variant.archived ? "text-fg-3" : "text-fg"
                                           }
                                         >
                                           <td className="px-3 py-2 font-medium">
@@ -507,7 +507,7 @@ export default function ProductsPage() {
           )}
         </section>
       ) : !loading && shops.length > 0 ? (
-        <p className="text-small text-ink/70">{COPY.selectShopPrompt}</p>
+        <p className="text-small text-fg-2">{COPY.selectShopPrompt}</p>
       ) : null}
 
       {/* Dialogs */}

@@ -6,7 +6,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-2">
       <h1 className="text-h2 font-semibold">{HEADING}</h1>
-      <p className="text-ink/70">{EMPTY_STATE}</p>
+      <p className="text-fg-2">{EMPTY_STATE}</p>
     </div>
   );
 }

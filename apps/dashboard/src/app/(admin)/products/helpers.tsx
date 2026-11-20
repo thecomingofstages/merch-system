@@ -49,7 +49,7 @@ function BrokenImagePreview({ url, alt, sizeClass }: { url: string; alt: string;
   if (!isValidHttpUrl(url) || failedUrl === url) {
     return (
       <div
-        className={`flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-rigging bg-rigging/20 p-1 text-center text-small leading-tight break-words text-ink/60 ${sizeClass}`}
+        className={`flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-line bg-raised p-1 text-center text-small leading-tight break-words text-fg-3 ${sizeClass}`}
       >
         {COPY.imageLoadFailed}
       </div>
@@ -64,7 +64,7 @@ function BrokenImagePreview({ url, alt, sizeClass }: { url: string; alt: string;
       loading="lazy"
       referrerPolicy="no-referrer"
       onError={() => setFailedUrl(url)}
-      className={`shrink-0 rounded-sm border border-rigging bg-rigging/20 object-cover ${sizeClass}`}
+      className={`shrink-0 rounded-sm border border-line bg-raised object-cover ${sizeClass}`}
     />
   );
 }
@@ -82,7 +82,7 @@ export function ImagePreview({
   if (!trimmed) {
     return (
       <div
-        className={`flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-rigging bg-rigging/20 p-1 text-center text-small leading-tight break-words text-ink/50 ${sizeClass}`}
+        className={`flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-line bg-raised p-1 text-center text-small leading-tight break-words text-fg-3 ${sizeClass}`}
       >
         {COPY.noImage}
       </div>

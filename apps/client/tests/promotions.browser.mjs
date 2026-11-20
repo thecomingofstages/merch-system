@@ -32,7 +32,7 @@ export default async function checkPromotions(page) {
   await press(dialog.getByRole("button", { name: /^More ซองสุ่ม/ }));
   await press(add);
 
-  await page.getByText("ตะกร้า 3", { exact: true }).waitFor();
+  await page.getByRole("link", { name: "ตะกร้า 3 ชิ้น", exact: true }).waitFor();
 
   // Set pieces use up stock for single lines too: M has 10, the set took 1, so 9 single M at most.
   await press(page.getByRole("button", { name: /เสื้อยืด/ }));

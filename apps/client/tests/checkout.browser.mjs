@@ -95,7 +95,7 @@ export default async function checkCheckout(page) {
   await press(button("สั่งซื้อ"));
   await page.getByRole("dialog", { name: "สั่งซื้อแล้ว" }).waitFor();
   await press(button("Done"));
-  await page.getByText("ตะกร้า 0", { exact: true }).waitFor();
+  await page.getByRole("link", { name: "ตะกร้า 0 ชิ้น", exact: true }).waitFor();
 
   // The same slip can't pay a second order.
   await addCapAndCheckout();
@@ -112,6 +112,9 @@ export default async function checkCheckout(page) {
   await page.setViewportSize({ width: 1280, height: 900 });
   assert(await noOverflow(), "No desktop overflow");
   await page.getByRole("link", { name: "Back", exact: true }).click();
-  await page.getByText("ตะกร้า 1", { exact: true }).waitFor();
+  // The basket is in the header on every page, so wait for the shop page and its ticket.
+  await page.waitForURL((url) => url.pathname === "/");
+  await page.getByRole("link", { name: "ตะกร้า 1 ชิ้น", exact: true }).waitFor();
+  await page.getByText("1 ชิ้น", { exact: true }).waitFor();
   assert(await page.getByText("1 ชิ้น", { exact: true }).locator("..").getByText("฿190", { exact: true }).count() === 1, "Back to shop preserves the cart");
 }
