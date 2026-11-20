@@ -63,7 +63,7 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
   }, 60_000);
 
   afterAll(async () => {
-    await m?.Purchase.deleteMany({ slip_qr_data: { $regex: `^${tag}` } });
+    await m?.Purchase.deleteMany({ slip_qr_data: { $regex: tag } });
     await m?.User.deleteMany({ _id: userId });
     await m?.Product.deleteMany({ name: { $regex: `^${tag}` } });
     await m?.Shop.deleteMany({ shop_name: { $regex: `^${tag}` } });
@@ -105,6 +105,14 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
     expect(sendOrderConfirmation).not.toHaveBeenCalled();
     expect(again.body.error.code).toBe("DUPLICATE_SLIP");
     expect(await stockOf(shirt)).toBe(before);
+  });
+
+  it("stores the slip exactly as read, so edge spaces make a different slip", async () => {
+    const items = [{ product_id: productId, variant_id: shirt, count: 1 }];
+    const spaced = `  ${tag}-spaced  `;
+    expect((await post(order(items, spaced))).status).toBe(201);
+    expect(await m.Purchase.exists({ slip_qr_data: spaced })).toBeTruthy();
+    expect((await post(order(items, spaced.trim()))).status).toBe(201);
   });
 
   it("two orders for the last item: only one succeeds, the other gets OUT_OF_STOCK", async () => {

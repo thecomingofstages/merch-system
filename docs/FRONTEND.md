@@ -62,7 +62,7 @@ The POS never calls `apps/server` directly. Its browser calls the POS's own Next
 | Sign in | Token field; token kept in `sessionStorage` | 1.8 |
 | Dashboard | Empty state: "Sales overview comes later." | 1.8 |
 | Products | Shops → products → variants table; Add stock; Transfer to POS | 1.9, 2.9 |
-| Orders | List with new-order badge, detail, Submit for shipping | 2.8 |
+| Orders | List with new-order badge, detail with the slip QR drawn again from `slip_qr_data` (`SlipQrCode`) for the admin to scan with a banking app's slip check, Submit for shipping | 2.8 |
 | POS | Create, list, stock table, End sale | 2.9 |
 
 ## Design direction

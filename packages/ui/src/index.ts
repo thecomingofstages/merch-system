@@ -11,4 +11,5 @@ export { ProductPopup, maxCount } from "./ProductPopup";
 export { QuantityStepper } from "./QuantityStepper";
 export { Select } from "./Select";
 export { readSlipQr, readSlipQrFromFrame } from "./slipQr";
+export { SlipQrCode } from "./SlipQrCode";
 export { CartProvider, useCart } from "./useCart";

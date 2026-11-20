@@ -67,7 +67,8 @@ export const CreateOrderRequest = z.object({
   items: z.array(CartItem).min(1),
   recipient: Recipient,
   shipping_address: Address,
-  slip_qr_data: z.string().trim().min(1),
+  // Exactly as read, never trimmed: an admin scans it again with a banking app (slipQr.ts).
+  slip_qr_data: z.string().min(1),
 });
 export type CreateOrderRequest = z.input<typeof CreateOrderRequest>;
 

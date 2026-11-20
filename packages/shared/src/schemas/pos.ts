@@ -60,7 +60,8 @@ export const CreatePosSaleRequest = z
   .object({
     items: z.array(CartItem).min(1),
     verify_method: VerifyMethod,
-    slip_qr_data: z.string().trim().min(1).optional(),
+    // Exactly as read, never trimmed (see CreateOrderRequest).
+    slip_qr_data: z.string().min(1).optional(),
   })
   .refine(
     (data) =>
