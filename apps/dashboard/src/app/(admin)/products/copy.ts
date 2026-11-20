@@ -10,6 +10,21 @@ export const COPY = {
   // Shops section
   shopsHeading: "Shops",
   addShop: "+ Add shop",
+  importButton: "Import from .xlsx",
+  importTitle: "Import shops and products",
+  importIntro:
+    "One row per variant. Columns: shop, product, variant, price (required); online_stock, buy_limit, visible_to_online (TRUE/FALSE, default TRUE), description, product_images (links, separated by spaces), variant_image. An empty shop, product, description or product_images cell repeats the row above, so merged cells work. In Google Sheets: File → Download → Microsoft Excel (.xlsx).",
+  importTemplate: "Download template",
+  importFile: "Sheet (.xlsx)",
+  importReading: "Reading the sheet...",
+  importErrors: (n: number) => `${n} problem${n === 1 ? "" : "s"} to fix in the sheet:`,
+  importRow: (row: number, message: string) => `Row ${row}: ${message}`,
+  importSummary: (shops: number, products: number, variants: number) =>
+    `Ready: ${shops} shop${shops === 1 ? "" : "s"}, ${products} product${products === 1 ? "" : "s"}, ${variants} variant${variants === 1 ? "" : "s"}. Existing shops with the same name get the new products. Image links are copied into storage.`,
+  importSubmit: "Import",
+  importDone: (r: { shops_created: number; products_created: number; variants_created: number }) =>
+    `Imported ${r.products_created} products and ${r.variants_created} variants (${r.shops_created} new shops).`,
+  importUnreadable: "This file can't be read as an .xlsx sheet.",
   editShopTitle: "Rename shop",
   createShopTitle: "Add shop",
   shopNameLabel: "Shop name",
