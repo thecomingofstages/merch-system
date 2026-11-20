@@ -83,6 +83,8 @@ export const COPY = {
   // Payment check (D10)
   paymentSectionTitle: "Payment verification",
   slipReferenceLabel: "Transaction reference (slip_qr_data)",
+  slipQrLabel: "Slip QR",
+  slipQrInstruction: "Scan this with your banking app's slip check to see the amount and the receiving account.",
   expectedTotalLabel: "Expected total",
   paymentCheckInstruction:
     "A slip is not proof of payment. Check this transaction reference and expected total against the bank account before verifying.",

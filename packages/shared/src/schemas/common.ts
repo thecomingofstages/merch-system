@@ -24,6 +24,13 @@ export type Email = z.infer<typeof Email>;
 export const ThaiPhone = z.string().regex(/^0\d{9}$/, "must be a 10-digit number starting with 0");
 export type ThaiPhone = z.infer<typeof ThaiPhone>;
 
+/**
+ * A slip's QR text, exactly as read (never trimmed: an admin scans it again with a banking
+ * app). Not blank, and short enough to draw as a QR again: a QR holds ~2,900 characters at
+ * most, real slip payloads are under 100.
+ */
+export const SlipQrData = z.string().min(1).max(500).refine((s) => s.trim() !== "", "must not be blank");
+
 /** 5-digit Thai postal code. */
 export const PostalCode = z.string().regex(/^\d{5}$/, "must be 5 digits");
 export type PostalCode = z.infer<typeof PostalCode>;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Address, baht, count, Email, IsoDateTime, objectId, ThaiPhone } from "./common";
+import { Address, baht, count, Email, IsoDateTime, objectId, SlipQrData, ThaiPhone } from "./common";
 import { CartItem, PromotionCartItem } from "./quote";
 
 export const VerifyMethod = z.enum(["QR", "MANUAL"]);
@@ -81,7 +81,7 @@ export const CreateOrderRequest = z.object({
   promotions: z.array(PromotionCartItem).optional(),
   recipient: Recipient,
   shipping_address: Address,
-  slip_qr_data: z.string().trim().min(1),
+  slip_qr_data: SlipQrData,
 });
 export type CreateOrderRequest = z.input<typeof CreateOrderRequest>;
 
