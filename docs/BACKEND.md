@@ -109,7 +109,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 | `POST /quote` `{ channel, pos_id?, items, promotions? }` → `{ lines, promotions, subtotal, shipping_fee, total, promptpay_id, promptpay_name }` | – | client, POS | S4 |
 | `POST /auth/google` `{ id_token }` | – | client | S6 |
 | `GET /me` → autofill fields | session | client | S6 |
-| `GET /address/postcode/:code` | – | client | 2.2 |
+| `GET /address/postcode/:code` → `[{ tambon, amphoe, province }]`, from the live `api/latest` files of [kongvut/thai-province-data](https://github.com/kongvut/thai-province-data) (MIT; DOPA names, Thailand Post postcodes), each answer cached at the edge for a day; `503 UNAVAILABLE` while the source is unreachable (D16) | – | client | 2.2 |
 | `POST /orders` `{ items, promotions?, recipient, shipping_address, slip_qr_data }` → `{ _id, status, payment_status, subtotal, shipping_fee, total, created_at }` | session | client | S5, S6 |
 | `GET/POST/PATCH/DELETE /admin/shops[/:id]` (`?archived=true` lists archived too) | admin | dashboard | S2 |
 | `GET/POST/PATCH/DELETE /admin/products[/:id]` (`?shop_id=`, `?archived=true`) | admin | dashboard | S2 |
