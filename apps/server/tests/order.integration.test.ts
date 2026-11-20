@@ -115,6 +115,12 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
     expect((await post(order(items, spaced.trim()))).status).toBe(201);
   });
 
+  it("refuses a blank slip, and one too long to draw again as a QR", async () => {
+    const items = [{ product_id: productId, variant_id: shirt, count: 1 }];
+    expect((await post(order(items, "   "))).status).toBe(400);
+    expect((await post(order(items, `${tag}-${"x".repeat(500)}`))).status).toBe(400);
+  });
+
   it("two orders for the last item: only one succeeds, the other gets OUT_OF_STOCK", async () => {
     const items = [{ product_id: productId, variant_id: last, count: 1 }];
     const results = await Promise.all([post(order(items)), post(order(items))]);

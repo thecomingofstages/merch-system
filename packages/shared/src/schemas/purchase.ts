@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Address, baht, count, Email, IsoDateTime, objectId, ThaiPhone } from "./common";
+import { Address, baht, count, Email, IsoDateTime, objectId, SlipQrData, ThaiPhone } from "./common";
 import { CartItem } from "./quote";
 
 export const VerifyMethod = z.enum(["QR", "MANUAL"]);
@@ -67,8 +67,7 @@ export const CreateOrderRequest = z.object({
   items: z.array(CartItem).min(1),
   recipient: Recipient,
   shipping_address: Address,
-  // Exactly as read, never trimmed: an admin scans it again with a banking app (slipQr.ts).
-  slip_qr_data: z.string().min(1),
+  slip_qr_data: SlipQrData,
 });
 export type CreateOrderRequest = z.input<typeof CreateOrderRequest>;
 

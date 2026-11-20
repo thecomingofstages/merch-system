@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { baht, count, IsoDateTime, objectId } from "./common";
+import { baht, count, IsoDateTime, objectId, SlipQrData } from "./common";
 import { VerifyMethod } from "./purchase";
 import { CartItem } from "./quote";
 
@@ -60,8 +60,7 @@ export const CreatePosSaleRequest = z
   .object({
     items: z.array(CartItem).min(1),
     verify_method: VerifyMethod,
-    // Exactly as read, never trimmed (see CreateOrderRequest).
-    slip_qr_data: z.string().min(1).optional(),
+    slip_qr_data: SlipQrData.optional(),
   })
   .refine(
     (data) =>
