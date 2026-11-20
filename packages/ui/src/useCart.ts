@@ -23,6 +23,8 @@ type CartState = {
 };
 
 const CartContext = createContext<CartState | null>(null);
+// Only needs to be unique within this tab's cart (crypto.randomUUID needs HTTPS, so not on a LAN dev server).
+let nextSetKey = 0;
 
 export function CartProvider({ children, initial = [] }: { children: ReactNode; initial?: CartLine[] }) {
   const [lines, setLines] = useState(initial);
@@ -35,7 +37,7 @@ export function CartProvider({ children, initial = [] }: { children: ReactNode; 
     add: (line: CartLine, max?: number) => setLines((ls) => addLine(ls, line, max)),
     setCount: (variantId: string, count: number, max?: number) => setLines((ls) => setLineCount(ls, variantId, count, max)),
     remove: (variantId: string) => setLines((ls) => removeLine(ls, variantId)),
-    addSet: (set: QuotePromotion) => setSets((ss) => [...ss, { ...set, key: crypto.randomUUID() }]),
+    addSet: (set: QuotePromotion) => setSets((ss) => [...ss, { ...set, key: String(++nextSetKey) }]),
     removeSet: (key: string) => setSets((ss) => ss.filter((s) => s.key !== key)),
     clear: () => {
       setLines([]);

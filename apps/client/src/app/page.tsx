@@ -31,6 +31,11 @@ export default function Home() {
     };
   }, []);
 
+  // Single lines and set pieces share the stock (D13); buy_limit counts single lines only.
+  const inSingles = (variantId: string) => cart.lines.find((line) => line.variant_id === variantId)?.count ?? 0;
+  const inSets = (variantId: string) =>
+    cart.sets.flatMap((s) => s.picks.flat()).reduce((sum, p) => sum + (p.variant_id === variantId ? p.count : 0), 0);
+
   function addToCart(variantId: string, count: number) {
     if (!activeProduct) return;
     const variant = activeProduct.variants.find((item) => item._id === variantId);
@@ -45,7 +50,7 @@ export default function Home() {
       unit_price: variant.price,
     };
 
-    cart.add(line, maxCount(variant.buy_limit, variant.online_stock));
+    cart.add(line, maxCount(variant.buy_limit, variant.online_stock - inSets(variant._id)));
     setActiveProduct(null);
   }
 
@@ -113,15 +118,15 @@ export default function Home() {
 
       <ProductPopup<CatalogVariant>
         product={activeProduct}
-        stockOf={(variant) => variant.online_stock}
-        inCart={(variantId) => cart.lines.find((line) => line.variant_id === variantId)?.count ?? 0}
+        stockOf={(variant) => variant.online_stock - inSets(variant._id)}
+        inCart={inSingles}
         onAdd={addToCart}
         onClose={() => setActiveProduct(null)}
       />
 
       <PromotionPopup
         promotion={activeSet}
-        stockOf={(variant) => variant.online_stock}
+        stockOf={(variant) => variant.online_stock - inSingles(variant._id) - inSets(variant._id)}
         onAdd={(set) => {
           cart.addSet(set);
           setActiveSet(null);

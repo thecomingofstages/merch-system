@@ -15,6 +15,7 @@ import {
 import type { Types } from "mongoose";
 import type { z } from "zod";
 import type { Models } from "../models";
+import { plainSet } from "./pricing.helper";
 import { ApiError } from "../utils/ApiError";
 
 type Id = Types.ObjectId;
@@ -178,12 +179,7 @@ export async function getCatalog(m: Models): Promise<CatalogResponse> {
   return {
     // Sets ignore visible_to_online (D13): a set may hold an item that isn't sold alone.
     promotions: catalogPromotions(
-      promotions.map((p) => ({
-        ...p,
-        _id: String(p._id),
-        image: p.image ?? null,
-        items: p.items.map((it) => ({ product_id: String(it.product_id), variant_ids: it.variant_ids.map(String), count: it.count })),
-      })),
+      promotions.map((p) => ({ ...plainSet(p), image: p.image ?? null })),
       products.map((p) => ({
         _id: String(p._id),
         name: p.name,

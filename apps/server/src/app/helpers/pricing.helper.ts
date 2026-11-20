@@ -30,6 +30,14 @@ export function mergeLines(items: CartItem[]): CartItem[] {
 
 const oid = (id: string) => new Types.ObjectId(id);
 
+type StoredSet = { _id: Types.ObjectId; items: { product_id: Types.ObjectId; variant_ids: Types.ObjectId[]; count: number }[] };
+/** A stored set with string ids, as the shared set rules (@merch/shared promotions.ts) take it. */
+export const plainSet = <S extends StoredSet>(p: S) => ({
+  ...p,
+  _id: String(p._id),
+  items: p.items.map((it) => ({ product_id: String(it.product_id), variant_ids: it.variant_ids.map(String), count: it.count })),
+});
+
 /**
  * Prices a cart for a channel:
  * - ONLINE: visible_to_online variants only, against online_stock, plus SHIPPING_FEE once.
@@ -101,12 +109,7 @@ export async function priceCart(
   try {
     sets = priceSets(
       entries,
-      promotions.map((p) => ({
-        _id: String(p._id),
-        name: p.name,
-        price: p.price,
-        items: p.items.map((it) => ({ product_id: String(it.product_id), variant_ids: it.variant_ids.map(String), count: it.count })),
-      })),
+      promotions.map(plainSet),
       // A POS sells a set only when every item's shop is one of its shops.
       products.filter(sold).map((p) => ({
         _id: String(p._id),

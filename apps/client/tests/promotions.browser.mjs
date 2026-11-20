@@ -33,6 +33,15 @@ export default async function checkPromotions(page) {
   await press(add);
 
   await page.getByText("ตะกร้า 3", { exact: true }).waitFor();
+
+  // Set pieces use up stock for single lines too: M has 10, the set took 1, so 9 single M at most.
+  await press(page.getByRole("button", { name: /เสื้อยืด/ }));
+  const product = page.getByRole("dialog", { name: /เสื้อยืด/ });
+  await product.getByRole("combobox").selectOption({ label: "M · ฿290" });
+  const more = product.getByRole("button", { name: "Increase", exact: true });
+  for (let i = 0; i < 20 && !(await more.isDisabled()); i++) await press(more);
+  assert(await product.locator("output").textContent() === "9", "Single M is capped by the stock left after the set");
+  await page.keyboard.press("Escape");
   await press(page.getByRole("button", { name: "ชำระเงิน", exact: true }));
   const summary = page.getByRole("region", { name: "Checkout", exact: true });
   await summary.getByText("Placeholder set", { exact: true }).waitFor();

@@ -34,7 +34,8 @@ const toRequest = (d: Draft): PromotionRequest => ({
   name: d.name,
   description: d.description,
   image: d.image.trim() || null,
-  price: Number(d.price),
+  // Number("") is 0: an empty price must fail, not make a free set.
+  price: d.price.trim() === "" ? NaN : Number(d.price),
   active: d.active,
   items: d.items.map((i) => ({ product_id: i.product_id, variant_ids: i.variant_ids, count: Number(i.count) })),
 });
