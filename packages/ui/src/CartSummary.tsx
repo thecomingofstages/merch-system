@@ -1,8 +1,10 @@
-import type { QuoteLine } from "@merch/shared";
+import type { QuoteLine, QuotePromotion } from "@merch/shared";
 import { Price } from "./Price";
 
 type CartSummaryProps = {
   lines: QuoteLine[];
+  /** Promotion sets (D13): the set's price, then the pieces chosen. */
+  sets?: QuotePromotion[];
   /** Left out on the POS, which charges no shipping. */
   shippingFee?: number;
   /** The total from `POST /quote`; left out while browsing. */
@@ -10,8 +12,8 @@ type CartSummaryProps = {
 };
 
 /** Lines grouped by product, as in POC screen C ("Prod. X – Var. A ×1 100 ฿"). */
-export function CartSummary({ lines, shippingFee, total }: CartSummaryProps) {
-  if (lines.length === 0) return <p>ยังไม่มีสินค้าในตะกร้า</p>;
+export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummaryProps) {
+  if (lines.length === 0 && sets.length === 0) return <p>ยังไม่มีสินค้าในตะกร้า</p>;
 
   const products = new Map<string, QuoteLine[]>();
   for (const line of lines) products.set(line.product_id, [...(products.get(line.product_id) ?? []), line]);
@@ -28,6 +30,21 @@ export function CartSummary({ lines, shippingFee, total }: CartSummaryProps) {
                   {line.variant_name} ×{line.count}
                 </span>
                 <Price amount={line.unit_price * line.count} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+      {sets.map((set, i) => (
+        <div key={i}>
+          <p className="flex justify-between gap-4 font-medium">
+            <span>{set.name}</span>
+            <Price amount={set.price} />
+          </p>
+          <ul className="text-small">
+            {set.picks.flat().map((pick) => (
+              <li key={`${pick.product_id}-${pick.variant_id}`}>
+                {pick.product_name} ({pick.variant_name}) ×{pick.count}
               </li>
             ))}
           </ul>

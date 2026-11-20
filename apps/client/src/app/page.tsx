@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CatalogProduct, CatalogResponse, CatalogVariant, CartLine } from "@merch/shared";
-import { Button, CartTicket, maxCount, ProductCard, ProductPopup, useCart } from "@merch/ui";
+import type { CatalogProduct, CatalogPromotion, CatalogResponse, CatalogVariant, CartLine } from "@merch/shared";
+import { Button, CartTicket, maxCount, ProductCard, ProductPopup, PromotionCard, PromotionPopup, useCart } from "@merch/ui";
 import { clientApi } from "../lib/api";
 
 export default function Home() {
@@ -11,6 +11,7 @@ export default function Home() {
   const cart = useCart();
   const [catalog, setCatalog] = useState<CatalogResponse | null>(null);
   const [activeProduct, setActiveProduct] = useState<CatalogProduct | null>(null);
+  const [activeSet, setActiveSet] = useState<CatalogPromotion | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,6 +59,25 @@ export default function Home() {
 
         {error ? <p role="alert">{error}</p> : null}
 
+        {catalog?.promotions.length ? (
+          <section aria-labelledby="promotions" className="mb-10">
+            {/* TODO(Thai copy for the promotions heading) */}
+            <h2 id="promotions" className="mb-4 font-display text-h2 text-ink">
+              Promotions
+            </h2>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
+              {catalog.promotions.map((promotion) => (
+                <PromotionCard
+                  key={promotion._id}
+                  promotion={promotion}
+                  stockOf={(variant) => variant.online_stock}
+                  onOpen={() => setActiveSet(promotion)}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         {catalog?.shops.map((shop) => (
           <section key={shop._id} aria-labelledby={`shop-${shop._id}`} className="mb-10">
             <h2 id={`shop-${shop._id}`} className="mb-4 font-display text-h2 text-ink">
@@ -97,6 +117,16 @@ export default function Home() {
         inCart={(variantId) => cart.lines.find((line) => line.variant_id === variantId)?.count ?? 0}
         onAdd={addToCart}
         onClose={() => setActiveProduct(null)}
+      />
+
+      <PromotionPopup
+        promotion={activeSet}
+        stockOf={(variant) => variant.online_stock}
+        onAdd={(set) => {
+          cart.addSet(set);
+          setActiveSet(null);
+        }}
+        onClose={() => setActiveSet(null)}
       />
     </>
   );

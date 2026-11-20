@@ -14,6 +14,7 @@ export type EmailOrder = {
   _id: unknown;
   recipient?: { first_name?: string | null; email?: string | null } | null;
   products: { product_name: string; variants: { variant_name: string; count: number; unit_price: number }[] }[];
+  promotions?: { promotion_name: string; price: number; variants: { product_name: string; variant_name: string; count: number }[] }[];
   original_price: number;
   shipping_fee: number;
   shipping_address?: { [K in keyof Address]?: string | null } | null;
@@ -51,6 +52,11 @@ function render(order: EmailOrder, intro: string, extra: [string, string][] = []
   const items = order.products.flatMap((p) =>
     p.variants.map((v) => `${p.product_name} (${v.variant_name}) × ${v.count}: ${baht(v.unit_price * v.count)}`),
   );
+  // A set (D13): its price, then the pieces chosen.
+  for (const s of order.promotions ?? []) {
+    const pieces = s.variants.map((v) => `${v.product_name} (${v.variant_name}) × ${v.count}`).join(", ");
+    items.push(`${s.promotion_name}: ${baht(s.price)} (${pieces})`);
+  }
   const rows: [string, string][] = [
     [emailCopy.subtotal, baht(order.original_price)],
     [emailCopy.shipping, baht(order.shipping_fee)],

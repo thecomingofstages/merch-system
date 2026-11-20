@@ -2,12 +2,12 @@
  * POS management (S8) and POS sales (S9). Every stock move is one transaction with its
  * stock_log entry (docs/BACKEND.md "Business rules" 8), so online plus every POS stays constant.
  */
-import type { CreatePosRequest, CreatePosSaleRequest, CreatePosSaleResponse, TransferRequest } from "@merch/shared";
+import { stockDemand, type CreatePosRequest, type CreatePosSaleRequest, type CreatePosSaleResponse, type TransferRequest } from "@merch/shared";
 import type { Connection, Types } from "mongoose";
 import type { Config } from "../config/init";
 import type { Models } from "../models";
 import { ApiError } from "../utils/ApiError";
-import { groupByProduct, isDuplicateSlip } from "./order.helper";
+import { groupByProduct, isDuplicateSlip, purchaseSets } from "./order.helper";
 import { priceCart } from "./pricing.helper";
 import { deductOnlineStock, deductPosStock, returnOnlineStock } from "./stock.helper";
 
@@ -46,7 +46,6 @@ export async function transfer(m: Models, db: Connection, id: Id, body: Transfer
           variant_id: body.variant_id,
           variant_name: variant.name,
           count: body.amount,
-          unit_price: variant.price,
         },
       ],
       session,
@@ -99,13 +98,14 @@ export async function createSale(
 ): Promise<CreatePosSaleResponse> {
   try {
     return await db.transaction(async (session) => {
-      const priced = await priceCart(m, { channel: "POS", pos_id: String(id), items: body.items }, config, session);
-      await deductPosStock(m, id, priced.lines, session);
+      const priced = await priceCart(m, { channel: "POS", pos_id: String(id), items: body.items, promotions: body.promotions }, config, session);
+      await deductPosStock(m, id, stockDemand(priced.lines, priced.promotions), session);
       const [sale] = await m.Purchase.create(
         [
           {
             users: null,
             products: groupByProduct(priced.lines),
+            promotions: purchaseSets(priced.promotions),
             original_price: priced.subtotal,
             shipping_fee: priced.shipping_fee,
             // Left out for MANUAL, never null: see the slip index in purchase.model.ts.

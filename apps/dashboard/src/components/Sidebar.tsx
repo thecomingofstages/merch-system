@@ -12,6 +12,7 @@ import { clearAdminToken } from "@/lib/api";
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
   { href: "/products", label: "Products" },
+  { href: "/promotions", label: "Promotions" },
   { href: "/orders", label: "Orders" },
   { href: "/pos", label: "POS" },
 ] as const;
