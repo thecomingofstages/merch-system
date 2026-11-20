@@ -65,6 +65,26 @@ describe.skipIf(!uri)("POST /admin/import (D19)", { timeout: 60_000 }, () => {
     expect(bucket.files.size).toBe(1);
   });
 
+  it("a dead image link refuses the import and leaves no copied image behind", async () => {
+    vi.stubGlobal("fetch", async (url: string) =>
+      url.includes("dead") ? new Response("gone", { status: 404 }) : new Response(Buffer.from("png"), { headers: { "Content-Type": "image/png" } }),
+    );
+    const files = bucket.files.size;
+    const res = await post([
+      {
+        shop_name: `${tag} E`,
+        products: [
+          { name: `${tag} first`, image: ["https://shop.example/ok.png"], variants: [variant("1")] },
+          { name: `${tag} second`, image: ["https://shop.example/dead.png"], variants: [variant("1")] },
+        ],
+      },
+    ]);
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toContain("dead.png");
+    expect(bucket.files.size).toBe(files);
+    expect(await m.Shop.countDocuments({ shop_name: `${tag} E` })).toBe(0);
+  });
+
   it("adds to a shop that already exists, without a second shop of that name", async () => {
     const res = await post([{ shop_name: `${tag} A`, products: [{ name: `${tag} sticker`, variants: [variant("Set")] }] }]);
     expect(res.body).toEqual({ shops_created: 0, products_created: 1, variants_created: 1 });

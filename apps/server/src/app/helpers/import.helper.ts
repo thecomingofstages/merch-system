@@ -34,27 +34,27 @@ export async function importCatalog(m: Models, db: Connection, store: ImageStore
     .map(([shop, name]) => `${shop} / ${name}`);
   if (clashes.length) throw ApiError.validation(`Already in the shop: ${clashes.join(", ")}`);
 
-  // Links are copied into R2 before anything is saved (D17); if saving fails, the copies go again.
+  // Links are copied into R2 before anything is saved (D17); if copying or saving fails, the copies go again.
   const copied: string[] = [];
   const keep = async (url: string | null) => {
     const stored = await storeOptional(store, url);
     if (stored && stored !== url) copied.push(stored);
     return stored ?? null;
   };
-  // One download at a time: a sheet may link many images, and the Worker shouldn't open them all at once.
-  type Product = Body["shops"][number]["products"][number];
-  const prepared: { shop_name: string; product: Product }[] = [];
-  for (const [shop_name, products] of shops) {
-    for (const p of products) {
-      const image: string[] = [];
-      for (const url of p.image) image.push((await keep(url))!);
-      const variants: Product["variants"] = [];
-      for (const v of p.variants) variants.push({ ...v, image: await keep(v.image) });
-      prepared.push({ shop_name, product: { ...p, image, variants } });
-    }
-  }
-
   try {
+    // One download at a time: a sheet may link many images, and the Worker shouldn't open them all at once.
+    type Product = Body["shops"][number]["products"][number];
+    const prepared: { shop_name: string; product: Product }[] = [];
+    for (const [shop_name, products] of shops) {
+      for (const p of products) {
+        const image: string[] = [];
+        for (const url of p.image) image.push((await keep(url))!);
+        const variants: Product["variants"] = [];
+        for (const v of p.variants) variants.push({ ...v, image: await keep(v.image) });
+        prepared.push({ shop_name, product: { ...p, image, variants } });
+      }
+    }
+
     return await db.transaction(async (session) => {
       const created = await m.Shop.create(
         [...shops.keys()].filter((name) => !shopIdOf.has(name)).map((shop_name) => ({ shop_name })),

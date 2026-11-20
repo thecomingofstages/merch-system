@@ -110,6 +110,14 @@ describe("parseCatalogSheet", () => {
     });
   });
 
+  it("treats a shop name repeated on each row like an empty one: the product still carries on", () => {
+    const { request, errors } = parseCatalogSheet(sheet(row("A", "Cap", "Red", "190"), row("A", "", "Black", "190"), row("B", "", "X", "1")));
+    expect(errors).toEqual([{ row: 4, message: "product is empty" }]);
+    expect(request).toBeNull();
+    const ok = parseCatalogSheet(sheet(row("A", "Cap", "Red", "190"), row("A", "", "Black", "190")));
+    expect(ok.request!.shops[0]!.products[0]!.variants.map((v) => v.name)).toEqual(["Red", "Black"]);
+  });
+
   it("gives each problem its sheet row, and no request", () => {
     const { request, errors } = parseCatalogSheet(
       sheet(

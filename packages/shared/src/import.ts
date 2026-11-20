@@ -57,9 +57,10 @@ export function parseCatalogSheet(rows: SheetRow[]): { request: ImportRequest | 
   for (const r of data) {
     const shopCell = cell(r, "shop");
     const productCell = cell(r, "product");
+    // A new shop starts its own products: an empty product cell only repeats within the same shop,
+    // whether the shop cell is empty (merged) or repeats the name.
+    product = productCell || (shopCell && shopCell !== shop ? "" : product);
     if (shopCell) shop = shopCell;
-    // A new shop starts its own products: an empty product cell only repeats within the same shop.
-    product = productCell || (shopCell ? "" : product);
     if (!shop || !product) {
       errors.push({ row: r.row, message: !shop ? "shop is empty" : "product is empty" });
       continue;

@@ -86,7 +86,10 @@ function ImportBody({ onClose, onDone }: { onClose: () => void; onDone: (notice:
         accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         label={COPY.importFile}
         disabled={saving}
-        onChange={(e) => void pick(e.target.files?.[0])}
+        onChange={(e) => {
+          void pick(e.target.files?.[0]);
+          e.target.value = ""; // the same file, fixed and picked again, still fires
+        }}
       />
       {reading ? <p className="text-small text-fg-2">{COPY.importReading}</p> : null}
 
