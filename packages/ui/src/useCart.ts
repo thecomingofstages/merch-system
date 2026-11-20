@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, createElement, useContext, useState, type ReactNode } from "react";
-import { addLine, cartSubtotal, removeLine, setLineCount, type CartLine } from "@merch/shared";
+import { addLine, cartSubtotal, removeLine, setLineCount, setPieces, type CartLine, type CartSet, type QuotePromotion } from "@merch/shared";
 
 /**
  * The shared cart state is mounted once for the lifetime of the app layout.
@@ -9,26 +9,40 @@ import { addLine, cartSubtotal, removeLine, setLineCount, type CartLine } from "
  */
 type CartState = {
   lines: CartLine[];
+  /** Promotion sets (D13), each at its own price. */
+  sets: CartSet[];
+  /** Pieces: single lines and every piece of every set. */
   count: number;
   subtotal: number;
   add: (line: CartLine, max?: number) => void;
   setCount: (variantId: string, count: number, max?: number) => void;
   remove: (variantId: string) => void;
+  addSet: (set: QuotePromotion) => void;
+  removeSet: (key: string) => void;
   clear: () => void;
 };
 
 const CartContext = createContext<CartState | null>(null);
+// Only needs to be unique within this tab's cart (crypto.randomUUID needs HTTPS, so not on a LAN dev server).
+let nextSetKey = 0;
 
 export function CartProvider({ children, initial = [] }: { children: ReactNode; initial?: CartLine[] }) {
   const [lines, setLines] = useState(initial);
+  const [sets, setSets] = useState<CartSet[]>([]);
   const cart: CartState = {
     lines,
-    count: lines.reduce((sum, l) => sum + l.count, 0),
-    subtotal: cartSubtotal(lines),
+    sets,
+    count: lines.reduce((sum, l) => sum + l.count, 0) + sets.reduce((sum, s) => sum + setPieces(s), 0),
+    subtotal: cartSubtotal(lines, sets),
     add: (line: CartLine, max?: number) => setLines((ls) => addLine(ls, line, max)),
     setCount: (variantId: string, count: number, max?: number) => setLines((ls) => setLineCount(ls, variantId, count, max)),
     remove: (variantId: string) => setLines((ls) => removeLine(ls, variantId)),
-    clear: () => setLines([]),
+    addSet: (set: QuotePromotion) => setSets((ss) => [...ss, { ...set, key: String(++nextSetKey) }]),
+    removeSet: (key: string) => setSets((ss) => ss.filter((s) => s.key !== key)),
+    clear: () => {
+      setLines([]);
+      setSets([]);
+    },
   };
 
   return createElement(CartContext.Provider, { value: cart }, children);

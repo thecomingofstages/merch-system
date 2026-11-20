@@ -2,7 +2,7 @@
  * Online orders (S5). One transaction: price from the database, take the stock, save
  * the order, save the buyer's details. If any step fails, nothing is kept (docs/BACKEND.md "Business rules").
  */
-import type { CreateOrderRequest, CreateOrderResponse, QuoteLine } from "@merch/shared";
+import { stockDemand, type CreateOrderRequest, type CreateOrderResponse, type QuoteLine, type QuotePromotion } from "@merch/shared";
 import type { Connection } from "mongoose";
 import type { z } from "zod";
 import type { Config } from "../config/init";
@@ -27,13 +27,14 @@ export async function createOrder(
     const { response, order } = await db.transaction(async (session) => {
       const user = await m.User.findById(userId).session(session);
       if (!user) throw ApiError.unauthorized("Please sign in");
-      const priced = await priceCart(m, { channel: "ONLINE", items: body.items }, config, session);
-      await deductOnlineStock(m, priced.lines, session);
+      const priced = await priceCart(m, { channel: "ONLINE", items: body.items, promotions: body.promotions }, config, session);
+      await deductOnlineStock(m, stockDemand(priced.lines, priced.promotions), session);
       const [order] = await m.Purchase.create(
         [
           {
             users: user._id,
             products: groupByProduct(priced.lines),
+            promotions: purchaseSets(priced.promotions),
             original_price: priced.subtotal,
             shipping_fee: priced.shipping_fee,
             // The email is the signed-in one, whatever was sent (the form's field is read-only).
@@ -81,10 +82,11 @@ async function saveRefundDue(m: Models, userId: string, body: Order, config: Pic
   try {
     const user = await m.User.findById(userId).lean();
     if (!user) return;
-    const priced = await priceCart(m, { channel: "ONLINE", items: body.items }, config, null, false);
+    const priced = await priceCart(m, { channel: "ONLINE", items: body.items, promotions: body.promotions }, config, null, false);
     await m.Purchase.create({
       users: user._id,
       products: groupByProduct(priced.lines),
+      promotions: purchaseSets(priced.promotions),
       original_price: priced.subtotal,
       shipping_fee: priced.shipping_fee,
       recipient: { ...body.recipient, email: user.email },
@@ -110,6 +112,21 @@ export function groupByProduct(lines: QuoteLine[]) {
   }
   return [...products.values()];
 }
+
+/** The order's `promotions` shape (D13): each set's price and the pieces chosen, names copied. */
+export const purchaseSets = (sets: QuotePromotion[]) =>
+  sets.map((s) => ({
+    promotions_id: s.promotion_id,
+    promotion_name: s.name,
+    price: s.price,
+    variants: s.picks.flat().map((p) => ({
+      products_id: p.product_id,
+      product_name: p.product_name,
+      variants_id: p.variant_id,
+      variant_name: p.variant_name,
+      count: p.count,
+    })),
+  }));
 
 export const isDuplicateSlip = (err: unknown) =>
   (err as { code?: number })?.code === 11000 && "slip_qr_data" in ((err as { keyPattern?: object }).keyPattern ?? {});

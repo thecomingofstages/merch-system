@@ -30,9 +30,9 @@ The draft `promotions` only supports **x% off** and **x ฿ off** a product or v
 | Shirt + cap for 500 ฿, card holder + umbrella for 399 ฿ | Fixed price for a set of different items |
 | 719 ฿ set **plus 3 free stickers** | Set + free gift |
 
-14. Should these bundle types be supported, or will promotions be limited to % / ฿ off from now on?
-15. In sticker ×4/×6 and the 719 ฿ set, does the buyer **choose** the designs, or are they random? In shirt + cap sets, does the buyer choose size and colour? Do free gifts come out of stock?
-16. Should the system apply a bundle automatically when the cart qualifies (e.g. 3 keychain bags → 310 ฿), or must the buyer pick the bundle?
+14. Should these bundle types be supported, or will promotions be limited to % / ฿ off from now on? **Answered (D13):** fixed-price sets ("buy these items, in these amounts, for this price").
+15. In sticker ×4/×6 and the 719 ฿ set, does the buyer **choose** the designs, or are they random? In shirt + cap sets, does the buyer choose size and colour? Do free gifts come out of stock? **Answered (D13):** the buyer chooses the variant of each piece; free gifts are items in the set and come out of stock.
+16. Should the system apply a bundle automatically when the cart qualifies (e.g. 3 keychain bags → 310 ฿), or must the buyer pick the bundle? **Answered (D13):** the buyer picks the set.
 17. Can promotions stack? Do they have start and end dates? Do they apply online, on-site, or both?
 18. With % discounts, how should fractions of a baht be rounded (down, up, nearest)? Per item or per order?
 19. Is the card holder + umbrella bundle (399 ฿) still active? It is in the story but not in the form.

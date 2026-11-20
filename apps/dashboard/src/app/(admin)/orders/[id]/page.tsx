@@ -8,7 +8,7 @@ import {
 import { Button, Dialog, Input, Price } from "@merch/ui";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useOrderCount } from "@/components/OrderCountProvider";
 import { PaymentCheck } from "@/components/PaymentCheck";
 import { ApiError, getOrder, updateOrderTracking } from "@/lib/api";
@@ -374,6 +374,27 @@ export default function OrderDetailPage() {
                     <Price amount={line.unit_price} />
                   </td>
                 </tr>
+              ))}
+              {/* Promotion sets (D13): the set's price on its own row, then the pieces chosen. */}
+              {order.promotions.map((set, i) => (
+                <Fragment key={`set-${i}`}>
+                  <tr className="bg-rigging/15">
+                    <td colSpan={3} className="px-4 py-2.5 font-semibold text-ink">
+                      {set.promotion_name}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-ink">
+                      <Price amount={set.price} />
+                    </td>
+                  </tr>
+                  {set.variants.map((v) => (
+                    <tr key={`set-${i}-${v.variants_id}`} className="bg-house">
+                      <td className="py-2.5 pr-4 pl-8 text-ink">{v.product_name}</td>
+                      <td className="px-4 py-2.5 text-ink">{v.variant_name}</td>
+                      <td className="px-4 py-2.5 font-mono tabular-nums text-ink">{v.count}</td>
+                      <td />
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
             </tbody>
           </table>

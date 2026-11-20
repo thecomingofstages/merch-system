@@ -12,6 +12,7 @@ import {
   mockQuoteForFixtures,
   PostcodeLookupResponse,
   QuoteResponse,
+  stockDemand,
   toCatalog,
   type Product,
   type QuoteRequest,
@@ -141,8 +142,8 @@ export async function createOrder(body: CreateOrderRequest): Promise<CreateOrder
       throw new ApiError(409, "DUPLICATE_SLIP", "This slip already paid another order");
     }
     try {
-      const priced = mockQuoteForFixtures({ channel: "ONLINE", items: parsed.data.items }, memoryClientProducts);
-      for (const line of priced.lines) {
+      const priced = mockQuoteForFixtures({ channel: "ONLINE", items: parsed.data.items, promotions: parsed.data.promotions }, memoryClientProducts);
+      for (const line of stockDemand(priced.lines, priced.promotions)) {
         const prod = memoryClientProducts.find((p) => p._id === line.product_id);
         const variant = prod?.variants.find((v) => v._id === line.variant_id);
         if (variant) {

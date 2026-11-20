@@ -5,6 +5,7 @@
 import type { Connection } from "mongoose";
 import { posSchema } from "./pos.model";
 import { productSchema } from "./product.model";
+import { promotionSchema } from "./promotion.model";
 import { purchaseSchema } from "./purchase.model";
 import { shopSchema } from "./shop.model";
 import { userSchema } from "./user.model";
@@ -16,6 +17,7 @@ export function models(db: Connection) {
     Product: db.model("Product", productSchema, "products"),
     Purchase: db.model("Purchase", purchaseSchema, "purchases"),
     Pos: db.model("Pos", posSchema, "pos"),
+    Promotion: db.model("Promotion", promotionSchema, "promotions"),
   };
 }
 

@@ -2,17 +2,17 @@
  * Stock changes that must never go negative (docs/BACKEND.md "Business rules" 3).
  * Call inside a transaction: if any line fails, the caller's whole transaction aborts.
  */
-import type { QuoteLine } from "@merch/shared";
+import type { SetPick } from "@merch/shared";
 import type { ClientSession, Types } from "mongoose";
 import type { Models } from "../models";
 import { ApiError } from "../utils/ApiError";
 
 /**
- * Takes each line's count off online_stock with a conditional $inc. The filter only
+ * Takes each line's count off online_stock (pass stockDemand: single lines and set pieces added up) with a conditional $inc. The filter only
  * matches while online_stock covers the count, so two orders for the last item can't
  * both succeed. Checks modifiedCount: the product still matches when the variant is short.
  */
-export async function deductOnlineStock(m: Models, lines: QuoteLine[], session: ClientSession) {
+export async function deductOnlineStock(m: Models, lines: SetPick[], session: ClientSession) {
   for (const line of lines) {
     const res = await m.Product.updateOne(
       { _id: line.product_id, archived: false },
@@ -29,7 +29,7 @@ export async function deductOnlineStock(m: Models, lines: QuoteLine[], session: 
 }
 
 /** Takes each line's count off this POS's pos_stock, on the same terms as deductOnlineStock. */
-export async function deductPosStock(m: Models, posId: Types.ObjectId, lines: QuoteLine[], session: ClientSession) {
+export async function deductPosStock(m: Models, posId: Types.ObjectId, lines: SetPick[], session: ClientSession) {
   for (const line of lines) {
     const res = await m.Pos.updateOne(
       { _id: posId },
