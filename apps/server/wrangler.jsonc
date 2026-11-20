@@ -5,12 +5,10 @@
   "compatibility_date": "2026-10-15",
   // Listed explicitly even where the compatibility date turns it on (docs/BACKEND.md "Hosting").
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true },
+  "observability": { "enabled": true }
 
-  // Vars: not secret. Secrets (MONGODB_URI, ADMIN_ACCESS_TOKEN, ...) go in with
-  // `npx wrangler secret put <NAME>`, and in .dev.vars for local runs (see .dev.vars.example).
-  "vars": {
-    // Comma-separated origins of the client and the dashboard. TODO(domains): production origins (I6).
-    "CORS_ORIGINS": "http://localhost:3000,http://localhost:3001"
-  }
+  // No "vars" here on purpose: every deploy replaces the dashboard's vars with this file's.
+  // Every setting, CORS_ORIGINS and SHIPPING_FEE included, is a Secret in the Cloudflare
+  // dashboard (or `npx wrangler secret put <NAME>`), and in .dev.vars for local runs
+  // (see .dev.vars.example and docs/BACKEND.md "Environment").
 }
