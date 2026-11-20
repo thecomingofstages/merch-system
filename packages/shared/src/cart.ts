@@ -4,13 +4,24 @@
  * the amount to pay always comes from POST /quote (docs/FRONTEND.md "Rules every app follows").
  */
 import type { CatalogResponse } from "./schemas/catalog";
-import type { QuoteLine } from "./schemas/quote";
+import type { QuoteLine, QuotePromotion } from "./schemas/quote";
 
 export type CartLine = QuoteLine;
+/** A promotion set in the cart (D13). `key` tells apart two copies of one set with different picks. */
+export type CartSet = QuotePromotion & { key: string };
 
-export function cartSubtotal(lines: CartLine[]): number {
-  return lines.reduce((sum, line) => sum + line.unit_price * line.count, 0);
+export function cartSubtotal(lines: CartLine[], sets: Pick<CartSet, "price">[] = []): number {
+  return lines.reduce((sum, line) => sum + line.unit_price * line.count, 0) + sets.reduce((sum, s) => sum + s.price, 0);
 }
+
+/** Pieces in a set: the cart counts items, not sets. */
+export const setPieces = (set: Pick<CartSet, "picks">) => set.picks.flat().reduce((sum, p) => sum + p.count, 0);
+
+/** The request shape of a cart set (POST /quote, /orders, /pos/:id/sales). */
+export const setRequest = ({ promotion_id, picks }: CartSet) => ({
+  promotion_id,
+  picks: picks.map((item) => item.map(({ variant_id, count }) => ({ variant_id, count }))),
+});
 
 /**
  * Adds `line.count` of a variant. A variant already in the cart is merged into its line;
@@ -50,5 +61,24 @@ export function stockShortfalls(lines: CartLine[], catalog: CatalogResponse): { 
     const variant = variants.find((v) => v._id === line.variant_id);
     const available = !variant || variant.sold_out ? 0 : variant.online_stock;
     return line.count > available ? [{ line, available }] : [];
+  });
+}
+
+/**
+ * Cart sets the latest GET /catalog can no longer fill: the set is gone or switched off,
+ * or a chosen variant is gone or has less stock than was picked. The checkout drops them whole.
+ */
+export function unavailableSets(sets: CartSet[], catalog: CatalogResponse): CartSet[] {
+  return sets.filter((set) => {
+    const promotion = catalog.promotions.find((p) => p._id === set.promotion_id);
+    return (
+      !promotion ||
+      set.picks.some((picks, i) =>
+        picks.some((pick) => {
+          const variant = promotion.items[i]?.variants.find((v) => v._id === pick.variant_id);
+          return !variant || variant.online_stock < pick.count;
+        }),
+      )
+    );
   });
 }

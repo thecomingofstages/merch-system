@@ -58,7 +58,8 @@ Secrets are set with `npx wrangler secret put` in production and in `.dev.vars` 
 |---|---|
 | `MONGODB_URI` | The merch database on the new cluster |
 | `ADMIN_ACCESS_TOKEN` | Dashboard and POS (D6) |
-| `PROMPTPAY_ID` | Shared by all shops; sent to the apps that build the QR |
+| `PROMPTPAY_ID` | Shared by all shops; sent with each quote for the QR |
+| `PROMPTPAY_NAME` | The name on that PromptPay account; sent with each quote and shown under the QR (D14) |
 | `GOOGLE_CLIENT_ID` | Verifying ID tokens |
 | `SESSION_SECRET` | Signing the session cookie |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Emails |
@@ -73,11 +74,12 @@ From the draft schema plus the additions on POC page 4. D1 (proposed by BE): a s
 | `users` | The draft schema (the enrollment site's fields), in the merch database, minus `password_hash` (merch only signs in with Google). A user is created on first Google sign-in; fields the merch site doesn't collect stay empty. Add `line_id: string \| null`. `address` is **replaced** by `{ details, tambon, amphoe, province, postal_code }` (the collection starts empty, D4, so nothing to migrate). Only the buyer's own submissions change these fields. |
 | `shops` | `shop_name`, `archived` |
 | `products` | `shop_id`, `name`, `description`, `image: string[]`, `archived`, `variants: [{ _id, name, price, image, online_stock, buy_limit, visible_to_online, archived }]` |
-| `purchases` | `users: ObjectId \| null` (null = POS), `products: [{ products_id, product_name, variants: [{ variants_id, variant_name, count, unit_price }] }]`, `original_price`, `shipping_fee`, `recipient: { first_name, last_name, nickname, phone, line_id, email }`, `shipping_address`, `slip_qr_data?: string` (exactly as the QR was read, never trimmed, so an admin can scan it again; unique, partial: only string values; **left out**, never `null`, when there is no slip), `verify_method: 'QR' \| 'MANUAL'`, `payment_status: 'PENDING_CHECK' \| 'VERIFIED' \| 'REJECTED' \| 'REFUND_DUE'`, `verified_at`, `pos_id: ObjectId \| null`, `tracking_provider`, `tracking_id`, `status: 'ORDERED' \| 'SHIPPING' \| 'ARRIVED'`, `created_at` |
+| `purchases` | `users: ObjectId \| null` (null = POS), `products: [{ products_id, product_name, variants: [{ variants_id, variant_name, count, unit_price }] }]`, `promotions: [{ promotions_id, promotion_name, price, variants: [{ products_id, product_name, variants_id, variant_name, count }] }]` (sets bought, D13), `original_price`, `shipping_fee`, `recipient: { first_name, last_name, nickname, phone, line_id, email }`, `shipping_address`, `slip_qr_data?: string` (exactly as the QR was read, never trimmed, so an admin can scan it again; unique, partial: only string values; **left out**, never `null`, when there is no slip), `verify_method: 'QR' \| 'MANUAL'`, `payment_status: 'PENDING_CHECK' \| 'VERIFIED' \| 'REJECTED' \| 'REFUND_DUE'`, `verified_at`, `pos_id: ObjectId \| null`, `tracking_provider`, `tracking_id`, `status: 'ORDERED' \| 'SHIPPING' \| 'ARRIVED'`, `created_at` |
 | `pos` | `name`, `shop_ids: ObjectId[]`, `products: [{ product_id, variants: [{ variants_id, pos_stock }] }]`, `stock_log: [{ product_id, variant_id, amount, direction: 'TO_POS' \| 'TO_MAIN', at }]` |
+| `promotions` | `name`, `description`, `image: string \| null`, `price` (the set's one price), `active` (on/off switch), `archived`, `items: [{ product_id, variant_ids: ObjectId[], count }]`. Items can come from any shop; a buyer mixes an item's `variant_ids` freely (D13). |
 
 - `unit_price`, `product_name` and `variant_name` per line are copied at order time, so a later price change, rename or archive can't alter old orders. `original_price` stays as the order subtotal.
-- **Nothing that orders or stock point at is deleted.** `DELETE` on a shop, product or variant sets `archived: true`, which hides it from the catalog and the POS. It answers `409 IN_USE` while the item still has `online_stock` or any POS holds stock of it.
+- **Nothing that orders or stock point at is deleted. Deleting a product (or a shop, which deletes its products) archives every set holding it; deleting a variant removes it from the sets, and archives a set whose item has no variant left (D13). The dashboard lists those sets before the admin confirms.** `DELETE` on a shop, product or variant sets `archived: true`, which hides it from the catalog and the POS. It answers `409 IN_USE` while the item still has `online_stock` or any POS holds stock of it.
 - **Why the slip index is partial, not sparse:** a sparse index still indexes an explicit `null`, so the second manual POS sale would hit the unique index. The index is `{ unique: true, partialFilterExpression: { slip_qr_data: { $type: "string" } } }`.
 
 ## Business rules (the reason this system exists)
@@ -94,6 +96,7 @@ From the draft schema plus the additions on POC page 4. D1 (proposed by BE): a s
 8. **Stock moves are logged.** Transfer to POS and end-of-sale returns write `stock_log` entries in the same transaction as the stock change.
 9. **Orders keep a copy** of recipient and address at order time, so later edits to the user record don't change past orders.
 10. **A paid order that runs out of stock is kept as `REFUND_DUE`** (D11). The buyer pays before ordering, so when `POST /orders` fails with `OUT_OF_STOCK` the server saves the attempt, stock untouched, with `payment_status: REFUND_DUE`, then still answers `409 OUT_OF_STOCK`. It holds the slip, so that slip can't pay another order. The admin refunds the buyer over LINE, outside the system, then sets `REJECTED`, which returns no stock (none was taken).
+11. **Promotion sets** (D13) cost their own `price`, whatever their pieces cost. `priceCart` checks each set in the cart (`priceSets` in `@merch/shared`): every item filled, each item's picks adding up to its `count`, only that item's live `variant_ids`. Sets ignore `buy_limit` and `visible_to_online` (a set may hold a gift not sold alone). Single lines and set pieces share the stock: rule 3 deducts their sum per variant (`stockDemand`). At a POS a set sells only when every item's shop is one of the POS's shops. Rejecting an order returns set pieces too.
 
 ## API
 
@@ -102,12 +105,12 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 | Method & path | Auth | Used by | Task |
 |---|---|---|---|
 | `GET /health` | – | ops | F3 |
-| `GET /catalog` → `{ shops: [{ _id, shop_name, products: [{ ..., variants: [{ ..., online_stock, buy_limit, sold_out }] }] }] }` | – | client | S3 |
-| `POST /quote` `{ channel, pos_id?, items }` → `{ lines, subtotal, shipping_fee, total, promptpay_id }` | – | client, POS | S4 |
+| `GET /catalog` → `{ promotions: [{ _id, name, description, image, price, sold_out, items: [{ product_id, product_name, count, variants: [{ _id, name, image, online_stock }] }] }], shops: [{ _id, shop_name, products: [{ ..., variants: [{ ..., online_stock, buy_limit, sold_out }] }] }] }` | – | client | S3 |
+| `POST /quote` `{ channel, pos_id?, items, promotions? }` → `{ lines, promotions, subtotal, shipping_fee, total, promptpay_id, promptpay_name }` | – | client, POS | S4 |
 | `POST /auth/google` `{ id_token }` | – | client | S6 |
 | `GET /me` → autofill fields | session | client | S6 |
 | `GET /address/postcode/:code` | – | client | 2.2 |
-| `POST /orders` `{ items, recipient, shipping_address, slip_qr_data }` → `{ _id, status, payment_status, subtotal, shipping_fee, total, created_at }` | session | client | S5, S6 |
+| `POST /orders` `{ items, promotions?, recipient, shipping_address, slip_qr_data }` → `{ _id, status, payment_status, subtotal, shipping_fee, total, created_at }` | session | client | S5, S6 |
 | `GET/POST/PATCH/DELETE /admin/shops[/:id]` (`?archived=true` lists archived too) | admin | dashboard | S2 |
 | `GET/POST/PATCH/DELETE /admin/products[/:id]` (`?shop_id=`, `?archived=true`) | admin | dashboard | S2 |
 | `POST/PATCH/DELETE /admin/products/:id/variants[/:vid]` | admin | dashboard | S2 |
@@ -121,6 +124,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 | `POST /admin/pos/:id/transfer` `{ product_id, variant_id, amount }` | admin | dashboard | S8 |
 | `POST /admin/pos/:id/end-sale` | admin | dashboard | S8 |
 | `POST /pos/:id/sales` | admin (D6) | POS | S9 |
+| `GET/POST /admin/promotions`, `PATCH/DELETE /admin/promotions/:id` (`DELETE` archives) | admin | dashboard | D13 |
 
 ## Shared zod schemas
 `packages/shared/src/schemas/` holds one file per collection (`common`, `shop`, `product`, `catalog` and `quote` exist, written by BE with S2–S4; F4 adds the rest) (`shop`, `product`, `purchase`, `pos`, `user`) plus request bodies (`QuoteRequest`, `CreateOrderRequest`, `CreatePosSaleRequest`, `TransferRequest`). Express validates each body with them, and the apps import the inferred types. FE2 writes the first version (F4) and BE reviews it. After that, a change to a schema is a change to the API contract, so BE and the FE leads review it.

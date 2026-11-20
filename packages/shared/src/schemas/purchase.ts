@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Address, baht, count, Email, IsoDateTime, objectId, SlipQrData, ThaiPhone } from "./common";
-import { CartItem } from "./quote";
+import { CartItem, PromotionCartItem } from "./quote";
 
 export const VerifyMethod = z.enum(["QR", "MANUAL"]);
 export type VerifyMethod = z.infer<typeof VerifyMethod>;
@@ -27,6 +27,17 @@ export const PurchaseLine = z.object({
 });
 export type PurchaseLine = z.infer<typeof PurchaseLine>;
 
+/** A set bought at its own price (D13), with copies of the names of the pieces chosen. */
+export const PurchasePromotion = z.object({
+  promotions_id: objectId,
+  promotion_name: z.string(),
+  price: baht,
+  variants: z.array(
+    z.object({ products_id: objectId, product_name: z.string(), variants_id: objectId, variant_name: z.string(), count }),
+  ),
+});
+export type PurchasePromotion = z.infer<typeof PurchasePromotion>;
+
 export const Recipient = z.object({
   first_name: z.string().trim().min(1),
   last_name: z.string().trim().min(1),
@@ -45,6 +56,8 @@ export const Purchase = z.object({
   _id: objectId,
   users: objectId.nullable(),
   products: z.array(PurchaseLine),
+  // Orders from before sets have no field.
+  promotions: z.array(PurchasePromotion).default([]),
   original_price: baht,
   shipping_fee: baht,
   recipient: Recipient.nullable(),
@@ -64,7 +77,8 @@ export type Purchase = z.infer<typeof Purchase>;
 
 /** POST /orders (S5): online order requires recipient, shipping_address, and slip_qr_data (D5). Never includes prices/totals. */
 export const CreateOrderRequest = z.object({
-  items: z.array(CartItem).min(1),
+  items: z.array(CartItem),
+  promotions: z.array(PromotionCartItem).optional(),
   recipient: Recipient,
   shipping_address: Address,
   slip_qr_data: SlipQrData,

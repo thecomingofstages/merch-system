@@ -29,7 +29,28 @@ export const CatalogShop = z.object({
 });
 export type CatalogShop = z.infer<typeof CatalogShop>;
 
+/** An active set and the live variants of each item, with their stock (D13). */
+export const CatalogPromotion = z.object({
+  _id: objectId,
+  name: z.string(),
+  description: z.string(),
+  image: z.string().nullable(),
+  price: baht,
+  /** True when some item can't be filled from the stock left. */
+  sold_out: z.boolean(),
+  items: z.array(
+    z.object({
+      product_id: objectId,
+      product_name: z.string(),
+      count: baht,
+      variants: z.array(CatalogVariant.pick({ _id: true, name: true, image: true, online_stock: true })),
+    }),
+  ),
+});
+export type CatalogPromotion = z.infer<typeof CatalogPromotion>;
+
 export const CatalogResponse = z.object({
   shops: z.array(CatalogShop),
+  promotions: z.array(CatalogPromotion),
 });
 export type CatalogResponse = z.infer<typeof CatalogResponse>;

@@ -64,7 +64,11 @@ export async function setPayment(m: Models, db: Connection, id: Id, payment_stat
       throw ApiError.conflict("NOT_PENDING", `This order is already ${exists.payment_status}`);
     }
     if (payment_status === "REJECTED" && before.payment_status === "PENDING_CHECK") {
-      await returnOnlineStock(m, order.products, session);
+      // Set pieces (D13) took stock too.
+      const setPieces = (order.promotions ?? []).flatMap((s) =>
+        s.variants.map((v) => ({ products_id: v.products_id, variants: [{ variants_id: v.variants_id, count: v.count }] })),
+      );
+      await returnOnlineStock(m, [...order.products, ...setPieces], session);
     }
     return order;
   });

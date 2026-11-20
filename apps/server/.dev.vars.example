@@ -8,6 +8,8 @@ ADMIN_ACCESS_TOKEN=
 
 # Used by S4
 PROMPTPAY_ID=
+# The name on that PromptPay account, shown under the QR
+PROMPTPAY_NAME=
 # Flat fee per online order, whole baht
 SHIPPING_FEE=
 # Used by 2.5 and S10 (emails)

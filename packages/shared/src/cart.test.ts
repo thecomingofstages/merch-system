@@ -55,6 +55,7 @@ describe("stockShortfalls", () => {
     _id, name: _id, price: 100, image: null, online_stock, buy_limit: 0, sold_out,
   });
   const catalog = {
+    promotions: [],
     shops: [{ _id: "s", shop_name: "s", products: [{ _id: "p1", name: "p1", description: "", image: [], variants: [variant("a", 5), variant("b", 1), variant("c", 0)] }] }],
   };
 

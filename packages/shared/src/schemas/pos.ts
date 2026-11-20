@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { baht, count, IsoDateTime, objectId, SlipQrData } from "./common";
 import { VerifyMethod } from "./purchase";
-import { CartItem } from "./quote";
+import { CartItem, PromotionCartItem } from "./quote";
 
 export const StockLogDirection = z.enum(["TO_POS", "TO_MAIN"]);
 export type StockLogDirection = z.infer<typeof StockLogDirection>;
@@ -58,7 +58,8 @@ export type TransferRequest = z.infer<typeof TransferRequest>;
 /** POST /pos/:id/sales: QR requires slip_qr_data; MANUAL must omit slip_qr_data. */
 export const CreatePosSaleRequest = z
   .object({
-    items: z.array(CartItem).min(1),
+    items: z.array(CartItem),
+    promotions: z.array(PromotionCartItem).optional(),
     verify_method: VerifyMethod,
     slip_qr_data: SlipQrData.optional(),
   })

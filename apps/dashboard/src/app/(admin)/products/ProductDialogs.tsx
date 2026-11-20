@@ -1,18 +1,20 @@
 "use client";
 
 import {
+  deleteImpact,
   type Product,
   ProductPatch,
   ProductRequest,
   type Shop,
   ShopRequest,
   StockRequest,
+  type Promotion,
   type Variant,
   VariantPatch,
   VariantRequest,
 } from "@merch/shared";
 import { Button, Dialog, Input } from "@merch/ui";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   addStock,
   archiveProduct,
@@ -21,6 +23,8 @@ import {
   createProduct,
   createShop,
   createVariant,
+  listProducts,
+  listPromotions,
   updateProduct,
   updateShop,
   updateVariant,
@@ -1169,6 +1173,29 @@ function ArchiveConfirmBody({
 }: DialogCommonProps & { target: ArchiveTarget }) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // The promotion sets this delete takes with it (D13); null while loading. Archive waits for it.
+  const [impact, setImpact] = useState<{ deleted: Promotion[]; shrunk: Promotion[] } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const sets = await listPromotions();
+      const productIds =
+        target.kind === "shop"
+          ? (await listProducts({ shopId: target.shop._id })).map((p) => p._id)
+          : target.kind === "product"
+            ? [target.product._id]
+            : null;
+      const result = deleteImpact(sets, productIds ? { productIds } : { variantId: target.kind === "variant" ? target.variant._id : "" });
+      if (!cancelled) setImpact(result);
+    })().catch((err: unknown) => {
+      const msg = mapDashboardError(err, onRedirect);
+      if (!cancelled && msg) setApiError(msg);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [target, onRedirect]);
 
   const itemName =
     target.kind === "shop"
@@ -1203,6 +1230,27 @@ function ArchiveConfirmBody({
     <div className="flex flex-col gap-4">
       <p className="text-body font-semibold text-ink">{itemName}</p>
       <p className="text-small text-ink/80">{COPY.confirmArchiveBody}</p>
+      {impact === null && !apiError ? <p className="text-small text-ink/70">{COPY.checkingSets}</p> : null}
+      {impact?.deleted.length ? (
+        <div className="text-small text-curtain">
+          <p className="font-semibold">{COPY.setsDeletedWarning}</p>
+          <ul className="list-disc pl-5">
+            {impact.deleted.map((s) => (
+              <li key={s._id}>{s.name}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {impact?.shrunk.length ? (
+        <div className="text-small text-ink">
+          <p className="font-semibold">{COPY.setsShrunkWarning}</p>
+          <ul className="list-disc pl-5">
+            {impact.shrunk.map((s) => (
+              <li key={s._id}>{s.name}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {apiError ? (
         <p role="alert" className="text-small text-curtain">
@@ -1214,7 +1262,7 @@ function ArchiveConfirmBody({
         <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}>
           {COPY.cancel}
         </Button>
-        <Button type="button" variant="primary" disabled={submitting} onClick={handleConfirm}>
+        <Button type="button" variant="primary" disabled={submitting || impact === null} onClick={handleConfirm}>
           {submitting ? COPY.saving : COPY.archive}
         </Button>
       </div>
