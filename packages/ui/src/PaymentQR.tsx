@@ -21,7 +21,7 @@ type PaymentQRProps = {
  * to, so the buyer can check the name their banking app shows. Throws on a bad ID or amount.
  */
 export function PaymentQR({ promptpayId, name, amount }: PaymentQRProps) {
-  if (!isPromptpayId(promptpayId)) throw new Error("PromptPay ID must be a 10-digit phone number, a 13-digit ID or a 15-digit e-wallet ID");
+  if (!isPromptpayId(promptpayId)) throw new Error("PromptPay ID must be a 10-digit phone number or a 13-digit ID");
   if (!Number.isInteger(amount) || amount <= 0) throw new Error("amount must be a whole number of baht above 0");
   const id = promptpayId.replace(/[\s-]/g, "");
 
@@ -30,6 +30,8 @@ export function PaymentQR({ promptpayId, name, amount }: PaymentQRProps) {
       <img
         src={`https://promptpay.io/${id}/${amount}.png`}
         alt={LABEL}
+        // promptpay.io needs the ID and amount, not which checkout page asked.
+        referrerPolicy="no-referrer"
         width={240}
         height={240}
         className="h-auto w-full max-w-60 bg-house"
