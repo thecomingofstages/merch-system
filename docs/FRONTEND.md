@@ -59,7 +59,7 @@ The POS never calls `apps/server` directly. Its browser calls the POS's own Next
 ### apps/dashboard (FE2)
 | Screen | Notes | Task |
 |---|---|---|
-| Sign in | Token field; token kept in `sessionStorage` | 1.8 |
+| (no sign-in) | `ADMIN_ACCESS_TOKEN` is in the dashboard's server-side `.env`; the browser calls `/api/admin/*`, and the dashboard's own server adds the token and forwards to `apps/server` (D15). Tailscale is what keeps others out | 1.8 |
 | Dashboard | Empty state: "Sales overview comes later." | 1.8 |
 | Products | Shops → products → variants table; Add stock; Transfer to POS | 1.9, 2.9 |
 | Orders | List with new-order badge, detail, Submit for shipping | 2.8 |

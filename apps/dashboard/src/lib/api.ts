@@ -22,22 +22,6 @@ import {
 } from "@merch/shared";
 import { z } from "zod";
 
-const ADMIN_TOKEN_STORAGE_KEY = "admin_token";
-const adminTokenListeners = new Set<() => void>();
-
-function notifyAdminTokenListeners(): void {
-  for (const listener of adminTokenListeners) {
-    listener();
-  }
-}
-
-export function subscribeAdminToken(listener: () => void): () => void {
-  adminTokenListeners.add(listener);
-  return () => {
-    adminTokenListeners.delete(listener);
-  };
-}
-
 export type DashboardErrorCode = ErrorCode | "UNKNOWN" | "NETWORK";
 
 export class ApiError extends Error {
@@ -51,55 +35,9 @@ export class ApiError extends Error {
   }
 }
 
-export function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function setAdminToken(token: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
-  } catch {
-    // Ignore storage errors in restricted environments.
-  }
-  notifyAdminTokenListeners();
-}
-
-export function clearAdminToken(): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
-  } catch {
-    // Ignore storage errors in restricted environments.
-  }
-  notifyAdminTokenListeners();
-}
-
-export function hasAdminToken(): boolean {
-  const token = getAdminToken();
-  return typeof token === "string" && token.length > 0;
-}
-
 // NEXT_PUBLIC_ values are baked in at build time, so changing the flag requires a rebuild.
 export function isFixturesMode(): boolean {
   return process.env.NEXT_PUBLIC_USE_FIXTURES === "true";
-}
-
-function getBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
-}
-
-function requireAdminToken(): string {
-  const token = getAdminToken();
-  if (!token) {
-    throw new ApiError(401, "UNAUTHORIZED", "Missing admin access token");
-  }
-  return token;
 }
 
 const shopListSchema = z.array(Shop);
@@ -122,18 +60,17 @@ export function resetDashboardFixtures(): void {
   memoryOrders = structuredClone(fixtureOrders);
 }
 
+/** Calls apps/server through this dashboard's own /api route, which adds ADMIN_ACCESS_TOKEN (D15). */
 async function requestAdmin<S extends z.ZodTypeAny>(
   endpoint: string,
   init: RequestInit,
   schema: S,
 ): Promise<z.output<S>> {
-  const token = requireAdminToken();
   let res: Response;
   try {
-    res = await fetch(`${getBaseUrl()}${endpoint}`, {
+    res = await fetch(`/api${endpoint}`, {
       ...init,
       headers: {
-        Authorization: `Bearer ${token}`,
         ...(init.body ? { "Content-Type": "application/json" } : {}),
         ...init.headers,
       },
@@ -174,13 +111,8 @@ async function requestAdmin<S extends z.ZodTypeAny>(
 
 // Shops
 
-export async function verifyAdminToken(): Promise<void> {
-  await listShops();
-}
-
 export async function listShops(options?: { includeArchived?: boolean }): Promise<Shop[]> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const includeArchived = Boolean(options?.includeArchived);
     return structuredClone(
       memoryShops.filter((s) => includeArchived || !s.archived),
@@ -192,7 +124,6 @@ export async function listShops(options?: { includeArchived?: boolean }): Promis
 
 export async function createShop(body: ShopRequest): Promise<Shop> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsed = ShopRequest.parse(body);
     const created: Shop = {
       _id: makeFixtureId("65"),
@@ -207,7 +138,6 @@ export async function createShop(body: ShopRequest): Promise<Shop> {
 
 export async function updateShop(id: string, body: ShopRequest): Promise<Shop> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsed = ShopRequest.parse(body);
     const shop = memoryShops.find((s) => s._id === id && !s.archived);
     if (!shop) throw new ApiError(404, "NOT_FOUND", "Shop not found");
@@ -219,7 +149,6 @@ export async function updateShop(id: string, body: ShopRequest): Promise<Shop> {
 
 export async function archiveShop(id: string): Promise<void> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const shop = memoryShops.find((s) => s._id === id && !s.archived);
     if (!shop) throw new ApiError(404, "NOT_FOUND", "Shop not found");
     const shopProducts = memoryProducts.filter((p) => p.shop_id === id && !p.archived);
@@ -243,7 +172,6 @@ export async function archiveShop(id: string): Promise<void> {
 
 export async function listProducts(options?: { shopId?: string; includeArchived?: boolean }): Promise<Product[]> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const includeArchived = Boolean(options?.includeArchived);
     return structuredClone(
       memoryProducts.filter(
@@ -262,7 +190,6 @@ export async function listProducts(options?: { shopId?: string; includeArchived?
 
 export async function getProduct(id: string): Promise<Product> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const product = memoryProducts.find((p) => p._id === id);
     if (!product) throw new ApiError(404, "NOT_FOUND", "Product not found");
     return structuredClone(product);
@@ -272,7 +199,6 @@ export async function getProduct(id: string): Promise<Product> {
 
 export async function createProduct(body: ProductRequest): Promise<Product> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsed = ProductRequest.parse(body);
     const shop = memoryShops.find((s) => s._id === parsed.shop_id && !s.archived);
     if (!shop) throw new ApiError(400, "VALIDATION", "shop_id: no such shop");
@@ -302,7 +228,6 @@ export async function createProduct(body: ProductRequest): Promise<Product> {
 
 export async function updateProduct(id: string, body: ProductPatch): Promise<Product> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsed = ProductPatch.parse(body);
     const product = memoryProducts.find((p) => p._id === id && !p.archived);
     if (!product) throw new ApiError(404, "NOT_FOUND", "Product not found");
@@ -325,7 +250,6 @@ export async function updateProduct(id: string, body: ProductPatch): Promise<Pro
 
 export async function archiveProduct(id: string): Promise<void> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const product = memoryProducts.find((p) => p._id === id && !p.archived);
     if (!product) throw new ApiError(404, "NOT_FOUND", "Product not found");
     if (product.variants.some((v) => v.online_stock > 0)) {
@@ -342,7 +266,6 @@ export async function archiveProduct(id: string): Promise<void> {
 
 export async function createVariant(productId: string, body: VariantRequest): Promise<Product> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsed = VariantRequest.parse(body);
     const product = memoryProducts.find((p) => p._id === productId && !p.archived);
     if (!product) throw new ApiError(404, "NOT_FOUND", "Product not found");
@@ -367,7 +290,6 @@ export async function createVariant(productId: string, body: VariantRequest): Pr
 
 export async function updateVariant(productId: string, variantId: string, body: VariantPatch): Promise<Product> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsed = VariantPatch.parse(body);
     const product = memoryProducts.find((p) => p._id === productId && !p.archived);
     const variant = product?.variants.find((v) => v._id === variantId && !v.archived);
@@ -388,7 +310,6 @@ export async function updateVariant(productId: string, variantId: string, body: 
 
 export async function archiveVariant(productId: string, variantId: string): Promise<void> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const product = memoryProducts.find((p) => p._id === productId && !p.archived);
     const variant = product?.variants.find((v) => v._id === variantId && !v.archived);
     if (!product || !variant) throw new ApiError(404, "NOT_FOUND", "Variant not found");
@@ -407,7 +328,6 @@ export async function archiveVariant(productId: string, variantId: string): Prom
 
 export async function addStock(productId: string, variantId: string, body: StockRequest): Promise<Product> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsed = StockRequest.parse(body);
     const product = memoryProducts.find((p) => p._id === productId && !p.archived);
     const variant = product?.variants.find((v) => v._id === variantId && !v.archived);
@@ -440,7 +360,6 @@ function matchesOnlineOrdersFilter(order: Purchase, q?: AdminOrdersCountQuery): 
 
 export async function listOrders(query?: AdminOrdersQuery): Promise<AdminOrdersResponse> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsedQuery = query ? AdminOrdersQuery.parse(query) : {};
     const page = parsedQuery.page ?? 1;
     const filtered = memoryOrders
@@ -469,7 +388,6 @@ export async function listOrders(query?: AdminOrdersQuery): Promise<AdminOrdersR
 
 export async function countOrders(query?: AdminOrdersCountQuery): Promise<AdminOrdersCountResponse> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsedQuery = query ? AdminOrdersCountQuery.parse(query) : {};
     const count = memoryOrders.filter((o) => matchesOnlineOrdersFilter(o, parsedQuery)).length;
     return { count };
@@ -487,7 +405,6 @@ export async function countOrders(query?: AdminOrdersCountQuery): Promise<AdminO
 
 export async function getOrder(id: string): Promise<Purchase> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const order = memoryOrders.find((o) => o._id === id);
     if (!order) throw new ApiError(404, "NOT_FOUND", "Order not found");
     return structuredClone(order);
@@ -500,7 +417,6 @@ export async function updateOrderPayment(
   body: UpdateOrderPaymentRequest,
 ): Promise<Purchase> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsed = UpdateOrderPaymentRequest.parse(body);
     const order = memoryOrders.find((o) => o._id === id);
     if (!order) throw new ApiError(404, "NOT_FOUND", "Order not found");
@@ -541,7 +457,6 @@ export async function updateOrderTracking(
   body: UpdateOrderTrackingRequest,
 ): Promise<Purchase> {
   if (isFixturesMode()) {
-    requireAdminToken();
     const parsed = UpdateOrderTrackingRequest.parse(body);
     const order = memoryOrders.find((o) => o._id === id);
     if (!order) throw new ApiError(404, "NOT_FOUND", "Order not found");
@@ -565,13 +480,7 @@ export async function updateOrderTracking(
 // TODO(2.9): Admin POS management endpoints (list, create, get, transfer stock, end sale).
 
 export const dashboardApi = {
-  getAdminToken,
-  setAdminToken,
-  clearAdminToken,
-  hasAdminToken,
-  subscribeAdminToken,
   isFixturesMode,
-  verifyAdminToken,
   resetDashboardFixtures,
   listShops,
   createShop,

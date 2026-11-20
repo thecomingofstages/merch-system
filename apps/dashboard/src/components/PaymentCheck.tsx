@@ -19,11 +19,9 @@ import {
 export function PaymentCheck({
   order,
   onOrderUpdated,
-  onRedirect,
 }: {
   order: Purchase;
   onOrderUpdated: (notice?: string) => Promise<void>;
-  onRedirect: (path: string) => void;
 }) {
   const [confirmAction, setConfirmAction] = useState<VerifyPaymentStatus | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -71,7 +69,7 @@ export function PaymentCheck({
         await onOrderUpdated(COPY.orderChangedNotice);
         return;
       }
-      const msg = mapOrderError(err, onRedirect);
+      const msg = mapOrderError(err);
       if (msg) setError(msg);
     } finally {
       setSubmitting(false);

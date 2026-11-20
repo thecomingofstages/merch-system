@@ -1,6 +1,5 @@
 import type { Purchase } from "@merch/shared";
 import { COPY } from "@/app/(admin)/orders/copy";
-import { handleUnauthorized } from "@/components/AuthGuard";
 import { ApiError } from "@/lib/api";
 
 /**
@@ -51,17 +50,13 @@ export function orderItemCount(order: Pick<Purchase, "products">): number {
 }
 
 /**
- * Maps ApiError from order endpoints into user-facing copy, redirecting to /sign-in on 401.
+ * Maps ApiError from order endpoints into user-facing copy.
  */
-export function mapOrderError(
-  err: unknown,
-  onRedirect: (path: string) => void,
-): string | null {
-  if (handleUnauthorized(err, onRedirect)) {
-    return null;
-  }
+export function mapOrderError(err: unknown): string | null {
   if (err instanceof ApiError) {
     switch (err.code) {
+      case "UNAUTHORIZED":
+        return COPY.tokenRejected;
       case "NOT_VERIFIED":
         return COPY.notVerifiedError;
       case "NOT_FOUND":

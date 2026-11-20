@@ -1,5 +1,6 @@
 // TODO(Thai copy for Products page): POC and docs/BACKEND.md wording until the team picks the Thai
 export const COPY = {
+  tokenRejected: "The dashboard's ADMIN_ACCESS_TOKEN (in its .env) doesn't match the server's.",
   pageTitle: "Products",
   showArchived: "Show archived",
   archivedBadge: "Archived",

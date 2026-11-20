@@ -3,8 +3,7 @@
 import type { OrderStatus, PaymentStatus, Purchase } from "@merch/shared";
 import { Button, Price, Select } from "@merch/ui";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useOrderCount } from "@/components/OrderCountProvider";
 import { listOrders } from "@/lib/api";
 import {
@@ -29,7 +28,6 @@ function StatusLabel({ text }: { text: string }) {
 }
 
 export default function OrdersPage() {
-  const router = useRouter();
   const { count: newOrderCount, refresh: refreshOrderCount } = useOrderCount();
 
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
@@ -43,12 +41,6 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const handleRedirect = useCallback(
-    (path: string) => {
-      router.replace(path);
-    },
-    [router],
-  );
 
   useEffect(() => {
     let active = true;
@@ -68,7 +60,7 @@ export default function OrdersPage() {
       })
       .catch((err) => {
         if (!active) return;
-        const msg = mapOrderError(err, handleRedirect);
+        const msg = mapOrderError(err);
         if (msg) setError(msg);
       })
       .finally(() => {
@@ -79,7 +71,7 @@ export default function OrdersPage() {
     return () => {
       active = false;
     };
-  }, [handleRedirect, page, paymentFilter, refreshOrderCount, reloadNonce, statusFilter]);
+  }, [page, paymentFilter, refreshOrderCount, reloadNonce, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const hasFilters = statusFilter !== "" || paymentFilter !== "";

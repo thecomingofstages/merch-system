@@ -31,7 +31,6 @@ import { ImagePreview, isValidHttpUrl, mapDashboardError, parseStrictInt } from 
 interface DialogCommonProps {
   onClose: () => void;
   onSuccess: (createdShopId?: string) => Promise<void>;
-  onRedirect: (path: string) => void;
 }
 
 // Shared helpers & subcomponents for Product / Variant forms
@@ -344,7 +343,6 @@ export function ShopFormDialog({
   shop,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & {
   open: boolean;
   shop: Shop | null;
@@ -359,7 +357,6 @@ export function ShopFormDialog({
             shop={shop}
             onClose={onClose}
             onSuccess={onSuccess}
-            onRedirect={onRedirect}
           />
         ) : null}
       </Dialog>
@@ -371,7 +368,6 @@ function ShopFormBody({
   shop,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & { shop: Shop | null }) {
   const [name, setName] = useState(shop?.shop_name ?? "");
   const [fieldError, setFieldError] = useState<string | undefined>(undefined);
@@ -402,7 +398,7 @@ function ShopFormBody({
       }
       onClose();
     } catch (err) {
-      const msg = mapDashboardError(err, onRedirect);
+      const msg = mapDashboardError(err);
       if (msg) setApiError(msg);
     } finally {
       setSubmitting(false);
@@ -447,7 +443,6 @@ export function CreateProductDialog({
   shopId,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & {
   open: boolean;
   shopId: string;
@@ -461,7 +456,6 @@ export function CreateProductDialog({
             shopId={shopId}
             onClose={onClose}
             onSuccess={onSuccess}
-            onRedirect={onRedirect}
           />
         ) : null}
       </Dialog>
@@ -473,7 +467,6 @@ function CreateProductFormBody({
   shopId,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & { shopId: string }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -591,7 +584,7 @@ function CreateProductFormBody({
       await onSuccess();
       onClose();
     } catch (err) {
-      const msg = mapDashboardError(err, onRedirect);
+      const msg = mapDashboardError(err);
       if (msg) setGeneralError(msg);
     } finally {
       setSubmitting(false);
@@ -715,7 +708,6 @@ export function EditProductDialog({
   product,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & {
   open: boolean;
   product: Product | null;
@@ -729,7 +721,6 @@ export function EditProductDialog({
             product={product}
             onClose={onClose}
             onSuccess={onSuccess}
-            onRedirect={onRedirect}
           />
         ) : null}
       </Dialog>
@@ -741,7 +732,6 @@ function EditProductFormBody({
   product,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & { product: Product }) {
   const [name, setName] = useState(product.name);
   const [description, setDescription] = useState(product.description);
@@ -794,7 +784,7 @@ function EditProductFormBody({
       await onSuccess();
       onClose();
     } catch (err) {
-      const msg = mapDashboardError(err, onRedirect);
+      const msg = mapDashboardError(err);
       if (msg) setGeneralError(msg);
     } finally {
       setSubmitting(false);
@@ -869,7 +859,6 @@ export function VariantFormDialog({
   variant,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & {
   open: boolean;
   productId: string;
@@ -886,7 +875,6 @@ export function VariantFormDialog({
             variant={variant}
             onClose={onClose}
             onSuccess={onSuccess}
-            onRedirect={onRedirect}
           />
         ) : null}
       </Dialog>
@@ -899,7 +887,6 @@ function VariantFormBody({
   variant,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & { productId: string; variant: Variant | null }) {
   const [fields, setFields] = useState<VariantFormFields>({
     name: variant?.name ?? "",
@@ -957,7 +944,7 @@ function VariantFormBody({
       await onSuccess();
       onClose();
     } catch (err) {
-      const msg = mapDashboardError(err, onRedirect);
+      const msg = mapDashboardError(err);
       if (msg) setApiError(msg);
     } finally {
       setSubmitting(false);
@@ -1001,7 +988,6 @@ export function AddStockDialog({
   variant,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & {
   open: boolean;
   productId: string;
@@ -1017,7 +1003,6 @@ export function AddStockDialog({
             variant={variant}
             onClose={onClose}
             onSuccess={onSuccess}
-            onRedirect={onRedirect}
           />
         ) : null}
       </Dialog>
@@ -1030,7 +1015,6 @@ function AddStockFormBody({
   variant,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & { productId: string; variant: Variant }) {
   const [amount, setAmount] = useState("");
   const [fieldError, setFieldError] = useState<string | undefined>(undefined);
@@ -1067,7 +1051,7 @@ function AddStockFormBody({
       await onSuccess();
       onClose();
     } catch (err) {
-      const msg = mapDashboardError(err, onRedirect);
+      const msg = mapDashboardError(err);
       if (msg) setApiError(msg);
     } finally {
       setSubmitting(false);
@@ -1133,7 +1117,6 @@ export function ArchiveConfirmDialog({
   target,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & {
   target: ArchiveTarget | null;
 }) {
@@ -1153,7 +1136,6 @@ export function ArchiveConfirmDialog({
             target={target}
             onClose={onClose}
             onSuccess={onSuccess}
-            onRedirect={onRedirect}
           />
         ) : null}
       </Dialog>
@@ -1165,7 +1147,6 @@ function ArchiveConfirmBody({
   target,
   onClose,
   onSuccess,
-  onRedirect,
 }: DialogCommonProps & { target: ArchiveTarget }) {
   const [apiError, setApiError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -1192,7 +1173,7 @@ function ArchiveConfirmBody({
       await onSuccess();
       onClose();
     } catch (err) {
-      const msg = mapDashboardError(err, onRedirect);
+      const msg = mapDashboardError(err);
       if (msg) setApiError(msg);
     } finally {
       setSubmitting(false);

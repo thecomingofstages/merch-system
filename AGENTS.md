@@ -67,4 +67,4 @@ CI (`.github/workflows/`) runs lint, type check, tests and the deploy build for 
 
 ### Secrets
 - Never commit `.env*` or `.dev.vars` files, tokens or database URIs. Use `.env.example` (apps) and `.dev.vars.example` (server) with empty values. Server secrets go in with `npx wrangler secret put`.
-- Never put a secret in a `NEXT_PUBLIC_` variable. The POS adds `ADMIN_ACCESS_TOKEN` on its own Next.js server, never in the browser.
+- Never put a secret in a `NEXT_PUBLIC_` variable. The POS and the dashboard add `ADMIN_ACCESS_TOKEN` on their own Next.js servers, never in the browser.
