@@ -15,3 +15,5 @@ out/
 
 # Kept on the project lead's PC only
 docs/research/
+
+.claude/
