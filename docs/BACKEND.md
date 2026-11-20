@@ -73,7 +73,7 @@ From the draft schema plus the additions on POC page 4. D1 (proposed by BE): a s
 | `users` | The draft schema (the enrollment site's fields), in the merch database, minus `password_hash` (merch only signs in with Google). A user is created on first Google sign-in; fields the merch site doesn't collect stay empty. Add `line_id: string \| null`. `address` is **replaced** by `{ details, tambon, amphoe, province, postal_code }` (the collection starts empty, D4, so nothing to migrate). Only the buyer's own submissions change these fields. |
 | `shops` | `shop_name`, `archived` |
 | `products` | `shop_id`, `name`, `description`, `image: string[]`, `archived`, `variants: [{ _id, name, price, image, online_stock, buy_limit, visible_to_online, archived }]` |
-| `purchases` | `users: ObjectId \| null` (null = POS), `products: [{ products_id, product_name, variants: [{ variants_id, variant_name, count, unit_price }] }]`, `original_price`, `shipping_fee`, `recipient: { first_name, last_name, nickname, phone, line_id, email }`, `shipping_address`, `slip_qr_data?: string` (unique, partial: only string values; **left out**, never `null`, when there is no slip), `verify_method: 'QR' \| 'MANUAL'`, `payment_status: 'PENDING_CHECK' \| 'VERIFIED' \| 'REJECTED'`, `verified_at`, `pos_id: ObjectId \| null`, `tracking_provider`, `tracking_id`, `status: 'ORDERED' \| 'SHIPPING' \| 'ARRIVED'`, `created_at` |
+| `purchases` | `users: ObjectId \| null` (null = POS), `products: [{ products_id, product_name, variants: [{ variants_id, variant_name, count, unit_price }] }]`, `original_price`, `shipping_fee`, `recipient: { first_name, last_name, nickname, phone, line_id, email }`, `shipping_address`, `slip_qr_data?: string` (unique, partial: only string values; **left out**, never `null`, when there is no slip), `verify_method: 'QR' \| 'MANUAL'`, `payment_status: 'PENDING_CHECK' \| 'VERIFIED' \| 'REJECTED' \| 'REFUND_DUE'`, `verified_at`, `pos_id: ObjectId \| null`, `tracking_provider`, `tracking_id`, `status: 'ORDERED' \| 'SHIPPING' \| 'ARRIVED'`, `created_at` |
 | `pos` | `name`, `shop_ids: ObjectId[]`, `products: [{ product_id, variants: [{ variants_id, pos_stock }] }]`, `stock_log: [{ product_id, variant_id, amount, direction: 'TO_POS' \| 'TO_MAIN', at }]` |
 
 - `unit_price`, `product_name` and `variant_name` per line are copied at order time, so a later price change, rename or archive can't alter old orders. `original_price` stays as the order subtotal.
@@ -93,6 +93,7 @@ From the draft schema plus the additions on POC page 4. D1 (proposed by BE): a s
 7. **`buy_limit`** (0 = no limit) is checked per order, on the merged lines. Whether it should apply per person is still open.
 8. **Stock moves are logged.** Transfer to POS and end-of-sale returns write `stock_log` entries in the same transaction as the stock change.
 9. **Orders keep a copy** of recipient and address at order time, so later edits to the user record don't change past orders.
+10. **A paid order that runs out of stock is kept as `REFUND_DUE`** (D11). The buyer pays before ordering, so when `POST /orders` fails with `OUT_OF_STOCK` the server saves the attempt, stock untouched, with `payment_status: REFUND_DUE`, then still answers `409 OUT_OF_STOCK`. It holds the slip, so that slip can't pay another order. The admin refunds the buyer over LINE, outside the system, then sets `REJECTED`, which returns no stock (none was taken).
 
 ## API
 
@@ -114,7 +115,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 | `GET /admin/orders?status=&payment_status=&page=`: online orders only, 20 per page; rejected orders only with `payment_status=REJECTED` | admin | dashboard | S7 |
 | `GET /admin/orders/count?status=ORDERED&payment_status=`: online orders only, not rejected ones unless asked | admin | dashboard | S7 |
 | `GET /admin/orders/:id` | admin | dashboard | S7 |
-| `PATCH /admin/orders/:id/payment` `{ payment_status: 'VERIFIED' \| 'REJECTED' }`: only from `PENDING_CHECK`, once (`409 NOT_PENDING`) | admin | dashboard | S7 |
+| `PATCH /admin/orders/:id/payment` `{ payment_status: 'VERIFIED' \| 'REJECTED' }`: only from `PENDING_CHECK`, once (`409 NOT_PENDING`); a `REFUND_DUE` order only to `REJECTED`, with no stock returned | admin | dashboard | S7 |
 | `PATCH /admin/orders/:id/tracking` `{ tracking_id }` (`409 NOT_VERIFIED` unless verified) | admin | dashboard | S7 |
 | `GET/POST /admin/pos`, `GET /admin/pos/:id` | admin | dashboard, POS | S8 |
 | `POST /admin/pos/:id/transfer` `{ product_id, variant_id, amount }` | admin | dashboard | S8 |

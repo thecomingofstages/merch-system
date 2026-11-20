@@ -64,8 +64,39 @@ export async function createOrder(
     await sendOrderConfirmation(order, config);
     return response;
   } catch (err) {
-    if (isDuplicateSlip(err)) throw ApiError.conflict("DUPLICATE_SLIP", "This slip has already been used for an order");
+    if (err instanceof ApiError && err.code === "OUT_OF_STOCK") await saveRefundDue(m, userId, body, config);
+    if (isDuplicateSlip(err)) throw duplicateSlip();
     throw err;
+  }
+}
+
+const duplicateSlip = () => ApiError.conflict("DUPLICATE_SLIP", "This slip has already been used for an order");
+
+/**
+ * The buyer pays before ordering (D5), so an order that loses the race for the last item
+ * has already been paid. Keep it, stock untouched, as REFUND_DUE: the admin refunds over
+ * LINE (D11). It holds the slip, so the same slip can't pay another order.
+ */
+async function saveRefundDue(m: Models, userId: string, body: Order, config: Pick<Config, "SHIPPING_FEE">) {
+  try {
+    const user = await m.User.findById(userId).lean();
+    if (!user) return;
+    const priced = await priceCart(m, { channel: "ONLINE", items: body.items }, config, null, false);
+    await m.Purchase.create({
+      users: user._id,
+      products: groupByProduct(priced.lines),
+      original_price: priced.subtotal,
+      shipping_fee: priced.shipping_fee,
+      recipient: { ...body.recipient, email: user.email },
+      shipping_address: body.shipping_address,
+      slip_qr_data: body.slip_qr_data,
+      verify_method: "QR",
+      payment_status: "REFUND_DUE",
+    });
+  } catch (err) {
+    if (isDuplicateSlip(err)) throw duplicateSlip();
+    // The buyer still gets OUT_OF_STOCK; the log is what the admin has left to find them.
+    console.error("Could not save a REFUND_DUE order", { slip_qr_data: body.slip_qr_data, err });
   }
 }
 

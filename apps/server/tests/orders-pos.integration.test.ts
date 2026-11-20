@@ -124,6 +124,28 @@ describe.skipIf(!uri)("admin orders, POS management, POS sales (S7–S9)", { tim
       expect((await tracking(id)).body.error.code).toBe("NOT_VERIFIED");
     });
 
+    it("a REFUND_DUE order can only be marked refunded (REJECTED), and gives back no stock (D11)", async () => {
+      const [order] = await m.Purchase.create([
+        {
+          users: userId,
+          products: [{ products_id: productId, product_name: "p", variants: [{ variants_id: variant, variant_name: "M", count: 2, unit_price: 100 }] }],
+          original_price: 200,
+          shipping_fee: 60,
+          slip_qr_data: slip("refund-due"),
+          verify_method: "QR",
+          payment_status: "REFUND_DUE",
+        },
+      ]);
+      const id = String(order!._id);
+      const before = await online();
+
+      expect((await payment(id, "VERIFIED")).body.error.code).toBe("NOT_PENDING");
+      const res = await payment(id, "REJECTED");
+      expect(res.status).toBe(200);
+      expect(res.body.payment_status).toBe("REJECTED");
+      expect(await online()).toBe(before);
+    });
+
     it("a rejected order leaves the new-order count and list, unless asked for", async () => {
       const count = async (q = "status=ORDERED") => (await request(app).get(`/admin/orders/count?${q}`).set(admin)).body.count;
       const id = await placeOrder("badge");

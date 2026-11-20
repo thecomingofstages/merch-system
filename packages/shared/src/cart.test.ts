@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addLine, cartSubtotal, removeLine, setLineCount, type CartLine } from "./cart";
+import { addLine, cartSubtotal, removeLine, setLineCount, stockShortfalls, type CartLine } from "./cart";
 
 const line = (product_id: string, variant_id: string, count: number, unit_price: number): CartLine => ({
   product_id,
@@ -47,5 +47,23 @@ describe("setLineCount and removeLine", () => {
     expect(setLineCount(cart, "a", 3)[0]?.count).toBe(3);
     expect(setLineCount(cart, "a", 0).map((l) => l.variant_id)).toEqual(["b"]);
     expect(removeLine(cart, "b").map((l) => l.variant_id)).toEqual(["a"]);
+  });
+});
+
+describe("stockShortfalls", () => {
+  const variant = (_id: string, online_stock: number, sold_out = online_stock === 0) => ({
+    _id, name: _id, price: 100, image: null, online_stock, buy_limit: 0, sold_out,
+  });
+  const catalog = {
+    shops: [{ _id: "s", shop_name: "s", products: [{ _id: "p1", name: "p1", description: "", image: [], variants: [variant("a", 5), variant("b", 1), variant("c", 0)] }] }],
+  };
+
+  it("lists lines over the stock left: fewer, sold out, or gone from the catalog", () => {
+    const cart = [line("p1", "a", 5, 100), line("p1", "b", 3, 100), line("p1", "c", 1, 100), line("p1", "gone", 1, 100)];
+    expect(stockShortfalls(cart, catalog).map(({ line, available }) => [line.variant_id, available])).toEqual([
+      ["b", 1],
+      ["c", 0],
+      ["gone", 0],
+    ]);
   });
 });

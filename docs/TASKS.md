@@ -30,6 +30,8 @@ One brief per task. Hand a developer (or their AI tool) the brief together with 
 | D7 | New dependencies approved: QR rendering, QR decoding, `google-auth-library`, `resend`, `mongoose`, `express`. |
 | D8 | `apps/client` and `apps/server` on Cloudflare Workers. `apps/dashboard` and `apps/pos` on a private VM, reachable only over Tailscale. |
 | D9 | `apps/dashboard` and `apps/pos` run under `pm2`. **Still open: CI platform** (affects I3). |
+| D11 | **CEO (questions 22, 23):** refunds and wrong amounts are settled outside the system: the shop contacts the buyer over LINE. A paid order that runs out of stock is kept as `payment_status: REFUND_DUE` so the admin can find the buyer (BACKEND.md "Business rules" 10). |
+| D12 | **CEO (question 24):** the buyer pays before the order is placed, in one checkout session, so there are no unpaid orders to cancel. The checkout re-checks stock every 15 s and removes what sold out. |
 
 ## Open questions in these briefs
 

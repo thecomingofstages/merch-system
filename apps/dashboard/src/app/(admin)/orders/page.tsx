@@ -18,7 +18,7 @@ import {
 import { COPY, formatOrderStatus, formatPaymentStatus } from "./copy";
 
 const STATUS_OPTIONS: OrderStatus[] = ["ORDERED", "SHIPPING", "ARRIVED"];
-const PAYMENT_OPTIONS: PaymentStatus[] = ["PENDING_CHECK", "VERIFIED", "REJECTED"];
+const PAYMENT_OPTIONS: PaymentStatus[] = ["PENDING_CHECK", "VERIFIED", "REJECTED", "REFUND_DUE"];
 
 function StatusLabel({ text }: { text: string }) {
   return (

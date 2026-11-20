@@ -32,7 +32,7 @@ export class ApiError extends Error {
 }
 
 // NEXT_PUBLIC_ values are baked in at build time, so changing the flag requires a rebuild.
-function isFixturesMode(): boolean {
+export function isFixturesMode(): boolean {
   return process.env.NEXT_PUBLIC_USE_FIXTURES === "true";
 }
 
@@ -83,9 +83,28 @@ async function requestJson<T>(
 
 // Stored in-memory copy of fixtureProducts so createOrder in fixtures mode deducts stock during dev and resets on reload.
 let memoryClientProducts: Product[] = structuredClone(fixtureProducts);
+// Fixtures mode: signed out until googleSignIn, and each slip pays one order, as on the server.
+let fixtureSignedIn = false;
+let fixtureSlips = new Set<string>();
+
+const fixtureMe: MeResponse = {
+  email: "buyer@example.com",
+  first_name: null,
+  last_name: null,
+  nickname: null,
+  phone: null,
+  line_id: null,
+  address: null,
+};
 
 export function resetClientFixtures(): void {
   memoryClientProducts = structuredClone(fixtureProducts);
+  fixtureSignedIn = false;
+  fixtureSlips = new Set();
+}
+
+function requireFixtureSession(): void {
+  if (!fixtureSignedIn) throw new ApiError(401, "UNAUTHORIZED", "Sign in first");
 }
 
 export async function getCatalog(): Promise<CatalogResponse> {
@@ -117,6 +136,10 @@ export async function createOrder(body: CreateOrderRequest): Promise<CreateOrder
       const issue = parsed.error.issues[0];
       throw new ApiError(400, "VALIDATION", issue ? `${issue.path.join(".")}: ${issue.message}` : "Invalid order");
     }
+    requireFixtureSession();
+    if (fixtureSlips.has(parsed.data.slip_qr_data)) {
+      throw new ApiError(409, "DUPLICATE_SLIP", "This slip already paid another order");
+    }
     try {
       const priced = mockQuoteForFixtures({ channel: "ONLINE", items: parsed.data.items }, memoryClientProducts);
       for (const line of priced.lines) {
@@ -126,6 +149,8 @@ export async function createOrder(body: CreateOrderRequest): Promise<CreateOrder
           variant.online_stock -= line.count;
         }
       }
+      fixtureSlips.add(parsed.data.slip_qr_data);
+
       return {
         _id: "64d000000000000000000001",
         status: "ORDERED",
@@ -137,6 +162,8 @@ export async function createOrder(body: CreateOrderRequest): Promise<CreateOrder
       };
     } catch (err) {
       if (err instanceof FixtureError) {
+        // The server keeps a paid order that ran out of stock (REFUND_DUE), and so its slip.
+        if (err.code === "OUT_OF_STOCK") fixtureSlips.add(parsed.data.slip_qr_data);
         throw new ApiError(err.status, err.code, err.message);
       }
       throw err;
@@ -151,37 +178,29 @@ export async function googleSignIn(body: GoogleAuthRequest): Promise<MeResponse>
     if (!parsed.success) {
       throw new ApiError(400, "VALIDATION", "id_token is required");
     }
-    return {
-      email: "buyer@example.com",
-      first_name: null,
-      last_name: null,
-      nickname: null,
-      phone: null,
-      line_id: null,
-      address: null,
-    };
+    fixtureSignedIn = true;
+    return fixtureMe;
   }
   return requestJson("/auth/google", { method: "POST", body: JSON.stringify(body) }, MeResponse);
 }
 
 export async function getMe(): Promise<MeResponse> {
   if (isFixturesMode()) {
-    return {
-      email: "buyer@example.com",
-      first_name: null,
-      last_name: null,
-      nickname: null,
-      phone: null,
-      line_id: null,
-      address: null,
-    };
+    requireFixtureSession();
+    return fixtureMe;
   }
   return requestJson("/me", { method: "GET" }, MeResponse);
 }
 
 export async function getPostcode(code: string): Promise<PostcodeLookupResponse> {
   if (isFixturesMode()) {
-    return [];
+    // Synthetic places, so the tambon dropdown can be tried without the server's dataset.
+    return code === "10200"
+      ? [
+          { tambon: "Tambon 1", amphoe: "Amphoe 1", province: "Province 1" },
+          { tambon: "Tambon 2", amphoe: "Amphoe 1", province: "Province 1" },
+        ]
+      : [];
   }
   return requestJson(`/address/postcode/${encodeURIComponent(code)}`, { method: "GET" }, PostcodeLookupResponse);
 }

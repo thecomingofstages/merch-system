@@ -3,6 +3,7 @@
  * so CartSummary shows either. The subtotal is for display while browsing only:
  * the amount to pay always comes from POST /quote (docs/FRONTEND.md "Rules every app follows").
  */
+import type { CatalogResponse } from "./schemas/catalog";
 import type { QuoteLine } from "./schemas/quote";
 
 export type CartLine = QuoteLine;
@@ -37,4 +38,17 @@ export function setLineCount(lines: CartLine[], variantId: string, count: number
 
 export function removeLine(lines: CartLine[], variantId: string): CartLine[] {
   return lines.filter((l) => l.variant_id !== variantId);
+}
+
+/**
+ * Cart lines the latest GET /catalog no longer covers, with what is left of each:
+ * 0 when the variant sold out or left the catalog. The checkout re-checks with this.
+ */
+export function stockShortfalls(lines: CartLine[], catalog: CatalogResponse): { line: CartLine; available: number }[] {
+  const variants = catalog.shops.flatMap((s) => s.products.flatMap((p) => p.variants));
+  return lines.flatMap((line) => {
+    const variant = variants.find((v) => v._id === line.variant_id);
+    const available = !variant || variant.sold_out ? 0 : variant.online_stock;
+    return line.count > available ? [{ line, available }] : [];
+  });
 }
