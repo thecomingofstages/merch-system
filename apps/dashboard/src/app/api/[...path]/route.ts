@@ -8,6 +8,10 @@ import type { NextRequest } from "next/server";
 const fail = (status: number, code: string, message: string) => Response.json({ error: { code, message } }, { status });
 
 async function forward(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  // The token is added here, so another site's form must not get through (CSRF): browsers mark
+  // every request with Sec-Fetch-Site, and the dashboard's own calls are same-origin.
+  const site = req.headers.get("sec-fetch-site");
+  if (site && site !== "same-origin") return fail(403, "FORBIDDEN", "Only the dashboard itself can call this");
   const { path } = await params;
   if (path[0] !== "admin" || path.some((s) => s === ".." || s === ".")) return fail(404, "NOT_FOUND", "Not found");
   const base = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
