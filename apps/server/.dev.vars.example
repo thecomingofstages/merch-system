@@ -1,6 +1,6 @@
 # Local settings for `npx wrangler dev`. Copy to .dev.vars (never committed) and fill in.
-# In production every key here is a Secret in the Cloudflare dashboard, or
-# `npx wrangler secret put <NAME>` (docs/BACKEND.md "Environment").
+# In production these are set in the Cloudflare dashboard: CORS_ORIGINS, SHIPPING_FEE, EMAIL_FROM,
+# PROMPTPAY_ID and PROMPTPAY_NAME as Text variables, the rest as Secrets (docs/BACKEND.md "Environment").
 
 # Used now (F3, F6)
 MONGODB_URI=
