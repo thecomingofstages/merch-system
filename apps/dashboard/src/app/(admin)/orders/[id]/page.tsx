@@ -7,7 +7,7 @@ import {
 } from "@merch/shared";
 import { Button, Dialog, Input, Price } from "@merch/ui";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useOrderCount } from "@/components/OrderCountProvider";
 import { PaymentCheck } from "@/components/PaymentCheck";
@@ -39,7 +39,6 @@ function StatusBadge({ label }: { label: string }) {
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();
   const orderId = typeof params.id === "string" ? params.id : "";
-  const router = useRouter();
   const { refresh: refreshOrderCount } = useOrderCount();
 
   const [order, setOrder] = useState<Purchase | null>(null);
@@ -67,12 +66,6 @@ export default function OrderDetailPage() {
   const [confirmTrackingId, setConfirmTrackingId] = useState<string | null>(null);
   const [savingTracking, setSavingTracking] = useState(false);
 
-  const handleRedirect = useCallback(
-    (path: string) => {
-      router.replace(path);
-    },
-    [router],
-  );
 
   useEffect(() => {
     if (!orderId) return;
@@ -86,7 +79,7 @@ export default function OrderDetailPage() {
       })
       .catch((err) => {
         if (!active) return;
-        const msg = mapOrderError(err, handleRedirect);
+        const msg = mapOrderError(err);
         if (msg) setPageError(msg);
       })
       .finally(() => {
@@ -97,7 +90,7 @@ export default function OrderDetailPage() {
     return () => {
       active = false;
     };
-  }, [handleRedirect, orderId, reloadNonce]);
+  }, [orderId, reloadNonce]);
 
   const handleOrderUpdated = useCallback(
     async (statusNotice?: string) => {
@@ -160,7 +153,7 @@ export default function OrderDetailPage() {
         await handleOrderUpdated();
         return;
       }
-      const msg = mapOrderError(err, handleRedirect);
+      const msg = mapOrderError(err);
       if (msg) setTrackingApiError(msg);
     } finally {
       setSavingTracking(false);
@@ -426,7 +419,6 @@ export default function OrderDetailPage() {
       <PaymentCheck
         order={order}
         onOrderUpdated={handleOrderUpdated}
-        onRedirect={handleRedirect}
       />
 
       {/* Tracking Section (Online orders only; never rendered for POS sales) */}

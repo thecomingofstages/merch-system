@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { handleUnauthorized } from "@/components/AuthGuard";
 import { ApiError } from "@/lib/api";
 import { COPY } from "./copy";
 
@@ -24,15 +23,11 @@ export function parseStrictInt(value: string): number | null {
   return num;
 }
 
-export function mapDashboardError(
-  err: unknown,
-  onRedirect: (path: string) => void,
-): string | null {
-  if (handleUnauthorized(err, onRedirect)) {
-    return null;
-  }
+export function mapDashboardError(err: unknown): string | null {
   if (err instanceof ApiError) {
     switch (err.code) {
+      case "UNAUTHORIZED":
+        return COPY.tokenRejected;
       case "OUT_OF_STOCK":
         return COPY.stockBelowZeroError;
       case "NOT_FOUND":

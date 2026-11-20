@@ -2,7 +2,6 @@
 
 import type { Product, Shop, Variant } from "@merch/shared";
 import { Button, Price } from "@merch/ui";
-import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { listProducts, listShops } from "@/lib/api";
 import { COPY } from "./copy";
@@ -28,13 +27,6 @@ function ArchivedBadge() {
 }
 
 export default function ProductsPage() {
-  const router = useRouter();
-  const handleRedirect = useCallback(
-    (path: string) => {
-      router.replace(path);
-    },
-    [router],
-  );
 
   const [showArchived, setShowArchived] = useState(false);
   const [shops, setShops] = useState<Shop[]>([]);
@@ -79,7 +71,7 @@ export default function ProductsPage() {
       })
       .catch((err) => {
         if (!active) return;
-        const msg = mapDashboardError(err, handleRedirect);
+        const msg = mapDashboardError(err);
         if (msg) setPageError(msg);
       })
       .finally(() => {
@@ -89,7 +81,7 @@ export default function ProductsPage() {
     return () => {
       active = false;
     };
-  }, [handleRedirect, showArchived, reloadNonce]);
+  }, [showArchived, reloadNonce]);
 
   const refreshData = useCallback(async (createdShopId?: string) => {
     setReloadNonce((n) => n + 1);
@@ -524,7 +516,6 @@ export default function ProductsPage() {
         shop={shopModal.shop}
         onClose={() => setShopModal({ open: false, shop: null })}
         onSuccess={refreshData}
-        onRedirect={handleRedirect}
       />
 
       {activeShop ? (
@@ -533,7 +524,6 @@ export default function ProductsPage() {
           shopId={activeShop._id}
           onClose={() => setCreateProductOpen(false)}
           onSuccess={refreshData}
-          onRedirect={handleRedirect}
         />
       ) : null}
 
@@ -542,7 +532,6 @@ export default function ProductsPage() {
         product={editingProduct}
         onClose={() => setEditingProduct(null)}
         onSuccess={refreshData}
-        onRedirect={handleRedirect}
       />
 
       <VariantFormDialog
@@ -551,7 +540,6 @@ export default function ProductsPage() {
         variant={variantModal.variant}
         onClose={() => setVariantModal({ open: false, productId: "", variant: null })}
         onSuccess={refreshData}
-        onRedirect={handleRedirect}
       />
 
       <AddStockDialog
@@ -560,14 +548,12 @@ export default function ProductsPage() {
         variant={stockModal.variant}
         onClose={() => setStockModal({ open: false, productId: "", variant: null })}
         onSuccess={refreshData}
-        onRedirect={handleRedirect}
       />
 
       <ArchiveConfirmDialog
         target={archiveTarget}
         onClose={() => setArchiveTarget(null)}
         onSuccess={refreshData}
-        onRedirect={handleRedirect}
       />
     </div>
   );

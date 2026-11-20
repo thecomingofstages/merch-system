@@ -3,6 +3,7 @@ import type { OrderStatus, PaymentStatus } from "@merch/shared";
 // TODO(Thai copy for Orders page): POC and docs/BACKEND.md wording until the team picks the Thai
 // TODO(native speaker review)
 export const COPY = {
+  tokenRejected: "The dashboard's ADMIN_ACCESS_TOKEN (in its .env) doesn't match the server's.",
   pageTitle: "Orders",
   tableCaption: "Online orders list",
   loading: "Loading...",

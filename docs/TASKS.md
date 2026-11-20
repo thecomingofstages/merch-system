@@ -34,6 +34,7 @@ One brief per task. Hand a developer (or their AI tool) the brief together with 
 | D12 | **CEO (question 24):** the buyer pays before the order is placed, in one checkout session, so there are no unpaid orders to cancel. The checkout re-checks stock every 15 s and removes what sold out. |
 | D13 | **Promotion sets (CEO question 14):** "buy these items, in these amounts, for this price". Admins create, edit, switch off and delete sets in the dashboard; items can come from several shops, and buyers mix each item's allowed variants. Shown first in the shop. Sets ignore `buy_limit`. Online and POS (the POS screen shows them with 2.6). Deleting a product or variant warns, then cascades (BACKEND.md "Data model", "Business rules" 11). |
 | D14 | **PromptPay QR from promptpay.io:** `PaymentQR` shows `https://promptpay.io/<PROMPTPAY_ID>/<total>.png` instead of building the QR in the browser, with the account name (`PROMPTPAY_NAME`) and number under it. The buyer's browser loads it from that third-party service. |
+| D15 | **Dashboard token from `.env`:** the dashboard has no sign-in screen. `ADMIN_ACCESS_TOKEN` is in its server-side env, and `apps/dashboard/src/app/api/[...path]/route.ts` adds it to `/admin/*` calls (the same way the POS works, F7). Tailscale is the only gate. |
 
 ## Open questions in these briefs
 

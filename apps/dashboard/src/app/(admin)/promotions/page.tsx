@@ -2,8 +2,7 @@
 
 import { type Product, type Promotion, PromotionRequest, type Shop } from "@merch/shared";
 import { Button, Dialog, Input, Price, Select } from "@merch/ui";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { mapDashboardError } from "@/app/(admin)/products/helpers";
 import { archivePromotion, listProducts, listPromotions, listShops, savePromotion } from "@/lib/api";
 import { COPY } from "./copy";
@@ -41,8 +40,6 @@ const toRequest = (d: Draft): PromotionRequest => ({
 });
 
 export default function PromotionsPage() {
-  const router = useRouter();
-  const handleRedirect = useCallback((path: string) => router.replace(path), [router]);
   const [sets, setSets] = useState<Promotion[] | null>(null);
   const [shops, setShops] = useState<Shop[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -62,14 +59,14 @@ export default function PromotionsPage() {
         setError(null);
       },
       (err: unknown) => {
-        const msg = mapDashboardError(err, handleRedirect);
+        const msg = mapDashboardError(err);
         if (!cancelled && msg) setError(msg);
       },
     );
     return () => {
       cancelled = true;
     };
-  }, [reload, handleRedirect]);
+  }, [reload]);
 
   const refresh = () => setReload((n) => n + 1);
 
@@ -78,7 +75,7 @@ export default function PromotionsPage() {
       await savePromotion(p._id, toRequest({ ...toDraft(p), active: !p.active }));
       refresh();
     } catch (err) {
-      const msg = mapDashboardError(err, handleRedirect);
+      const msg = mapDashboardError(err);
       if (msg) setError(msg);
     }
   }
@@ -171,7 +168,6 @@ export default function PromotionsPage() {
               initial={editing.draft}
               shops={shops}
               products={products}
-              onRedirect={handleRedirect}
               onDone={() => {
                 setEditing(null);
                 refresh();
@@ -184,7 +180,6 @@ export default function PromotionsPage() {
           {deleting ? (
             <DeleteBody
               set={deleting}
-              onRedirect={handleRedirect}
               onDone={() => {
                 setDeleting(null);
                 refresh();
@@ -203,7 +198,6 @@ function SetForm({
   initial,
   shops,
   products,
-  onRedirect,
   onDone,
   onCancel,
 }: {
@@ -211,7 +205,6 @@ function SetForm({
   initial: Draft;
   shops: Shop[];
   products: Product[];
-  onRedirect: (path: string) => void;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -236,7 +229,7 @@ function SetForm({
       await savePromotion(id, parsed.data);
       onDone();
     } catch (err) {
-      const msg = mapDashboardError(err, onRedirect);
+      const msg = mapDashboardError(err);
       if (msg) setError(msg);
     } finally {
       setSaving(false);
@@ -336,12 +329,10 @@ function SetForm({
 
 function DeleteBody({
   set,
-  onRedirect,
   onDone,
   onCancel,
 }: {
   set: Promotion;
-  onRedirect: (path: string) => void;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -354,7 +345,7 @@ function DeleteBody({
       await archivePromotion(set._id);
       onDone();
     } catch (err) {
-      const msg = mapDashboardError(err, onRedirect);
+      const msg = mapDashboardError(err);
       if (msg) setError(msg);
     } finally {
       setSaving(false);

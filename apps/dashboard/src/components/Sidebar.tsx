@@ -2,13 +2,12 @@
 
 import { Button } from "@merch/ui";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { COPY as ORDERS_COPY } from "@/app/(admin)/orders/copy";
 import { useOrderCount } from "@/components/OrderCountProvider";
-import { clearAdminToken } from "@/lib/api";
 
-// TODO(Thai copy for dashboard navigation and sign-out): POC wording until the team picks the Thai
+// TODO(Thai copy for dashboard navigation): POC wording until the team picks the Thai
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard" },
   { href: "/products", label: "Products" },
@@ -17,7 +16,6 @@ const NAV_ITEMS = [
   { href: "/pos", label: "POS" },
 ] as const;
 
-const SIGN_OUT_LABEL = "Sign out";
 const MENU_LABEL = "Menu";
 
 function isActivePath(pathname: string, href: string): boolean {
@@ -29,7 +27,6 @@ function isActivePath(pathname: string, href: string): boolean {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const { count: newOrderCount } = useOrderCount();
   const [openOnPath, setOpenOnPath] = useState<string | null>(null);
   const mobileOpen = openOnPath === pathname;
@@ -44,11 +41,6 @@ export function Sidebar() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileOpen]);
-
-  function handleSignOut() {
-    clearAdminToken();
-    router.replace("/sign-in");
-  }
 
   return (
     <aside className="border-b border-rigging bg-house md:w-56 md:shrink-0 md:border-r md:border-b-0">
@@ -98,9 +90,6 @@ export function Sidebar() {
           })}
         </ul>
 
-        <Button variant="secondary" onClick={handleSignOut} className="w-full justify-start">
-          {SIGN_OUT_LABEL}
-        </Button>
       </nav>
     </aside>
   );

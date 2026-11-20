@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -9,7 +8,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { handleUnauthorized } from "@/components/AuthGuard";
 import { countOrders } from "@/lib/api";
 
 interface OrderCountContextValue {
@@ -28,7 +26,6 @@ export function useOrderCount(): OrderCountContextValue {
 
 // TODO(count semantics): status=ORDERED counts online orders that are not REJECTED (apps/server/src/app/helpers/adminOrder.helper.ts).
 export function OrderCountProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const [count, setCount] = useState(0);
   const [reloadNonce, setReloadNonce] = useState(0);
 
@@ -43,18 +40,15 @@ export function OrderCountProvider({ children }: { children: ReactNode }) {
         if (!active) return;
         setCount(res.count);
       })
-      .catch((err) => {
+      .catch(() => {
         if (!active) return;
-        if (handleUnauthorized(err, (path) => router.replace(path))) {
-          return;
-        }
         // If the count request fails, show no badge and no error toast.
         setCount(0);
       });
     return () => {
       active = false;
     };
-  }, [reloadNonce, router]);
+  }, [reloadNonce]);
 
   useEffect(() => {
     function handleFocus() {
