@@ -63,3 +63,7 @@ export const Product = z.object({
   variants: z.array(Variant),
 });
 export type Product = z.infer<typeof Product>;
+
+/** POST /admin/images (D17): the image bytes as the body, with an image Content-Type. */
+export const ImageUploadResponse = z.object({ url: z.string().url() });
+export type ImageUploadResponse = z.infer<typeof ImageUploadResponse>;

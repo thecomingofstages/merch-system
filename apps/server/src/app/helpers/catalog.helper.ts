@@ -17,6 +17,7 @@ import type { z } from "zod";
 import type { Models } from "../models";
 import { plainSet } from "./pricing.helper";
 import { ApiError } from "../utils/ApiError";
+import { type ImageStore, releaseImages, storeLink, storeOptional } from "./images.helper";
 
 type Id = Types.ObjectId;
 /** Bodies as the controllers hand them over: parsed, with defaults filled in. */
@@ -35,14 +36,18 @@ export async function updateShop(m: Models, id: Id, body: ShopRequest) {
   return shop;
 }
 
-export async function archiveShop(m: Models, id: Id) {
+export async function archiveShop(m: Models, store: ImageStore, id: Id) {
   if (!(await m.Shop.exists({ _id: id, archived: false }))) throw ApiError.notFound("Shop not found");
-  const products = await m.Product.find({ shop_id: id, archived: false }, { _id: 1, variants: 1 }).lean();
+  const products = await m.Product.find({ shop_id: id, archived: false }, { _id: 1, image: 1, variants: 1 }).lean();
   for (const p of products) await assertNoStock(m, p._id, p.variants);
   await m.Product.updateMany({ shop_id: id }, { $set: { archived: true, "variants.$[].archived": true } });
-  await archiveSetsOf(m, products.map((p) => p._id));
+  await archiveSetsOf(m, store, products.map((p) => p._id));
   await m.Shop.updateOne({ _id: id }, { archived: true });
+  await releaseImages(m, store, products.flatMap(imagesOf));
 }
+
+/** Every image a product holds: its own and its variants'. */
+const imagesOf = (p: { image: string[]; variants: { image?: string | null }[] }) => [...p.image, ...p.variants.map((v) => v.image)];
 
 // Products
 
@@ -61,50 +66,64 @@ export async function getProduct(m: Models, id: Id) {
   return product;
 }
 
-export async function createProduct(m: Models, body: Parsed<typeof ProductRequest>) {
+// Images are copied into R2 before a record is saved, and the old ones released after (D17).
+
+export async function createProduct(m: Models, store: ImageStore, body: Parsed<typeof ProductRequest>) {
   await assertLiveShop(m, body.shop_id);
-  return (await m.Product.create(body)).toObject();
+  const image = await Promise.all(body.image.map((u) => storeLink(store, u)));
+  const variants = await Promise.all(body.variants.map(async (v) => ({ ...v, image: await storeOptional(store, v.image) })));
+  return (await m.Product.create({ ...body, image, variants })).toObject();
 }
 
-export async function updateProduct(m: Models, id: Id, body: Parsed<typeof ProductPatch>) {
+export async function updateProduct(m: Models, store: ImageStore, id: Id, body: Parsed<typeof ProductPatch>) {
   if (body.shop_id) await assertLiveShop(m, body.shop_id);
-  const product = await m.Product.findOneAndUpdate({ _id: id, archived: false }, { $set: body }, { new: true, runValidators: true }).lean();
+  const before = await m.Product.findOne({ _id: id, archived: false }, { image: 1 }).lean();
+  if (!before) throw ApiError.notFound("Product not found");
+  const image = body.image && (await Promise.all(body.image.map((u) => storeLink(store, u))));
+  const set = image ? { ...body, image } : body;
+  const product = await m.Product.findOneAndUpdate({ _id: id, archived: false }, { $set: set }, { new: true, runValidators: true }).lean();
   if (!product) throw ApiError.notFound("Product not found");
+  if (image) await releaseImages(m, store, before.image.filter((u) => !image.includes(u)));
   return product;
 }
 
-export async function archiveProduct(m: Models, id: Id) {
-  const product = await m.Product.findOne({ _id: id, archived: false }, { variants: 1 }).lean();
+export async function archiveProduct(m: Models, store: ImageStore, id: Id) {
+  const product = await m.Product.findOne({ _id: id, archived: false }, { image: 1, variants: 1 }).lean();
   if (!product) throw ApiError.notFound("Product not found");
   await assertNoStock(m, id, product.variants);
   await m.Product.updateOne({ _id: id }, { $set: { archived: true, "variants.$[].archived": true } });
-  await archiveSetsOf(m, [id]);
+  await archiveSetsOf(m, store, [id]);
+  await releaseImages(m, store, imagesOf(product));
 }
 
 // Variants
 
-export async function addVariant(m: Models, productId: Id, body: Parsed<typeof VariantRequest>) {
+export async function addVariant(m: Models, store: ImageStore, productId: Id, body: Parsed<typeof VariantRequest>) {
+  if (!(await m.Product.exists({ _id: productId, archived: false }))) throw ApiError.notFound("Product not found");
+  const variant = { ...body, image: await storeOptional(store, body.image) };
   const product = await m.Product.findOneAndUpdate(
     { _id: productId, archived: false },
-    { $push: { variants: body } },
+    { $push: { variants: variant } },
     { new: true, runValidators: true },
   ).lean();
   if (!product) throw ApiError.notFound("Product not found");
   return product;
 }
 
-export async function updateVariant(m: Models, productId: Id, variantId: Id, body: Parsed<typeof VariantPatch>) {
-  const set = Object.fromEntries(Object.entries(body).map(([k, v]) => [`variants.$.${k}`, v]));
-  const product = await m.Product.findOneAndUpdate(
-    { _id: productId, archived: false, variants: { $elemMatch: { _id: variantId, archived: false } } },
-    { $set: set },
-    { new: true, runValidators: true },
-  ).lean();
+export async function updateVariant(m: Models, store: ImageStore, productId: Id, variantId: Id, body: Parsed<typeof VariantPatch>) {
+  const live = { _id: productId, archived: false, variants: { $elemMatch: { _id: variantId, archived: false } } };
+  const before = await m.Product.findOne(live, { variants: 1 }).lean();
+  const oldImage = before?.variants.find((v) => v._id.equals(variantId))?.image;
+  if (!before) throw ApiError.notFound("Variant not found");
+  const patch = body.image === undefined ? body : { ...body, image: await storeOptional(store, body.image) };
+  const set = Object.fromEntries(Object.entries(patch).map(([k, v]) => [`variants.$.${k}`, v]));
+  const product = await m.Product.findOneAndUpdate(live, { $set: set }, { new: true, runValidators: true }).lean();
   if (!product) throw ApiError.notFound("Variant not found");
+  if (patch.image !== undefined && oldImage !== patch.image) await releaseImages(m, store, [oldImage]);
   return product;
 }
 
-export async function archiveVariant(m: Models, productId: Id, variantId: Id) {
+export async function archiveVariant(m: Models, store: ImageStore, productId: Id, variantId: Id) {
   const product = await m.Product.findOne(
     { _id: productId, archived: false, variants: { $elemMatch: { _id: variantId, archived: false } } },
     { variants: 1 },
@@ -114,7 +133,8 @@ export async function archiveVariant(m: Models, productId: Id, variantId: Id) {
   await m.Product.updateOne({ _id: productId, "variants._id": variantId }, { $set: { "variants.$.archived": true } });
   // The sets lose that variant; a set left with an item that has none is archived (D13).
   await m.Promotion.updateMany({ "items.variant_ids": variantId }, { $pull: { "items.$[].variant_ids": variantId } });
-  await m.Promotion.updateMany({ archived: false, "items.variant_ids": { $size: 0 } }, { $set: { archived: true } });
+  await archiveSets(m, store, { archived: false, "items.variant_ids": { $size: 0 } });
+  await releaseImages(m, store, [product.variants.find((v) => v._id.equals(variantId))?.image]);
 }
 
 /**
@@ -122,8 +142,16 @@ export async function archiveVariant(m: Models, productId: Id, variantId: Id) {
  * after the archive it follows, outside a transaction: if it fails, the catalog and priceCart
  * still never offer a set whose item has no live variant.
  */
-async function archiveSetsOf(m: Models, productIds: Id[]) {
-  if (productIds.length) await m.Promotion.updateMany({ archived: false, "items.product_id": { $in: productIds } }, { $set: { archived: true } });
+async function archiveSetsOf(m: Models, store: ImageStore, productIds: Id[]) {
+  if (productIds.length) await archiveSets(m, store, { archived: false, "items.product_id": { $in: productIds } });
+}
+
+/** Archives the sets this filter matches, then releases their images. */
+async function archiveSets(m: Models, store: ImageStore, filter: Record<string, unknown>) {
+  const sets = await m.Promotion.find(filter, { image: 1 }).lean();
+  if (sets.length === 0) return;
+  await m.Promotion.updateMany({ _id: { $in: sets.map((s) => s._id) } }, { $set: { archived: true } });
+  await releaseImages(m, store, sets.map((s) => s.image));
 }
 
 /**

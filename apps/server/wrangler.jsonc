@@ -7,8 +7,12 @@
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
 
+  // Product, variant and promotion images (D17). Create once: `npx wrangler r2 bucket create merch-images`,
+  // then connect a custom domain to it and set IMAGES_PUBLIC_URL to that domain.
+  "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "merch-images" }],
+
   // Settings live in the Cloudflare dashboard, not here: the visible ones (CORS_ORIGINS,
-  // SHIPPING_FEE, EMAIL_FROM, PROMPTPAY_ID, PROMPTPAY_NAME) as Text variables, the rest as
+  // SHIPPING_FEE, EMAIL_FROM, PROMPTPAY_ID, PROMPTPAY_NAME, IMAGES_PUBLIC_URL) as Text variables, the rest as
   // Secrets. Without keep_vars, every deploy would replace the dashboard's Text variables with
   // this file's (none). Locally they go in .dev.vars (docs/BACKEND.md "Environment").
   "keep_vars": true

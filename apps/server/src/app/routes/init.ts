@@ -6,6 +6,7 @@ import { Router } from "express";
 import { Auth } from "../middleware/Auth";
 import { addressRoute } from "./address.route";
 import { adminCatalogRoute } from "./admin/catalog.route";
+import { adminImageRoute } from "./admin/image.route";
 import { adminOrderRoute } from "./admin/order.route";
 import { adminPosRoute } from "./admin/pos.route";
 import { adminPromotionRoute } from "./admin/promotion.route";
@@ -29,6 +30,7 @@ export function initRoutes(): Router {
   // Admin routers mount after Auth (S2, S7, S8).
   api.use("/admin", Auth);
   api.use("/admin", adminCatalogRoute);
+  api.use("/admin", adminImageRoute);
   api.use("/admin", adminOrderRoute);
   api.use("/admin", adminPosRoute);
   api.use("/admin", adminPromotionRoute);

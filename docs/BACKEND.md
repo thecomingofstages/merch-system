@@ -52,7 +52,7 @@ apps/server/src/
 Request bodies are checked with the zod schemas from `@merch/shared` (see "Shared zod schemas"), so there is no `schemas/` folder.
 
 ## Environment
-Production settings are set in the Cloudflare dashboard (merch-server → Settings → **Variables and Secrets**, the runtime section, not the one under Build), and in `.dev.vars` locally; `.dev.vars.example` lists every key with empty values. The visible ones (`CORS_ORIGINS`, `SHIPPING_FEE`, `EMAIL_FROM`, `PROMPTPAY_ID`, `PROMPTPAY_NAME`) are **Text** variables, so they can be read back; `wrangler.jsonc` has `"keep_vars": true`, so deploys keep them. Everything else (`MONGODB_URI`, `ADMIN_ACCESS_TOKEN`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`) is a **Secret** (or `npx wrangler secret put`).
+Production settings are set in the Cloudflare dashboard (merch-server → Settings → **Variables and Secrets**, the runtime section, not the one under Build), and in `.dev.vars` locally; `.dev.vars.example` lists every key with empty values. The visible ones (`CORS_ORIGINS`, `SHIPPING_FEE`, `EMAIL_FROM`, `PROMPTPAY_ID`, `PROMPTPAY_NAME`, `IMAGES_PUBLIC_URL`) are **Text** variables, so they can be read back; `wrangler.jsonc` has `"keep_vars": true`, so deploys keep them. Everything else (`MONGODB_URI`, `ADMIN_ACCESS_TOKEN`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`) is a **Secret** (or `npx wrangler secret put`).
 
 | Key | Used for |
 |---|---|
@@ -65,6 +65,8 @@ Production settings are set in the Cloudflare dashboard (merch-server → Settin
 | `RESEND_API_KEY`, `EMAIL_FROM` | Emails |
 | `CORS_ORIGINS` | Comma-separated origins of the three apps |
 | `SHIPPING_FEE` | Flat fee per order for now (shortcut until the per-shop setting is built) |
+| `IMAGES_PUBLIC_URL` | The custom domain of the R2 images bucket, e.g. `https://images.thecomingofstages.com`; image URLs are built from it (D17) |
+| `IMAGES` | Not a setting: the R2 bucket binding (`merch-images`) in `wrangler.jsonc` (D17) |
 
 ## Data model
 From the draft schema plus the additions on POC page 4. D1 (proposed by BE): a separate `products` collection with variants embedded, so one stock deduction touches one document per product.
@@ -97,6 +99,7 @@ From the draft schema plus the additions on POC page 4. D1 (proposed by BE): a s
 9. **Orders keep a copy** of recipient and address at order time, so later edits to the user record don't change past orders.
 10. **A paid order that runs out of stock is kept as `REFUND_DUE`** (D11). The buyer pays before ordering, so when `POST /orders` fails with `OUT_OF_STOCK` the server saves the attempt, stock untouched, with `payment_status: REFUND_DUE`, then still answers `409 OUT_OF_STOCK`. It holds the slip, so that slip can't pay another order. The admin refunds the buyer over LINE, outside the system, then sets `REJECTED`, which returns no stock (none was taken).
 11. **Promotion sets** (D13) cost their own `price`, whatever their pieces cost. `priceCart` checks each set in the cart (`priceSets` in `@merch/shared`): every item filled, each item's picks adding up to its `count`, only that item's live `variant_ids`. Sets ignore `buy_limit` and `visible_to_online` (a set may hold a gift not sold alone). Single lines and set pieces share the stock: rule 3 deducts their sum per variant (`stockDemand`). At a POS a set sells only when every item's shop is one of the POS's shops. Rejecting an order returns set pieces too.
+12. **Images live in R2** (D17). Uploads go to `POST /admin/images` (the dashboard shrinks photos to 1600 px WebP first). Any other image link in a product, variant or set is downloaded and copied into R2 when the record is saved (up to 5 MB; links are not resized). Files are named by a random key and served from `IMAGES_PUBLIC_URL` with a one-year cache. When a save replaces an image, or a product, variant, shop or set is archived (cascades included), its files are deleted from R2, unless another live product, variant or set still uses the same URL.
 
 ## API
 
@@ -125,6 +128,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 | `POST /admin/pos/:id/end-sale` | admin | dashboard | S8 |
 | `POST /pos/:id/sales` | admin (D6) | POS | S9 |
 | `GET/POST /admin/promotions`, `PATCH/DELETE /admin/promotions/:id` (`DELETE` archives) | admin | dashboard | D13 |
+| `POST /admin/images`: the image bytes as the body (`Content-Type` `image/webp`, `image/jpeg` or `image/png`, up to 5 MB) → `{ url }` in R2 | admin | dashboard | D17 |
 
 ## Shared zod schemas
 `packages/shared/src/schemas/` holds one file per collection (`common`, `shop`, `product`, `catalog` and `quote` exist, written by BE with S2–S4; F4 adds the rest) (`shop`, `product`, `purchase`, `pos`, `user`) plus request bodies (`QuoteRequest`, `CreateOrderRequest`, `CreatePosSaleRequest`, `TransferRequest`). Express validates each body with them, and the apps import the inferred types. FE2 writes the first version (F4) and BE reviews it. After that, a change to a schema is a change to the API contract, so BE and the FE leads review it.

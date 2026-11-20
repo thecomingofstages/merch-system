@@ -5,6 +5,7 @@ import { Button, Dialog, Input, Price, Select } from "@merch/ui";
 import { useEffect, useState, type FormEvent } from "react";
 import { mapDashboardError } from "@/app/(admin)/products/helpers";
 import { archivePromotion, listProducts, listPromotions, listShops, savePromotion } from "@/lib/api";
+import { UploadImageButton } from "@/components/UploadImageButton";
 import { COPY } from "./copy";
 
 /** The form's fields as typed; numbers stay strings until Save checks them. */
@@ -240,7 +241,12 @@ function SetForm({
     <form noValidate onSubmit={submit} className="flex max-h-[70dvh] flex-col gap-4 overflow-y-auto">
       <Input label={COPY.name} value={draft.name} onChange={(e) => set({ name: e.target.value })} required />
       <Input label={COPY.description} value={draft.description} onChange={(e) => set({ description: e.target.value })} />
-      <Input label={COPY.image} type="url" value={draft.image} onChange={(e) => set({ image: e.target.value })} />
+      <div className="flex items-end gap-2">
+        <div className="min-w-0 flex-1">
+          <Input label={COPY.image} type="url" value={draft.image} onChange={(e) => set({ image: e.target.value })} />
+        </div>
+        <UploadImageButton onUploaded={(url) => set({ image: url })} />
+      </div>
       <Input label={COPY.price} inputMode="numeric" value={draft.price} onChange={(e) => set({ price: e.target.value })} required />
       <label className="flex min-h-11 items-center gap-2">
         <input type="checkbox" className="size-5" checked={draft.active} onChange={(e) => set({ active: e.target.checked })} />

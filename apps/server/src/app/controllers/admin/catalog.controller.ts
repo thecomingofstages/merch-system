@@ -3,6 +3,8 @@ import { ProductPatch, ProductRequest, ShopRequest, StockRequest, VariantPatch, 
 import type { RequestHandler } from "express";
 import * as catalog from "../../helpers/catalog.helper";
 import { idParam } from "../../utils/id";
+import { imageStore } from "../../helpers/images.helper";
+import { getConfig } from "../../utils/config";
 import { withModels } from "../../utils/models";
 
 const includeArchived = (q: unknown) => q === "true";
@@ -25,7 +27,7 @@ export const AdminCatalogController = {
 
   archiveShop: (async (req, res) => {
     const id = idParam(req.params.id);
-    await withModels(req, (m) => catalog.archiveShop(m, id));
+    await withModels(req, (m) => catalog.archiveShop(m, imageStore(getConfig(req)), id));
     res.status(204).end();
   }) satisfies RequestHandler,
 
@@ -41,38 +43,38 @@ export const AdminCatalogController = {
 
   createProduct: (async (req, res) => {
     const body = ProductRequest.parse(req.body);
-    res.status(201).json(await withModels(req, (m) => catalog.createProduct(m, body)));
+    res.status(201).json(await withModels(req, (m) => catalog.createProduct(m, imageStore(getConfig(req)), body)));
   }) satisfies RequestHandler,
 
   updateProduct: (async (req, res) => {
     const id = idParam(req.params.id);
     const body = ProductPatch.parse(req.body);
-    res.json(await withModels(req, (m) => catalog.updateProduct(m, id, body)));
+    res.json(await withModels(req, (m) => catalog.updateProduct(m, imageStore(getConfig(req)), id, body)));
   }) satisfies RequestHandler,
 
   archiveProduct: (async (req, res) => {
     const id = idParam(req.params.id);
-    await withModels(req, (m) => catalog.archiveProduct(m, id));
+    await withModels(req, (m) => catalog.archiveProduct(m, imageStore(getConfig(req)), id));
     res.status(204).end();
   }) satisfies RequestHandler,
 
   addVariant: (async (req, res) => {
     const id = idParam(req.params.id);
     const body = VariantRequest.parse(req.body);
-    res.status(201).json(await withModels(req, (m) => catalog.addVariant(m, id, body)));
+    res.status(201).json(await withModels(req, (m) => catalog.addVariant(m, imageStore(getConfig(req)), id, body)));
   }) satisfies RequestHandler,
 
   updateVariant: (async (req, res) => {
     const id = idParam(req.params.id);
     const vid = idParam(req.params.vid);
     const body = VariantPatch.parse(req.body);
-    res.json(await withModels(req, (m) => catalog.updateVariant(m, id, vid, body)));
+    res.json(await withModels(req, (m) => catalog.updateVariant(m, imageStore(getConfig(req)), id, vid, body)));
   }) satisfies RequestHandler,
 
   archiveVariant: (async (req, res) => {
     const id = idParam(req.params.id);
     const vid = idParam(req.params.vid);
-    await withModels(req, (m) => catalog.archiveVariant(m, id, vid));
+    await withModels(req, (m) => catalog.archiveVariant(m, imageStore(getConfig(req)), id, vid));
     res.status(204).end();
   }) satisfies RequestHandler,
 

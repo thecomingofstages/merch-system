@@ -5,6 +5,7 @@ import {
   AdminOrdersResponse,
   deleteImpact,
   ErrorBody,
+  ImageUploadResponse,
   type ErrorCode,
   fixtureOrders,
   fixtureProducts,
@@ -363,6 +364,20 @@ export async function addStock(productId: string, variantId: string, body: Stock
     { method: "POST", body: JSON.stringify(body) },
     Product,
   );
+}
+
+// Images (D17)
+
+/** Uploads one image file to R2 through the server; answers its public URL. */
+export async function uploadImage(file: Blob): Promise<string> {
+  // Fixtures: a placeholder https address, so the form's link check still passes.
+  if (isFixturesMode()) return `https://example.invalid/uploaded/${Date.now()}.webp`;
+  const res = await requestAdmin(
+    "/admin/images",
+    { method: "POST", body: file, headers: { "Content-Type": file.type } },
+    ImageUploadResponse,
+  );
+  return res.url;
 }
 
 // Promotion sets (D13)
