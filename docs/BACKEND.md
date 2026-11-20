@@ -58,7 +58,8 @@ Secrets are set with `npx wrangler secret put` in production and in `.dev.vars` 
 |---|---|
 | `MONGODB_URI` | The merch database on the new cluster |
 | `ADMIN_ACCESS_TOKEN` | Dashboard and POS (D6) |
-| `PROMPTPAY_ID` | Shared by all shops; sent to the apps that build the QR |
+| `PROMPTPAY_ID` | Shared by all shops; sent with each quote for the QR |
+| `PROMPTPAY_NAME` | The name on that PromptPay account; sent with each quote and shown under the QR (D14) |
 | `GOOGLE_CLIENT_ID` | Verifying ID tokens |
 | `SESSION_SECRET` | Signing the session cookie |
 | `RESEND_API_KEY`, `EMAIL_FROM` | Emails |
@@ -105,7 +106,7 @@ Errors use `{ error: { code, message } }` with codes like `VALIDATION`, `UNAUTHO
 |---|---|---|---|
 | `GET /health` | – | ops | F3 |
 | `GET /catalog` → `{ promotions: [{ _id, name, description, image, price, sold_out, items: [{ product_id, product_name, count, variants: [{ _id, name, image, online_stock }] }] }], shops: [{ _id, shop_name, products: [{ ..., variants: [{ ..., online_stock, buy_limit, sold_out }] }] }] }` | – | client | S3 |
-| `POST /quote` `{ channel, pos_id?, items, promotions? }` → `{ lines, promotions, subtotal, shipping_fee, total, promptpay_id }` | – | client, POS | S4 |
+| `POST /quote` `{ channel, pos_id?, items, promotions? }` → `{ lines, promotions, subtotal, shipping_fee, total, promptpay_id, promptpay_name }` | – | client, POS | S4 |
 | `POST /auth/google` `{ id_token }` | – | client | S6 |
 | `GET /me` → autofill fields | session | client | S6 |
 | `GET /address/postcode/:code` | – | client | 2.2 |

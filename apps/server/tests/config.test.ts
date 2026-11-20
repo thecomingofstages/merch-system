@@ -7,6 +7,7 @@ const good = {
   CORS_ORIGINS: "http://a.test",
   SHIPPING_FEE: "60",
   PROMPTPAY_ID: "0000000000",
+  PROMPTPAY_NAME: "Test account",
   GOOGLE_CLIENT_ID: "test-client-id",
   SESSION_SECRET: "test-session-secret-test-session-secret",
   RESEND_API_KEY: "test-resend-key",
@@ -31,7 +32,7 @@ describe("initConfig", () => {
 
   it("names the bad settings without printing their values", () => {
     const bad = () => initConfig({ MONGODB_URI: "postgres://secret", ADMIN_ACCESS_TOKEN: "short" });
-    for (const name of ["MONGODB_URI", "ADMIN_ACCESS_TOKEN", "CORS_ORIGINS", "SHIPPING_FEE", "PROMPTPAY_ID"]) expect(bad).toThrow(name);
+    for (const name of ["MONGODB_URI", "ADMIN_ACCESS_TOKEN", "CORS_ORIGINS", "SHIPPING_FEE", "PROMPTPAY_ID", "PROMPTPAY_NAME"]) expect(bad).toThrow(name);
     expect(() => initConfig({ MONGODB_URI: "postgres://secret" })).not.toThrow(/secret/);
   });
 });

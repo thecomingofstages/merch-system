@@ -16,6 +16,6 @@ export const PublicController = {
     const body = QuoteRequest.parse(req.body);
     const config = getConfig(req);
     const priced = await withModels(req, (m) => priceCart(m, body, config));
-    res.json({ ...priced, promptpay_id: config.PROMPTPAY_ID } satisfies QuoteResponse);
+    res.json({ ...priced, promptpay_id: config.PROMPTPAY_ID, promptpay_name: config.PROMPTPAY_NAME } satisfies QuoteResponse);
   }) satisfies RequestHandler,
 };
