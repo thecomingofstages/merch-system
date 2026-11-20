@@ -1,72 +1,215 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { CreateOrderRequest, type CartLine, type QuoteResponse } from "@merch/shared";
-import { Button, CartSummary, CartTicket, Input, useCart } from "@merch/ui";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  CreateOrderRequest,
+  formatThaiAddress,
+  type CartLine,
+  type MeResponse,
+  type PostcodeLookupResponse,
+  type QuoteResponse,
+} from "@merch/shared";
+import { Button, CartSummary, CartTicket, Dialog, Input, PaymentQR, readSlipQr, Select, useCart } from "@merch/ui";
+import type { z } from "zod";
 import { ApiError, clientApi } from "../../lib/api";
+import { GoogleSignIn } from "./GoogleSignIn";
 
 const detailsSchema = CreateOrderRequest.pick({ recipient: true, shipping_address: true });
+type CheckedDetails = z.output<typeof detailsSchema>;
+
+// docs/FRONTEND.md "Copy"
+const OUT_OF_STOCK = "สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า";
+const DUPLICATE_SLIP = "สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้";
+const QR_NOT_READ = "อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น";
+
+const EMPTY = {
+  first_name: "", last_name: "", nickname: "", phone: "", line_id: "",
+  postal_code: "", tambon: "", amphoe: "", province: "", details: "",
+};
+type Details = typeof EMPTY;
+const EMPTY_PLACE = { tambon: "", amphoe: "", province: "" };
+
+/** Autofill from GET /me: the details of the buyer's last order, all editable. */
+function toDetails(me: MeResponse): Details {
+  const saved = { ...EMPTY, ...me, ...me.address };
+  return Object.fromEntries(Object.keys(EMPTY).map((key) => [key, saved[key as keyof Details] ?? ""])) as Details;
+}
+
+function errorText(cause: unknown): string {
+  if (cause instanceof ApiError && cause.code === "OUT_OF_STOCK") return OUT_OF_STOCK;
+  return cause instanceof Error ? cause.message : String(cause);
+}
+
+function focusStep(step: number) {
+  requestAnimationFrame(() => document.getElementById(`step-${step}`)?.focus());
+}
 
 export default function Checkout() {
-  const { lines, count } = useCart();
-  const [pricing, setPricing] = useState<{
-    cart: CartLine[];
-    quote?: QuoteResponse;
-    error?: string;
-  } | null>(null);
-  const [step, setStep] = useState<1 | 2>(1);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const paymentHeading = useRef<HTMLHeadingElement>(null);
-  const detailsHeading = useRef<HTMLHeadingElement>(null);
+  const router = useRouter();
+  const { lines, count, clear } = useCart();
+  const [pricing, setPricing] = useState<{ cart: CartLine[]; quote?: QuoteResponse; error?: string } | null>(null);
+  // undefined while GET /me is loading, null when signed out.
+  const [me, setMe] = useState<MeResponse | null>();
+  const [values, setValues] = useState<Details>(EMPTY);
+  const [places, setPlaces] = useState<{ code: string; list?: PostcodeLookupResponse; error?: string }>();
+  const [errors, setErrors] = useState<Partial<Record<keyof Details, string>>>({});
+  const [checked, setChecked] = useState<CheckedDetails>();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // undefined until a file is picked, null when its QR can't be read (D5).
+  const [slip, setSlip] = useState<string | null>();
+  const [slipKey, setSlipKey] = useState(0);
+  const [reading, setReading] = useState(false);
+  const slipRun = useRef(0);
+  const [placing, setPlacing] = useState(false);
+  const [placed, setPlaced] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
   // A previous quote must disappear as soon as the cart changes.
   const currentPricing = pricing?.cart === lines ? pricing : null;
   const quote = currentPricing?.quote;
+  const currentPlaces = places?.code === values.postal_code ? places : undefined;
+  const placeList = currentPlaces?.list ?? [];
+  const placeIndex = placeList.length === 1
+    ? 0
+    : placeList.findIndex((p) => p.tambon === values.tambon && p.amphoe === values.amphoe && p.province === values.province);
+  const place = placeList[placeIndex];
+  // TODO(Thai copy for a postcode with no tambon)
+  const postcodeError = currentPlaces?.error ?? (currentPlaces?.list?.length === 0 ? "No tambon found for this postal code" : undefined);
 
   useEffect(() => {
     if (lines.length === 0) return;
     let cancelled = false;
-
     clientApi.quote({
       channel: "ONLINE",
       items: lines.map(({ product_id, variant_id, count }) => ({ product_id, variant_id, count })),
     }).then(
-      (quote) => {
-        if (!cancelled) setPricing({ cart: lines, quote });
-      },
-      (cause: unknown) => {
-        if (cancelled) return;
-        const error = cause instanceof ApiError && cause.code === "OUT_OF_STOCK"
-          ? "สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า"
-          : cause instanceof Error ? cause.message : String(cause);
-        setPricing({ cart: lines, error });
-      },
+      (quote) => { if (!cancelled) setPricing({ cart: lines, quote }); },
+      (cause: unknown) => { if (!cancelled) setPricing({ cart: lines, error: errorText(cause) }); },
     );
-
     return () => { cancelled = true; };
   }, [lines]);
 
   useEffect(() => {
-    if (step === 2) paymentHeading.current?.focus();
-  }, [step]);
+    let cancelled = false;
+    clientApi.getMe().then(
+      (user) => {
+        if (cancelled) return;
+        setMe(user);
+        setValues(toDetails(user));
+      },
+      (cause: unknown) => {
+        if (cancelled) return;
+        setMe(null);
+        if (!(cause instanceof ApiError && cause.status === 401)) setNotice(errorText(cause));
+      },
+    );
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const code = values.postal_code;
+    if (!/^\d{5}$/.test(code)) return;
+    let cancelled = false;
+    clientApi.getPostcode(code).then(
+      (list) => { if (!cancelled) setPlaces({ code, list }); },
+      (cause: unknown) => { if (!cancelled) setPlaces({ code, error: errorText(cause) }); },
+    );
+    return () => { cancelled = true; };
+  }, [values.postal_code]);
+
+  function signIn(idToken: string) {
+    setNotice(null);
+    clientApi.googleSignIn({ id_token: idToken }).then(
+      (user) => {
+        setMe(user);
+        setValues(toDetails(user));
+      },
+      (cause: unknown) => setNotice(errorText(cause)),
+    );
+  }
+
+  function go(next: 1 | 2 | 3) {
+    setStep(next);
+    focusStep(next);
+  }
+
+  const field = (name: keyof Details) => ({
+    name,
+    value: values[name],
+    error: errors[name],
+    onChange: (event: ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, [name]: event.target.value })),
+  });
 
   function next(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!quote) return;
-    const values = Object.fromEntries(new FormData(event.currentTarget));
+    if (!quote || !me) return;
     const parsed = detailsSchema.safeParse({
-      recipient: { ...values, line_id: values.line_id || null },
-      shipping_address: values,
+      recipient: { ...values, line_id: values.line_id || null, email: me.email },
+      // Tambon, amphoe and province only ever come from the lookup of this postcode.
+      shipping_address: { details: values.details, postal_code: values.postal_code, ...EMPTY_PLACE, ...place },
     });
-    if (!parsed.success) {
-      setErrors(Object.fromEntries(parsed.error.issues.map((issue) => [issue.path.at(-1), issue.message])));
-      const input = event.currentTarget.elements.namedItem(String(parsed.error.issues[0]?.path.at(-1)));
+    const fieldErrors: Partial<Record<keyof Details, string>> = parsed.success
+      ? {}
+      : Object.fromEntries(parsed.error.issues.map((issue) => [issue.path.at(-1), issue.message]));
+    if (postcodeError) fieldErrors.postal_code = postcodeError;
+    setErrors(fieldErrors);
+    const first = Object.keys(fieldErrors)[0];
+    if (!parsed.success || first) {
+      const input = first ? event.currentTarget.elements.namedItem(first) : null;
       if (input instanceof HTMLElement) input.focus();
       return;
     }
-    setErrors({});
-    setStep(2);
+    setChecked(parsed.data);
+    go(2);
   }
+
+  async function pickSlip(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    const run = ++slipRun.current;
+    setSlip(undefined);
+    setNotice(null);
+    setReading(Boolean(file));
+    if (!file) return;
+    const data = await readSlipQr(file);
+    if (run !== slipRun.current) return; // a newer file was picked meanwhile
+    setReading(false);
+    setSlip(data);
+  }
+
+  async function placeOrder() {
+    if (!checked || !slip) return;
+    setPlacing(true);
+    setNotice(null);
+    try {
+      await clientApi.createOrder({
+        items: lines.map(({ product_id, variant_id, count }) => ({ product_id, variant_id, count })),
+        ...checked,
+        slip_qr_data: slip,
+      });
+      clear();
+      setPlaced(true);
+    } catch (cause) {
+      if (cause instanceof ApiError && cause.code === "DUPLICATE_SLIP") {
+        setSlip(undefined);
+        setSlipKey((key) => key + 1); // empties the file input
+        setNotice(DUPLICATE_SLIP);
+        go(2);
+      } else if (cause instanceof ApiError && cause.status === 401) {
+        setMe(null);
+        // TODO(Thai copy for an expired sign-in)
+        setNotice("Please sign in again.");
+        go(1);
+      } else {
+        setNotice(errorText(cause));
+      }
+    } finally {
+      setPlacing(false);
+    }
+  }
+
+  const back = (to: 1 | 2) => <Button variant="secondary" className="mt-6" onClick={() => go(to)}>Back</Button>;
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
@@ -80,51 +223,110 @@ export default function Checkout() {
         {currentPricing?.error ? <p role="alert" className="mt-4">{currentPricing.error}</p> : null}
       </section>
 
+      {notice ? <p role="alert" className="mb-6 text-curtain">{notice}</p> : null}
+
       {lines.length > 0 ? (
         <>
           {/* TODO(Thai copy for checkout steps, form labels, Back and Next): POC wording. */}
           <ol className="mb-6 flex flex-wrap gap-x-6 gap-y-2">
             <li aria-current={step === 1 ? "step" : undefined}>① Enter details</li>
             <li aria-current={step === 2 ? "step" : undefined}>② Payment</li>
-            <li>③ Confirm order</li>
+            <li aria-current={step === 3 ? "step" : undefined}>③ Confirm order</li>
           </ol>
 
-          <section hidden={step !== 1} aria-labelledby="details-heading">
-            <h2 id="details-heading" ref={detailsHeading} tabIndex={-1} className="mb-4 text-h3 font-semibold">① Enter details</h2>
-            <form noValidate onSubmit={next}>
-              <fieldset className="grid min-w-0 gap-4 sm:grid-cols-2">
-                <Input name="first_name" label="First name" autoComplete="given-name" required error={errors.first_name} />
-                <Input name="last_name" label="Last name" autoComplete="family-name" required error={errors.last_name} />
-                <Input name="nickname" label="Nickname" autoComplete="nickname" required error={errors.nickname} />
-                <Input name="phone" label="Phone" type="tel" autoComplete="tel" required error={errors.phone} />
-                <Input name="line_id" label="LINE ID" error={errors.line_id} />
-                <Input name="email" label="Email" type="email" autoComplete="email" required error={errors.email} />
-              </fieldset>
+          <section hidden={step !== 1} aria-labelledby="step-1" aria-busy={me === undefined}>
+            <h2 id="step-1" tabIndex={-1} className="mb-4 text-h3 font-semibold">① Enter details</h2>
+            {me === null ? (
+              <>
+                {/* TODO(Thai copy for "sign in to continue") */}
+                <p className="mb-4">Sign in with Google to continue.</p>
+                <GoogleSignIn onToken={signIn} />
+              </>
+            ) : me ? (
+              <form noValidate onSubmit={next}>
+                <fieldset className="grid min-w-0 gap-4 sm:grid-cols-2">
+                  <Input {...field("first_name")} label="First name" autoComplete="given-name" required />
+                  <Input {...field("last_name")} label="Last name" autoComplete="family-name" required />
+                  <Input {...field("nickname")} label="Nickname" autoComplete="nickname" required />
+                  <Input {...field("phone")} label="Phone" type="tel" autoComplete="tel" required />
+                  <Input {...field("line_id")} label="LINE ID" />
+                  <Input name="email" label="Email" type="email" value={me.email} readOnly />
+                </fieldset>
 
-              <fieldset className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2">
-                <legend className="mb-4 text-h4 font-semibold">Shipping address</legend>
-                <Input name="postal_code" label="Postal code" inputMode="numeric" autoComplete="shipping postal-code" required error={errors.postal_code} />
-                <Input name="tambon" label="Tambon/Khwaeng" autoComplete="shipping address-level3" required error={errors.tambon} />
-                <Input name="amphoe" label="Amphoe/Khet" autoComplete="shipping address-level2" required error={errors.amphoe} />
-                <Input name="province" label="Province" autoComplete="shipping address-level1" required error={errors.province} />
-                <Input name="details" label="Details" autoComplete="shipping street-address" required error={errors.details} className="w-full" />
-              </fieldset>
+                <fieldset className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2">
+                  <legend className="mb-4 text-h4 font-semibold">Shipping address</legend>
+                  <Input {...field("postal_code")} error={errors.postal_code ?? postcodeError} label="Postal code" inputMode="numeric" maxLength={5} autoComplete="shipping postal-code" required />
+                  <Select
+                    name="tambon"
+                    label="Tambon/Khwaeng"
+                    required
+                    disabled={placeList.length === 0}
+                    value={placeIndex < 0 ? "" : String(placeIndex)}
+                    error={errors.tambon}
+                    onChange={(event) => {
+                      const picked = placeList[Number(event.target.value)];
+                      if (picked) setValues((v) => ({ ...v, ...picked }));
+                    }}
+                  >
+                    <option value="" disabled>–</option>
+                    {placeList.map((p, i) => <option key={i} value={i}>{p.tambon}</option>)}
+                  </Select>
+                  <Input name="amphoe" label="Amphoe/Khet" value={place?.amphoe ?? ""} readOnly />
+                  <Input name="province" label="Province" value={place?.province ?? ""} readOnly />
+                  <Input {...field("details")} label="Details" autoComplete="shipping street-address" required className="w-full" />
+                </fieldset>
 
-              <Button type="submit" disabled={!quote} className="mt-6">Next</Button>
-            </form>
+                {place && values.details.trim() ? (
+                  <p aria-live="polite" className="mt-4">
+                    {formatThaiAddress({ ...place, details: values.details.trim(), postal_code: values.postal_code })}
+                  </p>
+                ) : null}
+
+                <Button type="submit" disabled={!quote} className="mt-6">Next</Button>
+              </form>
+            ) : null}
           </section>
 
-          <section hidden={step !== 2} aria-labelledby="payment-heading">
-            <h2 id="payment-heading" ref={paymentHeading} tabIndex={-1} className="mb-4 text-h3 font-semibold">② Payment</h2>
-            {/* TODO(task 1.5): PaymentQR, slip reading and order submission enable the remaining steps. */}
-            {quote ? <CartTicket count={count} total={quote.total} action={<Button variant="secondary" disabled>Next</Button>} /> : null}
-            <Button variant="secondary" className="mt-6" onClick={() => {
-              setStep(1);
-              requestAnimationFrame(() => detailsHeading.current?.focus());
-            }}>Back</Button>
+          <section hidden={step !== 2} aria-labelledby="step-2">
+            <h2 id="step-2" tabIndex={-1} className="mb-4 text-h3 font-semibold">② Payment</h2>
+            {quote ? <PaymentQR promptpayId={quote.promptpay_id} amount={quote.total} /> : null}
+            <div className="my-6">
+              {/* TODO(Thai copy for "Upload slip" and "Slip read") */}
+              <Input key={slipKey} type="file" accept="image/*" label="Upload slip" onChange={pickSlip} />
+              <p aria-live="polite" className="mt-2">
+                {reading ? "…" : slip === null ? QR_NOT_READ : slip ? "Slip read" : null}
+              </p>
+            </div>
+            {quote ? (
+              <CartTicket count={count} total={quote.total} action={
+                <Button variant="secondary" disabled={!slip || reading} onClick={() => go(3)}>Next</Button>
+              } />
+            ) : null}
+            {back(1)}
+          </section>
+
+          <section hidden={step !== 3} aria-labelledby="step-3">
+            <h2 id="step-3" tabIndex={-1} className="mb-4 text-h3 font-semibold">③ Confirm order</h2>
+            {checked ? (
+              <div className="mb-6">
+                <p>{checked.recipient.first_name} {checked.recipient.last_name} ({checked.recipient.nickname}) {checked.recipient.phone}</p>
+                <p>{formatThaiAddress(checked.shipping_address)}</p>
+              </div>
+            ) : null}
+            {quote ? (
+              <CartTicket count={count} total={quote.total} action={
+                <Button variant="secondary" disabled={!slip || placing} onClick={placeOrder}>สั่งซื้อ</Button>
+              } />
+            ) : null}
+            {back(2)}
           </section>
         </>
       ) : null}
+
+      <Dialog open={placed} onClose={() => router.push("/")} title="สั่งซื้อแล้ว">
+        {/* TODO(Thai copy for the button that closes "Order placed") */}
+        <Button onClick={() => router.push("/")}>Done</Button>
+      </Dialog>
     </main>
   );
 }
