@@ -35,6 +35,7 @@ One brief per task. Hand a developer (or their AI tool) the brief together with 
 | D13 | **Promotion sets (CEO question 14):** "buy these items, in these amounts, for this price". Admins create, edit, switch off and delete sets in the dashboard; items can come from several shops, and buyers mix each item's allowed variants. Shown first in the shop. Sets ignore `buy_limit`. Online and POS (the POS screen shows them with 2.6). Deleting a product or variant warns, then cascades (BACKEND.md "Data model", "Business rules" 11). |
 | D14 | **PromptPay QR from promptpay.io:** `PaymentQR` shows `https://promptpay.io/<PROMPTPAY_ID>/<total>.png` instead of building the QR in the browser, with the account name (`PROMPTPAY_NAME`) and number under it. The buyer's browser loads it from that third-party service. |
 | D15 | **Dashboard token from `.env`:** the dashboard has no sign-in screen. `ADMIN_ACCESS_TOKEN` is in its server-side env, and `apps/dashboard/src/app/api/[...path]/route.ts` adds it to `/admin/*` calls (the same way the POS works, F7). Tailscale is the only gate. |
+| D16 | **Postcodes from a live source:** the server reads `kongvut/thai-province-data`'s `api/latest` files (maintained; follows DOPA names and Thailand Post postcodes) instead of a bundled snapshot, so upstream fixes reach buyers within a day. Thailand Post has no public postcode API. Each postcode's answer is cached with the Cache API for a day, because parsing the ~3 MB source costs ~15 ms CPU (over the free plan's 10 ms, `TODO(Workers plan)`); the source files are edge-cached for a day too. If the source is down, the lookup answers `503 UNAVAILABLE` and step ① can't continue until it's back. |
 
 ## Open questions in these briefs
 
@@ -196,7 +197,7 @@ Leave these as `TODO(<question>)` until the project lead answers:
 ### 2.2 Postcode lookup endpoint
 - **Size:** M · **Depends on:** F3 · **Owner:** FE1 (BE reviews)
 - **Files:** `apps/server/src/app/routes/address.route.ts`, `src/app/controllers/address.controller.ts`, `src/app/helpers/postcode.helper.ts`
-- **Do:** choose the source: a free external API, otherwise a bundled dataset. `GET /address/postcode/:code` returns `[{ tambon, amphoe, province }]`.
+- **Do:** choose the source: a free external API, otherwise a bundled dataset. **Now (D16):** the live `api/latest` files of kongvut/thai-province-data, no bundled data. `GET /address/postcode/:code` returns `[{ tambon, amphoe, province }]`.
 - **Done when:** a postcode that covers several tambons returns all of them.
 
 ### 2.3 Checkout: details form
