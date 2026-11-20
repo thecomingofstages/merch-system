@@ -1,4 +1,4 @@
-/** Non-secret app settings, still stored as Cloudflare Secrets so deploys keep them (docs/BACKEND.md "Environment"). */
+/** Non-secret app settings: Text variables in the Cloudflare dashboard, kept by deploys through keep_vars (docs/BACKEND.md "Environment"). */
 import { z } from "zod";
 
 export const appConfSchema = z.object({

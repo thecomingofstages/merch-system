@@ -5,10 +5,11 @@
   "compatibility_date": "2026-10-15",
   // Listed explicitly even where the compatibility date turns it on (docs/BACKEND.md "Hosting").
   "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
 
-  // No "vars" here on purpose: every deploy replaces the dashboard's vars with this file's.
-  // Every setting, CORS_ORIGINS and SHIPPING_FEE included, is a Secret in the Cloudflare
-  // dashboard (or `npx wrangler secret put <NAME>`), and in .dev.vars for local runs
-  // (see .dev.vars.example and docs/BACKEND.md "Environment").
+  // Settings live in the Cloudflare dashboard, not here: the visible ones (CORS_ORIGINS,
+  // SHIPPING_FEE, EMAIL_FROM, PROMPTPAY_ID, PROMPTPAY_NAME) as Text variables, the rest as
+  // Secrets. Without keep_vars, every deploy would replace the dashboard's Text variables with
+  // this file's (none). Locally they go in .dev.vars (docs/BACKEND.md "Environment").
+  "keep_vars": true
 }

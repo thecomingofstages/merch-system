@@ -52,7 +52,7 @@ apps/server/src/
 Request bodies are checked with the zod schemas from `@merch/shared` (see "Shared zod schemas"), so there is no `schemas/` folder.
 
 ## Environment
-Every key below is a **Secret** in production, set in the Cloudflare dashboard (merch-server → Settings → Variables and Secrets) or with `npx wrangler secret put`, and in `.dev.vars` locally. `.dev.vars.example` lists every key with empty values. The non-secret ones (`CORS_ORIGINS`, `SHIPPING_FEE`) are Secrets too: `wrangler.jsonc` has no `vars`, because every deploy replaces the dashboard's plain vars with the file's.
+Production settings are set in the Cloudflare dashboard (merch-server → Settings → **Variables and Secrets**, the runtime section, not the one under Build), and in `.dev.vars` locally; `.dev.vars.example` lists every key with empty values. The visible ones (`CORS_ORIGINS`, `SHIPPING_FEE`, `EMAIL_FROM`, `PROMPTPAY_ID`, `PROMPTPAY_NAME`) are **Text** variables, so they can be read back; `wrangler.jsonc` has `"keep_vars": true`, so deploys keep them. Everything else (`MONGODB_URI`, `ADMIN_ACCESS_TOKEN`, `SESSION_SECRET`, `GOOGLE_CLIENT_ID`, `RESEND_API_KEY`) is a **Secret** (or `npx wrangler secret put`).
 
 | Key | Used for |
 |---|---|
