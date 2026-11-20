@@ -63,18 +63,25 @@ export default async function checkCheckout(page) {
   await upload(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=", "base64"));
   await page.getByText("อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น", { exact: true }).waitFor();
   assert(await next.isDisabled(), "An unreadable slip blocks the order");
-  // A stand-in slip: the page's own QR drawn as a PNG.
-  const slip = Buffer.from(await page.evaluate(async () => {
+  // The QR comes from promptpay.io (D14) for the quoted total, with the account under it.
+  const qr = step("② Payment").getByRole("img", { name: "PromptPay QR", exact: true });
+  const src = await qr.getAttribute("src");
+  assert(src === "https://promptpay.io/0000000000000/250.png", `QR for the fixture ID and total, got ${src}`);
+  await step("② Payment").getByText("PromptPay: Placeholder account · 0000000000000", { exact: true }).waitFor();
+  // A stand-in slip: that QR, fetched outside the page (no CORS) and scaled up like a phone screenshot.
+  const png = (await (await page.request.get(src)).body()).toString("base64");
+  const slip = Buffer.from(await page.evaluate(async (b64) => {
     const image = new Image();
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(document.querySelector("svg[role=img]")))}`;
+    image.src = `data:image/png;base64,${b64}`;
     await image.decode();
     const canvas = Object.assign(document.createElement("canvas"), { width: 480, height: 480 });
     const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, 480, 480);
     ctx.drawImage(image, 0, 0, 480, 480);
     return canvas.toDataURL("image/png").split(",")[1];
-  }), "base64");
+  }, png), "base64");
   await upload(slip);
   await page.getByText("Slip read", { exact: true }).waitFor();
   await press(button("Back").first());

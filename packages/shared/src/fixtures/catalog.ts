@@ -10,6 +10,7 @@ import { fixtureShops } from "./shops";
 // TODO(SHIPPING_FEE value): placeholder shipping fee for fixtures mode only.
 export const FAKE_SHIPPING_FEE = 60;
 export const FAKE_PROMPTPAY_ID = "0000000000000";
+export const FAKE_PROMPTPAY_NAME = "Placeholder account";
 
 export class FixtureError extends Error {
   constructor(
@@ -123,5 +124,6 @@ export function mockQuoteForFixtures(
     shipping_fee,
     total: subtotal + shipping_fee,
     promptpay_id: FAKE_PROMPTPAY_ID,
+    promptpay_name: FAKE_PROMPTPAY_NAME,
   };
 }

@@ -7,6 +7,7 @@ const good = {
   CORS_ORIGINS: "http://a.test",
   SHIPPING_FEE: "60",
   PROMPTPAY_ID: "0000000000",
+  PROMPTPAY_NAME: "Test account",
   GOOGLE_CLIENT_ID: "test-client-id",
   SESSION_SECRET: "test-session-secret-test-session-secret",
   RESEND_API_KEY: "test-resend-key",

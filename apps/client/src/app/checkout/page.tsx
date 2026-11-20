@@ -339,7 +339,7 @@ export default function Checkout() {
 
           <section hidden={step !== 2} aria-labelledby="step-2">
             <h2 id="step-2" tabIndex={-1} className="mb-4 text-h3 font-semibold">② Payment</h2>
-            {quote ? <PaymentQR promptpayId={quote.promptpay_id} amount={quote.total} /> : null}
+            {quote ? <PaymentQR promptpayId={quote.promptpay_id} name={quote.promptpay_name} amount={quote.total} /> : null}
             <div className="my-6">
               {/* TODO(Thai copy for "Upload slip" and "Slip read") */}
               <Input key={slipKey} type="file" accept="image/*" label="Upload slip" onChange={pickSlip} />

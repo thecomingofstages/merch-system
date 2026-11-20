@@ -36,5 +36,7 @@ export const QuoteResponse = z.object({
   shipping_fee: baht,
   total: baht,
   promptpay_id: z.string(),
+  /** The account name, shown under the QR (D14). */
+  promptpay_name: z.string(),
 });
 export type QuoteResponse = z.infer<typeof QuoteResponse>;

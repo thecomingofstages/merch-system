@@ -118,6 +118,7 @@ describe.skipIf(!uri)("catalog, admin API and quote (S2–S4)", { timeout: 60_00
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ subtotal: 500, shipping_fee: testConfig.SHIPPING_FEE, total: 500 + testConfig.SHIPPING_FEE });
     expect(res.body.promptpay_id).toBe(testConfig.PROMPTPAY_ID);
+    expect(res.body.promptpay_name).toBe(testConfig.PROMPTPAY_NAME);
     expect(res.body.lines[0]).toMatchObject({ unit_price: 250, variant_name: "S" });
   });
 

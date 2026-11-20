@@ -5,7 +5,7 @@ Three Next.js 16 apps (`apps/client`, `apps/pos`, `apps/dashboard`) with Tailwin
 ## Workspace layout
 ```
 packages/
-  shared/   @merch/shared  zod schemas + types, cartSubtotal(), promptpayPayload(), formatThaiAddress()
+  shared/   @merch/shared  zod schemas + types, cartSubtotal(), isPromptpayId(), formatThaiAddress()
   ui/       @merch/ui      React components, useCart, slip QR reader, Tailwind theme (styles.css)
 apps/
   client/     storefront (phones first)            Cloudflare Workers (OpenNext)
@@ -31,7 +31,7 @@ apps/
 | `ProductPopup` | `product`, `stockOf(variant)`, optional `inCart(variantId)`, `onAdd(variantId, count)`; caps additions by stock, `buy_limit`, and the quantity already in the cart | client, POS | 1.1 |
 | `CartSummary` | `lines`, `shippingFee?`, `total?` (shipping hidden on POS) | client, POS | 1.1 |
 | `useCart()` | add / setCount / remove / clear; lines grouped by product | client, POS | 1.2 |
-| `PaymentQR` | `promptpayId`, `amount` | client, POS | 1.6 |
+| `PaymentQR` | `promptpayId`, `name`, `amount` (all from `POST /quote`); an `<img>` from `https://promptpay.io/<id>/<amount>.png` (D14) with the account name and number under it | client, POS | 1.6 |
 | `readSlipQrFromFile(file)` / `useSlipQrCamera()` | returns the payload string or null | client / POS | 1.7 |
 | `CartTicket` | `count`, `total`, `action` (see design direction) | client tray, POS checkout pane, payment step | 1.1 |
 
