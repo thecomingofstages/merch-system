@@ -29,18 +29,19 @@ apps/
 | `Button`, `Input`, `Select`, `Dialog`, `QuantityStepper`, `Price` | standard | all | F8 |
 | `ProductCard` | `product`, `stockOf(variant)`, `onOpen` | client, POS | 1.1 |
 | `ProductPopup` | `product`, `stockOf(variant)`, optional `inCart(variantId)`, `onAdd(variantId, count)`; caps additions by stock, `buy_limit`, and the quantity already in the cart | client, POS | 1.1 |
-| `CartSummary` | `lines`, `shippingFee?`, `total?` (shipping hidden on POS) | client, POS | 1.1 |
-| `useCart()` | add / setCount / remove / clear; lines grouped by product | client, POS | 1.2 |
+| `CartSummary` | `lines`, `sets?`, `shippingFee?`, `total?` (shipping hidden on POS) | client, POS | 1.1 |
+| `useCart()` | add / setCount / remove / clear, `sets` with addSet / removeSet (D13); lines grouped by product | client, POS | 1.2 |
 | `PaymentQR` | `promptpayId`, `name`, `amount` (all from `POST /quote`); an `<img>` from `https://promptpay.io/<id>/<amount>.png` (D14) with the account name and number under it | client, POS | 1.6 |
 | `readSlipQrFromFile(file)` / `useSlipQrCamera()` | returns the payload string or null | client / POS | 1.7 |
 | `CartTicket` | `count`, `total`, `action` (see design direction) | client tray, POS checkout pane, payment step | 1.1 |
+| `PromotionCard`, `PromotionPopup` | `promotion`, `stockOf(variant)`, `onOpen` / `onAdd(set)`; the popup has a stepper per allowed variant of each item, and "ใส่ตะกร้า" stays disabled until every item is filled | client (POS with 2.6) | D13 |
 
 ## App screens
 
 ### apps/client (FE1)
 | Screen | Notes | Task |
 |---|---|---|
-| Shop list | Header with cart count, one section per shop, `ProductCard` grid, `CartTicket` tray at the bottom | 1.3 |
+| Shop list | Header with cart count, promotion sets first (`PromotionCard` grid, `PromotionPopup`), one section per shop, `ProductCard` grid, `CartTicket` tray at the bottom | 1.3 |
 | Product popup | `ProductPopup` | 1.1 |
 | Checkout ① details | Sprint 1: plain form. Sprint 2: Google sign-in required first, autofill from `/me` (all fields editable, email read-only), postcode → tambon dropdown → amphoe/province auto, details field, live address preview with `formatThaiAddress()` | 1.4, 2.1, 2.3 |
 | Checkout ② payment | `PaymentQR` with a total quoted again on the way to ②, "Upload slip" → `readSlipQr` → show read / not read. If the QR can't be read, "Place order" stays disabled (D5). | 1.5 |
@@ -62,6 +63,7 @@ The POS never calls `apps/server` directly. Its browser calls the POS's own Next
 | Sign in | Token field; token kept in `sessionStorage` | 1.8 |
 | Dashboard | Empty state: "Sales overview comes later." | 1.8 |
 | Products | Shops → products → variants table; Add stock; Transfer to POS | 1.9, 2.9 |
+| Promotions | Sets: name, description, image URL, price, on/off switch, items (a product from any shop, its allowed variants, a count). Archiving a product or variant on Products lists the sets it deletes or changes first | D13 |
 | Orders | List with new-order badge, detail, Submit for shipping | 2.8 |
 | POS | Create, list, stock table, End sale | 2.9 |
 

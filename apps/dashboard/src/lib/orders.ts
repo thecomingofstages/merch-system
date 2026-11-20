@@ -42,12 +42,9 @@ export function orderTotal(order: Pick<Purchase, "original_price" | "shipping_fe
 /**
  * Total item count across all product variant lines in an order.
  */
-export function orderItemCount(order: Pick<Purchase, "products">): number {
-  return order.products.reduce(
-    (sum, productLine) =>
-      sum + productLine.variants.reduce((vSum, v) => vSum + v.count, 0),
-    0,
-  );
+export function orderItemCount(order: Pick<Purchase, "products" | "promotions">): number {
+  const pieces = (variants: { count: number }[]) => variants.reduce((sum, v) => sum + v.count, 0);
+  return [...order.products, ...order.promotions].reduce((sum, line) => sum + pieces(line.variants), 0);
 }
 
 /**

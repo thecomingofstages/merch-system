@@ -7,7 +7,7 @@ import { userSchema } from "../src/app/models/user.model";
 describe("models (S1)", () => {
   it("load on a connection", () => {
     const db = mongoose.createConnection();
-    expect(Object.keys(models(db)).sort()).toEqual(["Pos", "Product", "Purchase", "Shop", "User"]);
+    expect(Object.keys(models(db)).sort()).toEqual(["Pos", "Product", "Promotion", "Purchase", "Shop", "User"]);
   });
 
   it("users.gender takes only the enrollment values, or null", async () => {

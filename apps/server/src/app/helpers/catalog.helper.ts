@@ -3,10 +3,19 @@
  * Nothing is deleted: DELETE archives, and answers 409 IN_USE while the item still has
  * online stock or a POS holds stock of it (docs/BACKEND.md "Data model").
  */
-import type { CatalogResponse, ProductPatch, ProductRequest, ShopRequest, VariantPatch, VariantRequest } from "@merch/shared";
+import {
+  catalogPromotions,
+  type CatalogResponse,
+  type ProductPatch,
+  type ProductRequest,
+  type ShopRequest,
+  type VariantPatch,
+  type VariantRequest,
+} from "@merch/shared";
 import type { Types } from "mongoose";
 import type { z } from "zod";
 import type { Models } from "../models";
+import { plainSet } from "./pricing.helper";
 import { ApiError } from "../utils/ApiError";
 
 type Id = Types.ObjectId;
@@ -31,6 +40,7 @@ export async function archiveShop(m: Models, id: Id) {
   const products = await m.Product.find({ shop_id: id, archived: false }, { _id: 1, variants: 1 }).lean();
   for (const p of products) await assertNoStock(m, p._id, p.variants);
   await m.Product.updateMany({ shop_id: id }, { $set: { archived: true, "variants.$[].archived": true } });
+  await archiveSetsOf(m, products.map((p) => p._id));
   await m.Shop.updateOne({ _id: id }, { archived: true });
 }
 
@@ -68,6 +78,7 @@ export async function archiveProduct(m: Models, id: Id) {
   if (!product) throw ApiError.notFound("Product not found");
   await assertNoStock(m, id, product.variants);
   await m.Product.updateOne({ _id: id }, { $set: { archived: true, "variants.$[].archived": true } });
+  await archiveSetsOf(m, [id]);
 }
 
 // Variants
@@ -101,6 +112,18 @@ export async function archiveVariant(m: Models, productId: Id, variantId: Id) {
   if (!product) throw ApiError.notFound("Variant not found");
   await assertNoStock(m, productId, product.variants.filter((v) => v._id.equals(variantId)));
   await m.Product.updateOne({ _id: productId, "variants._id": variantId }, { $set: { "variants.$.archived": true } });
+  // The sets lose that variant; a set left with an item that has none is archived (D13).
+  await m.Promotion.updateMany({ "items.variant_ids": variantId }, { $pull: { "items.$[].variant_ids": variantId } });
+  await m.Promotion.updateMany({ archived: false, "items.variant_ids": { $size: 0 } }, { $set: { archived: true } });
+}
+
+/**
+ * Archives every set holding one of these products (D13). The dashboard warns first. Runs
+ * after the archive it follows, outside a transaction: if it fails, the catalog and priceCart
+ * still never offer a set whose item has no live variant.
+ */
+async function archiveSetsOf(m: Models, productIds: Id[]) {
+  if (productIds.length) await m.Promotion.updateMany({ archived: false, "items.product_id": { $in: productIds } }, { $set: { archived: true } });
 }
 
 /**
@@ -148,11 +171,21 @@ async function assertNoStock(m: Models, productId: Id, variants: { _id: Id; onli
  * such variant are left out.
  */
 export async function getCatalog(m: Models): Promise<CatalogResponse> {
-  const [shops, products] = await Promise.all([
+  const [shops, products, promotions] = await Promise.all([
     m.Shop.find({ archived: false }).sort({ shop_name: 1 }).lean(),
     m.Product.find({ archived: false }).sort({ name: 1 }).lean(),
+    m.Promotion.find({ active: true, archived: false }).sort({ name: 1 }).lean(),
   ]);
   return {
+    // Sets ignore visible_to_online (D13): a set may hold an item that isn't sold alone.
+    promotions: catalogPromotions(
+      promotions.map((p) => ({ ...plainSet(p), image: p.image ?? null })),
+      products.map((p) => ({
+        _id: String(p._id),
+        name: p.name,
+        variants: p.variants.map((v) => ({ _id: String(v._id), name: v.name, image: v.image ?? null, online_stock: v.online_stock, archived: v.archived })),
+      })),
+    ),
     shops: shops.map((shop) => ({
       _id: String(shop._id),
       shop_name: shop.shop_name,

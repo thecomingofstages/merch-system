@@ -6,8 +6,11 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import {
   CreateOrderRequest,
   formatThaiAddress,
+  setRequest,
   stockShortfalls,
+  unavailableSets,
   type CartLine,
+  type CartSet,
   type MeResponse,
   type PostcodeLookupResponse,
   type QuoteResponse,
@@ -50,18 +53,31 @@ function errorText(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
+/** The cart as POST /quote and POST /orders take it: no prices, the server sets them. */
+const cartRequest = (lines: CartLine[], sets: CartSet[]) => ({
+  items: lines.map(({ product_id, variant_id, count }) => ({ product_id, variant_id, count })),
+  promotions: sets.map(setRequest),
+});
+
 function focusStep(step: number) {
   requestAnimationFrame(() => document.getElementById(`step-${step}`)?.focus());
 }
 
 export default function Checkout() {
   const router = useRouter();
-  const { lines, count, clear, setCount } = useCart();
+  const { lines, sets, count, clear, setCount, removeSet } = useCart();
   // `run` bumps on the way to payment, so the QR always shows a fresh quote.
   const [quoteRun, setQuoteRun] = useState(0);
-  const [pricing, setPricing] = useState<{ cart: CartLine[]; run: number; quote?: QuoteResponse; error?: string } | null>(null);
+  const [pricing, setPricing] = useState<{
+    cart: CartLine[];
+    sets: CartSet[];
+    run: number;
+    quote?: QuoteResponse;
+    error?: string;
+  } | null>(null);
   const [stockRun, setStockRun] = useState(0);
-  const cart = useRef({ lines, setCount });
+  const cart = useRef({ lines, sets, setCount, removeSet });
+  const hasItems = lines.length + sets.length > 0;
   // undefined while GET /me is loading, null when signed out.
   const [me, setMe] = useState<MeResponse | null>();
   const [values, setValues] = useState<Details>(EMPTY);
@@ -79,7 +95,7 @@ export default function Checkout() {
   const [notice, setNotice] = useState<string | null>(null);
 
   // A previous quote must disappear as soon as the cart changes.
-  const currentPricing = pricing?.cart === lines && pricing.run === quoteRun ? pricing : null;
+  const currentPricing = pricing?.cart === lines && pricing.sets === sets && pricing.run === quoteRun ? pricing : null;
   const quote = currentPricing?.quote;
   const currentPlaces = places?.code === values.postal_code ? places : undefined;
   const placeList = currentPlaces?.list ?? [];
@@ -91,36 +107,37 @@ export default function Checkout() {
   const postcodeError = currentPlaces?.error ?? (currentPlaces?.list?.length === 0 ? "No tambon found for this postal code" : undefined);
 
   useEffect(() => {
-    if (lines.length === 0) return;
+    if (lines.length + sets.length === 0) return;
     let cancelled = false;
-    clientApi.quote({
-      channel: "ONLINE",
-      items: lines.map(({ product_id, variant_id, count }) => ({ product_id, variant_id, count })),
-    }).then(
-      (quote) => { if (!cancelled) setPricing({ cart: lines, run: quoteRun, quote }); },
-      (cause: unknown) => { if (!cancelled) setPricing({ cart: lines, run: quoteRun, error: errorText(cause) }); },
+    clientApi.quote({ channel: "ONLINE", ...cartRequest(lines, sets) }).then(
+      (quote) => { if (!cancelled) setPricing({ cart: lines, sets, run: quoteRun, quote }); },
+      (cause: unknown) => { if (!cancelled) setPricing({ cart: lines, sets, run: quoteRun, error: errorText(cause) }); },
     );
     return () => { cancelled = true; };
-  }, [lines, quoteRun]);
+  }, [lines, sets, quoteRun]);
 
   useEffect(() => {
-    cart.current = { lines, setCount };
+    cart.current = { lines, sets, setCount, removeSet };
   });
 
   // Re-checks stock while the buyer is in checkout, and takes what sold out out of the cart
   // (the quote, and so the QR, follow). Also right away after an order ran out of stock.
-  const hasLines = lines.length > 0;
   useEffect(() => {
-    if (!hasLines) return;
+    if (!hasItems) return;
     let cancelled = false;
     const check = () => {
       if (document.hidden) return;
       clientApi.getCatalog().then((catalog) => {
         if (cancelled) return;
         const short = stockShortfalls(cart.current.lines, catalog);
-        if (short.length === 0) return;
+        const goneSets = unavailableSets(cart.current.sets, catalog);
+        if (short.length + goneSets.length === 0) return;
         for (const { line, available } of short) cart.current.setCount(line.variant_id, available);
-        const names = short.map(({ line }) => `${line.product_name} (${line.variant_name})`).join(", ");
+        for (const set of goneSets) cart.current.removeSet(set.key);
+        const names = [
+          ...short.map(({ line }) => `${line.product_name} (${line.variant_name})`),
+          ...goneSets.map((set) => set.name),
+        ].join(", ");
         setNotice((prev) => [prev, cartUpdated(names)].filter(Boolean).join(" "));
       }, () => {}); // a failed check waits for the next one
     };
@@ -130,7 +147,7 @@ export default function Checkout() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [hasLines, stockRun]);
+  }, [hasItems, stockRun]);
 
   useEffect(() => {
     let cancelled = false;
@@ -227,7 +244,7 @@ export default function Checkout() {
     setNotice(null);
     try {
       await clientApi.createOrder({
-        items: lines.map(({ product_id, variant_id, count }) => ({ product_id, variant_id, count })),
+        ...cartRequest(lines, sets),
         ...checked,
         slip_qr_data: slip,
       });
@@ -268,14 +285,14 @@ export default function Checkout() {
         <Link href="/" className="inline-flex min-h-11 items-center text-violet">Back</Link>
       </header>
 
-      <section aria-label="Checkout" aria-busy={lines.length > 0 && !currentPricing} className="mb-8">
-        <CartSummary lines={quote?.lines ?? lines} shippingFee={quote?.shipping_fee} total={quote?.total} />
+      <section aria-label="Checkout" aria-busy={hasItems && !currentPricing} className="mb-8">
+        <CartSummary lines={quote?.lines ?? lines} sets={quote?.promotions ?? sets} shippingFee={quote?.shipping_fee} total={quote?.total} />
         {currentPricing?.error ? <p role="alert" className="mt-4">{currentPricing.error}</p> : null}
       </section>
 
       {notice ? <p role="alert" className="mb-6 text-curtain">{notice}</p> : null}
 
-      {lines.length > 0 ? (
+      {hasItems ? (
         <>
           {/* TODO(Thai copy for checkout steps, form labels, Back and Next): POC wording. */}
           <ol className="mb-6 flex flex-wrap gap-x-6 gap-y-2">

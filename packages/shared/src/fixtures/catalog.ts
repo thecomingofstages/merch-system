@@ -2,9 +2,12 @@
 import type { CatalogResponse } from "../schemas/catalog";
 import type { ErrorCode } from "../schemas/common";
 import type { Product } from "../schemas/product";
+import type { Promotion } from "../schemas/promotion";
+import { catalogPromotions, priceSets, SetError, stockDemand } from "../promotions";
 import { QuoteRequest, type CartItem, type QuoteLine, type QuoteResponse } from "../schemas/quote";
 import type { Shop } from "../schemas/shop";
 import { fixtureProducts } from "./products";
+import { fixturePromotions } from "./promotions";
 import { fixtureShops } from "./shops";
 
 // TODO(SHIPPING_FEE value): placeholder shipping fee for fixtures mode only.
@@ -28,8 +31,13 @@ export class FixtureError extends Error {
  * non-archived shops and products, only visible_to_online and non-archived variants,
  * and sold_out = online_stock === 0. Products with no visible variants are excluded.
  */
-export function toCatalog(shops: readonly Shop[], products: readonly Product[]): CatalogResponse {
+export function toCatalog(
+  shops: readonly Shop[],
+  products: readonly Product[],
+  promotions: readonly Promotion[] = fixturePromotions,
+): CatalogResponse {
   return {
+    promotions: catalogPromotions([...promotions], products.filter((p) => !p.archived)),
     shops: [...shops]
       .filter((s) => !s.archived)
       .sort((a, b) => a.shop_name.localeCompare(b.shop_name))
@@ -79,6 +87,7 @@ function mergeFixtureLines(items: readonly CartItem[]): CartItem[] {
 export function mockQuoteForFixtures(
   rawInput: QuoteRequest,
   products: readonly Product[] = fixtureProducts,
+  promotions: readonly Promotion[] = fixturePromotions,
 ): QuoteResponse {
   const parsed = QuoteRequest.safeParse(rawInput);
   if (!parsed.success) {
@@ -102,9 +111,6 @@ export function mockQuoteForFixtures(
     if (variant.buy_limit > 0 && item.count > variant.buy_limit) {
       throw new FixtureError(409, "BUY_LIMIT", `${label}: at most ${variant.buy_limit} per order`);
     }
-    if (item.count > variant.online_stock) {
-      throw new FixtureError(409, "OUT_OF_STOCK", `${label}: not enough stock`);
-    }
 
     return {
       product_id: product._id,
@@ -116,10 +122,28 @@ export function mockQuoteForFixtures(
     };
   });
 
-  const subtotal = lines.reduce((sum, l) => sum + l.unit_price * l.count, 0);
+  let sets;
+  try {
+    const onSale = promotions.filter((p) => p.active && !p.archived);
+    sets = priceSets(input.promotions ?? [], onSale, products.filter((p) => !p.archived));
+  } catch (err) {
+    if (err instanceof SetError) throw new FixtureError(400, "VALIDATION", err.message);
+    throw err;
+  }
+  if (lines.length + sets.length === 0) throw new FixtureError(400, "VALIDATION", "items: the cart is empty");
+  // Single lines and set pieces share the stock (D13).
+  for (const d of stockDemand(lines, sets)) {
+    const variant = products.find((p) => p._id === d.product_id)?.variants.find((v) => v._id === d.variant_id);
+    if (!variant || d.count > variant.online_stock) {
+      throw new FixtureError(409, "OUT_OF_STOCK", `${d.product_name} (${d.variant_name}): not enough stock`);
+    }
+  }
+
+  const subtotal = lines.reduce((sum, l) => sum + l.unit_price * l.count, 0) + sets.reduce((sum, s) => sum + s.price, 0);
   const shipping_fee = input.channel === "ONLINE" ? FAKE_SHIPPING_FEE : 0;
   return {
     lines,
+    promotions: sets,
     subtotal,
     shipping_fee,
     total: subtotal + shipping_fee,

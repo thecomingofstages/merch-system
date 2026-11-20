@@ -32,6 +32,7 @@ One brief per task. Hand a developer (or their AI tool) the brief together with 
 | D9 | `apps/dashboard` and `apps/pos` run under `pm2`. **Still open: CI platform** (affects I3). |
 | D11 | **CEO (questions 22, 23):** refunds and wrong amounts are settled outside the system: the shop contacts the buyer over LINE. A paid order that runs out of stock is kept as `payment_status: REFUND_DUE` so the admin can find the buyer (BACKEND.md "Business rules" 10). |
 | D12 | **CEO (question 24):** the buyer pays before the order is placed, in one checkout session, so there are no unpaid orders to cancel. The checkout re-checks stock every 15 s and removes what sold out. |
+| D13 | **Promotion sets (CEO question 14):** "buy these items, in these amounts, for this price". Admins create, edit, switch off and delete sets in the dashboard; items can come from several shops, and buyers mix each item's allowed variants. Shown first in the shop. Sets ignore `buy_limit`. Online and POS (the POS screen shows them with 2.6). Deleting a product or variant warns, then cascades (BACKEND.md "Data model", "Business rules" 11). |
 | D14 | **PromptPay QR from promptpay.io:** `PaymentQR` shows `https://promptpay.io/<PROMPTPAY_ID>/<total>.png` instead of building the QR in the browser, with the account name (`PROMPTPAY_NAME`) and number under it. The buyer's browser loads it from that third-party service. |
 
 ## Open questions in these briefs
@@ -417,4 +418,4 @@ Rough days per person (S = 1, M = 2.5), against 5 working days per sprint:
 **Critical path:** I1 → F1 → F3 → S1 → S4 → S5 → 1.5 (sprint 1 demo), then S8 → S9 → 2.7 (POS).
 
 ## Out of scope (marked in the POC)
-Sales dashboard, promotions, shipping-fee setting, tracking provider and link, cash at POS, order statuses beyond `ORDERED` / `SHIPPING` / `ARRIVED`.
+Sales dashboard, % or ฿-off promotions, shipping-fee setting, tracking provider and link, cash at POS, order statuses beyond `ORDERED` / `SHIPPING` / `ARRIVED`.
