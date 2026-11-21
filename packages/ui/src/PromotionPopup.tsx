@@ -2,6 +2,7 @@
 
 import type { CatalogPromotion, QuotePromotion } from "@merch/shared";
 import { useState } from "react";
+import { Bilingual } from "./Bilingual";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
 import { Price } from "./Price";
@@ -78,12 +79,11 @@ function PopupBody<V extends SetVariant>({
       {promotion.description ? <p>{promotion.description}</p> : null}
       {promotion.items.map((item, i) => (
         <fieldset key={i} className="flex min-w-0 flex-col gap-2 border-t border-line pt-3">
-          {/* TODO(Thai copy for "pick N" and the stepper labels) */}
           <legend className="font-medium">
-            {item.product_name} ×{item.count}
+            {item.product_name}: <Bilingual th={`เลือก ${item.count} ชิ้น`} en={`Pick ${item.count}`} />
           </legend>
           <p aria-live="polite" className="text-small">
-            {picked(i)} / {item.count}
+            <Bilingual th={`เลือกแล้ว ${picked(i)} จาก ${item.count}`} en={`${picked(i)} of ${item.count} picked`} />
           </p>
           {item.variants.map((v) => {
             const value = counts[i]?.[v._id] ?? 0;
@@ -92,14 +92,14 @@ function PopupBody<V extends SetVariant>({
               <div key={v._id} className="flex items-center justify-between gap-4">
                 <span>
                   {v.name}
-                  {stockOf(v) <= 0 ? " · สินค้าหมด" : null}
+                  {stockOf(v) <= 0 ? <> · <Bilingual th="สินค้าหมด" en="Sold out" /></> : null}
                 </span>
                 <QuantityStepper
                   value={value}
                   min={0}
                   max={max}
-                  decreaseLabel={`Fewer ${v.name}`}
-                  increaseLabel={`More ${v.name}`}
+                  decreaseLabel={`ลด ${v.name}`}
+                  increaseLabel={`เพิ่ม ${v.name}`}
                   onChange={(n) => setCounts((all) => all.map((c, j) => (j === i ? { ...c, [v._id]: n } : c)))}
                 />
               </div>
@@ -108,11 +108,11 @@ function PopupBody<V extends SetVariant>({
         </fieldset>
       ))}
       <p className="flex items-center justify-between font-semibold">
-        <span>Total price</span>
+        <span><Bilingual th="ราคารวม" en="Total" /></span>
         <Price amount={promotion.price} />
       </p>
       <Button disabled={!complete} onClick={add}>
-        ใส่ตะกร้า
+        <Bilingual th="ใส่ตะกร้า" en="Add to cart" />
       </Button>
     </div>
   );

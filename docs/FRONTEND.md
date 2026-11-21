@@ -130,16 +130,33 @@ Text is left-aligned throughout, except the total on the ticket, which is right-
 ### Copy
 Thai first, sentence case, plain verbs. An action keeps its name through the flow.
 
-| Situation | Text |
-|---|---|
-| Add button | ใส่ตะกร้า |
-| Go to checkout | ชำระเงิน |
-| Submit online order | สั่งซื้อ → popup "สั่งซื้อแล้ว" |
-| POS manual verify | ยืนยันสลิปด้วยตนเอง |
-| Duplicate slip | สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้ |
-| Out of stock at order | สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า |
-| QR not read from slip | อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น |
-| Empty cart | ยังไม่มีสินค้าในตะกร้า |
+The shop shows the English after the Thai, a step quieter: `<Bilingual th en />` from `@merch/ui` (`stack` puts a sentence's English on its own line). Text only a screen reader hears (`aria-label`, the QR's alt, the header's cart count) stays Thai, since the page is `lang="th"`. "N ชิ้น" counts stay Thai. Server error messages, form-field errors from the zod schemas, the buyer emails and the dashboard are not translated yet.
+
+| Situation | Thai | English |
+|---|---|---|
+| Add button | ใส่ตะกร้า | Add to cart |
+| Go to checkout, its heading | ชำระเงิน | Checkout |
+| Sold out | สินค้าหมด | Sold out |
+| Product popup | ตัวเลือก · จำนวน · ราคารวม | Option · Quantity · Total |
+| Buy limit reached | จำกัด N ชิ้นต่อคำสั่งซื้อ ใส่ตะกร้าครบแล้ว | You can buy up to N per order, and they're already in your cart. |
+| Promotion item | {product}: เลือก N ชิ้น · เลือกแล้ว 1 จาก 2 | Pick N · 1 of 2 picked |
+| Cart summary | ค่าส่ง · ยอดรวม | Shipping · Total |
+| Empty cart | ยังไม่มีสินค้าในตะกร้า | Your cart is empty |
+| Checkout steps | ① กรอกข้อมูล · ② ชำระเงิน · ③ ยืนยันคำสั่งซื้อ | Your details · Payment · Confirm order |
+| Back, Next | กลับ · ถัดไป | Back · Next |
+| Sign in | เข้าสู่ระบบด้วย Google ก่อนกรอกข้อมูล | Sign in with Google to fill in your details |
+| Signed out mid-order | หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบอีกครั้ง | You were signed out. Please sign in again. |
+| Details form | ชื่อ · นามสกุล · ชื่อเล่น · เบอร์โทร · LINE ID · อีเมล | First name · Last name · Nickname · Phone · Email |
+| Address | ที่อยู่จัดส่ง · รหัสไปรษณีย์ · ตำบล/แขวง · อำเภอ/เขต · จังหวัด · บ้านเลขที่ ซอย ถนน | Shipping address · Postal code · Subdistrict · District · Province · House no., soi, road |
+| Postcode with no tambon | ไม่พบตำบลของรหัสไปรษณีย์นี้ | No subdistrict found for this postal code |
+| Payment | บัญชีพร้อมเพย์ · อัปโหลดสลิป · อ่าน QR จากสลิปแล้ว | PromptPay account · Upload slip · Read the QR on your slip |
+| QR not read from slip | อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น | We couldn't read the QR on this slip. Try a sharper photo. |
+| Duplicate slip | สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้ | This slip was already used for another order. Please upload the slip for this order. |
+| Out of stock at order | สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า | Some items have sold out. Please update your cart. |
+| Cart updated in checkout | สินค้าบางรายการหมด เราปรับตะกร้าให้แล้ว: {names} | Some items sold out, so we updated your cart: {names} |
+| Paid, then sold out | สินค้าบางรายการหมดก่อนบันทึกคำสั่งซื้อ ร้านจะติดต่อทาง LINE เพื่อคืนเงินที่โอนมา | Some items sold out before we could save your order. The shop will contact you on LINE to refund your payment. |
+| Submit online order | สั่งซื้อ → popup "สั่งซื้อแล้ว" → กลับไปหน้าร้าน | Place order → "Order placed" → Back to the shop |
+| POS manual verify | ยืนยันสลิปด้วยตนเอง | – |
 
 Have a native speaker on the team check the Thai before release.
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { Bilingual } from "./Bilingual";
 import { Price } from "./Price";
 import { setSoldOut, type SetVariant, type ShopPromotion } from "./PromotionPopup";
 
@@ -22,7 +23,7 @@ export function PromotionCard<V extends SetVariant>({ promotion, stockOf, onOpen
         <div className={`aspect-square w-full rounded-sm bg-raised ${fade}`} />
       )}
       <span className="mt-1 font-medium">{promotion.name}</span>
-      {soldOut ? <span className="text-fg-3">สินค้าหมด</span> : <span className="text-fg-2 tabular-nums"><Price amount={promotion.price} /></span>}
+      {soldOut ? <span className="text-fg-3"><Bilingual th="สินค้าหมด" en="Sold out" /></span> : <span className="text-fg-2 tabular-nums"><Price amount={promotion.price} /></span>}
     </button>
   );
 }

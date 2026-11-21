@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import {
   CreateOrderRequest,
   formatThaiAddress,
@@ -15,7 +15,7 @@ import {
   type PostcodeLookupResponse,
   type QuoteResponse,
 } from "@merch/shared";
-import { Button, CartSummary, CartTicket, Dialog, Input, PaymentQR, readSlipQr, Select, useCart } from "@merch/ui";
+import { Bilingual, Button, CartSummary, CartTicket, Dialog, Input, PaymentQR, readSlipQr, Select, useCart } from "@merch/ui";
 import type { z } from "zod";
 import { ApiError, clientApi } from "../../lib/api";
 import { GoogleSignIn } from "./GoogleSignIn";
@@ -24,13 +24,29 @@ const detailsSchema = CreateOrderRequest.pick({ recipient: true, shipping_addres
 type CheckedDetails = z.output<typeof detailsSchema>;
 
 // docs/FRONTEND.md "Copy"
-const OUT_OF_STOCK = "สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า";
-const DUPLICATE_SLIP = "สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้";
-const QR_NOT_READ = "อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น";
-// TODO(Thai copy for stock running out during checkout)
-const PAID_OUT_OF_STOCK =
-  "Some items sold out before your order was saved. The shop will contact you on LINE to refund this payment.";
-const cartUpdated = (names: string) => `Some items sold out, so your cart was updated: ${names}`;
+const OUT_OF_STOCK = <Bilingual stack th="สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า" en="Some items have sold out. Please update your cart." />;
+const DUPLICATE_SLIP = (
+  <Bilingual
+    stack
+    th="สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้"
+    en="This slip was already used for another order. Please upload the slip for this order."
+  />
+);
+const QR_NOT_READ = (
+  <Bilingual stack th="อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น" en="We couldn't read the QR on this slip. Try a sharper photo." />
+);
+const PAID_OUT_OF_STOCK = (
+  <Bilingual
+    stack
+    th="สินค้าบางรายการหมดก่อนบันทึกคำสั่งซื้อ ร้านจะติดต่อทาง LINE เพื่อคืนเงินที่โอนมา"
+    en="Some items sold out before we could save your order. The shop will contact you on LINE to refund your payment."
+  />
+);
+const SIGNED_OUT = <Bilingual stack th="หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบอีกครั้ง" en="You were signed out. Please sign in again." />;
+const NO_TAMBON = <Bilingual th="ไม่พบตำบลของรหัสไปรษณีย์นี้" en="No subdistrict found for this postal code" />;
+const cartUpdated = (names: string) => (
+  <Bilingual stack th={`สินค้าบางรายการหมด เราปรับตะกร้าให้แล้ว: ${names}`} en={`Some items sold out, so we updated your cart: ${names}`} />
+);
 
 // How often the checkout re-checks stock (the server has no push; see docs/FRONTEND.md "apps/client").
 const STOCK_CHECK_MS = 15_000;
@@ -48,7 +64,7 @@ function toDetails(me: MeResponse): Details {
   return Object.fromEntries(Object.keys(EMPTY).map((key) => [key, saved[key as keyof Details] ?? ""])) as Details;
 }
 
-function errorText(cause: unknown): string {
+function errorText(cause: unknown): ReactNode {
   if (cause instanceof ApiError && cause.code === "OUT_OF_STOCK") return OUT_OF_STOCK;
   return cause instanceof Error ? cause.message : String(cause);
 }
@@ -73,7 +89,7 @@ export default function Checkout() {
     sets: CartSet[];
     run: number;
     quote?: QuoteResponse;
-    error?: string;
+    error?: ReactNode;
   } | null>(null);
   const [stockRun, setStockRun] = useState(0);
   const cart = useRef({ lines, sets, setCount, removeSet });
@@ -81,8 +97,8 @@ export default function Checkout() {
   // undefined while GET /me is loading, null when signed out.
   const [me, setMe] = useState<MeResponse | null>();
   const [values, setValues] = useState<Details>(EMPTY);
-  const [places, setPlaces] = useState<{ code: string; list?: PostcodeLookupResponse; error?: string }>();
-  const [errors, setErrors] = useState<Partial<Record<keyof Details, string>>>({});
+  const [places, setPlaces] = useState<{ code: string; list?: PostcodeLookupResponse; error?: ReactNode }>();
+  const [errors, setErrors] = useState<Partial<Record<keyof Details, ReactNode>>>({});
   const [checked, setChecked] = useState<CheckedDetails>();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   // undefined until a file is picked, null when its QR can't be read (D5).
@@ -92,7 +108,7 @@ export default function Checkout() {
   const slipRun = useRef(0);
   const [placing, setPlacing] = useState(false);
   const [placed, setPlaced] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<ReactNode>(null);
 
   // A previous quote must disappear as soon as the cart changes.
   const currentPricing = pricing?.cart === lines && pricing.sets === sets && pricing.run === quoteRun ? pricing : null;
@@ -103,8 +119,7 @@ export default function Checkout() {
     ? 0
     : placeList.findIndex((p) => p.tambon === values.tambon && p.amphoe === values.amphoe && p.province === values.province);
   const place = placeList[placeIndex];
-  // TODO(Thai copy for a postcode with no tambon)
-  const postcodeError = currentPlaces?.error ?? (currentPlaces?.list?.length === 0 ? "No tambon found for this postal code" : undefined);
+  const postcodeError = currentPlaces?.error ?? (currentPlaces?.list?.length === 0 ? NO_TAMBON : undefined);
 
   useEffect(() => {
     if (lines.length + sets.length === 0) return;
@@ -138,7 +153,7 @@ export default function Checkout() {
           ...short.map(({ line }) => `${line.product_name} (${line.variant_name})`),
           ...goneSets.map((set) => set.name),
         ].join(", ");
-        setNotice((prev) => [prev, cartUpdated(names)].filter(Boolean).join(" "));
+        setNotice((prev) => (prev ? <>{prev}<br />{cartUpdated(names)}</> : cartUpdated(names)));
       }, () => {}); // a failed check waits for the next one
     };
     if (stockRun > 0) check();
@@ -209,7 +224,7 @@ export default function Checkout() {
       // Tambon, amphoe and province only ever come from the lookup of this postcode.
       shipping_address: { details: values.details, postal_code: values.postal_code, ...EMPTY_PLACE, ...place },
     });
-    const fieldErrors: Partial<Record<keyof Details, string>> = parsed.success
+    const fieldErrors: Partial<Record<keyof Details, ReactNode>> = parsed.success
       ? {}
       : Object.fromEntries(parsed.error.issues.map((issue) => [issue.path.at(-1), issue.message]));
     if (postcodeError) fieldErrors.postal_code = postcodeError;
@@ -265,8 +280,7 @@ export default function Checkout() {
         go(2);
       } else if (cause instanceof ApiError && cause.status === 401) {
         setMe(null);
-        // TODO(Thai copy for an expired sign-in)
-        setNotice("Please sign in again.");
+        setNotice(SIGNED_OUT);
         go(1);
       } else {
         setNotice(errorText(cause));
@@ -276,16 +290,16 @@ export default function Checkout() {
     }
   }
 
-  const back = (to: 1 | 2) => <Button variant="secondary" className="mt-6" onClick={() => go(to)}>Back</Button>;
+  const back = (to: 1 | 2) => <Button variant="secondary" className="mt-6" onClick={() => go(to)}><Bilingual th="กลับ" en="Back" /></Button>;
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <header className="mb-8 flex items-center justify-between gap-4">
-        <h1 className="text-h2">ชำระเงิน</h1>
-        <Link href="/" className="inline-flex min-h-11 items-center text-gold">Back</Link>
+        <h1 className="text-h2"><Bilingual th="ชำระเงิน" en="Checkout" /></h1>
+        <Link href="/" className="inline-flex min-h-11 items-center text-gold"><Bilingual th="กลับ" en="Back" /></Link>
       </header>
 
-      <section aria-label="Checkout" aria-busy={hasItems && !currentPricing} className="mb-8 rounded-xl border border-line bg-surface p-5">
+      <section aria-label="สรุปคำสั่งซื้อ" aria-busy={hasItems && !currentPricing} className="mb-8 rounded-xl border border-line bg-surface p-5">
         <CartSummary lines={quote?.lines ?? lines} sets={quote?.promotions ?? sets} shippingFee={quote?.shipping_fee} total={quote?.total} />
         {currentPricing?.error ? <p role="alert" className="mt-4">{currentPricing.error}</p> : null}
       </section>
@@ -294,38 +308,36 @@ export default function Checkout() {
 
       {hasItems ? (
         <>
-          {/* TODO(Thai copy for checkout steps, form labels, Back and Next): POC wording. */}
           <ol className="mb-6 flex flex-wrap gap-x-6 gap-y-2 text-fg-3 [&>[aria-current=step]]:font-medium [&>[aria-current=step]]:text-fg">
-            <li aria-current={step === 1 ? "step" : undefined}>① Enter details</li>
-            <li aria-current={step === 2 ? "step" : undefined}>② Payment</li>
-            <li aria-current={step === 3 ? "step" : undefined}>③ Confirm order</li>
+            <li aria-current={step === 1 ? "step" : undefined}>① <Bilingual th="กรอกข้อมูล" en="Your details" /></li>
+            <li aria-current={step === 2 ? "step" : undefined}>② <Bilingual th="ชำระเงิน" en="Payment" /></li>
+            <li aria-current={step === 3 ? "step" : undefined}>③ <Bilingual th="ยืนยันคำสั่งซื้อ" en="Confirm order" /></li>
           </ol>
 
           <section hidden={step !== 1} aria-labelledby="step-1" aria-busy={me === undefined}>
-            <h2 id="step-1" tabIndex={-1} className="mb-4 text-h3">① Enter details</h2>
+            <h2 id="step-1" tabIndex={-1} className="mb-4 text-h3">① <Bilingual th="กรอกข้อมูล" en="Your details" /></h2>
             {me === null ? (
               <>
-                {/* TODO(Thai copy for "sign in to continue") */}
-                <p className="mb-4">Sign in with Google to continue.</p>
+                <p className="mb-4"><Bilingual th="เข้าสู่ระบบด้วย Google ก่อนกรอกข้อมูล" en="Sign in with Google to fill in your details" /></p>
                 <GoogleSignIn onToken={signIn} />
               </>
             ) : me ? (
               <form noValidate onSubmit={next}>
                 <fieldset className="grid min-w-0 gap-4 sm:grid-cols-2">
-                  <Input {...field("first_name")} label="First name" autoComplete="given-name" required />
-                  <Input {...field("last_name")} label="Last name" autoComplete="family-name" required />
-                  <Input {...field("nickname")} label="Nickname" autoComplete="nickname" required />
-                  <Input {...field("phone")} label="Phone" type="tel" autoComplete="tel" required />
+                  <Input {...field("first_name")} label={<Bilingual th="ชื่อ" en="First name" />} autoComplete="given-name" required />
+                  <Input {...field("last_name")} label={<Bilingual th="นามสกุล" en="Last name" />} autoComplete="family-name" required />
+                  <Input {...field("nickname")} label={<Bilingual th="ชื่อเล่น" en="Nickname" />} autoComplete="nickname" required />
+                  <Input {...field("phone")} label={<Bilingual th="เบอร์โทร" en="Phone" />} type="tel" autoComplete="tel" required />
                   <Input {...field("line_id")} label="LINE ID" />
-                  <Input name="email" label="Email" type="email" value={me.email} readOnly />
+                  <Input name="email" label={<Bilingual th="อีเมล" en="Email" />} type="email" value={me.email} readOnly />
                 </fieldset>
 
                 <fieldset className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2">
-                  <legend className="mb-4 text-h4 font-semibold">Shipping address</legend>
-                  <Input {...field("postal_code")} error={errors.postal_code ?? postcodeError} label="Postal code" inputMode="numeric" maxLength={5} autoComplete="shipping postal-code" required />
+                  <legend className="mb-4 text-h4 font-semibold"><Bilingual th="ที่อยู่จัดส่ง" en="Shipping address" /></legend>
+                  <Input {...field("postal_code")} error={errors.postal_code ?? postcodeError} label={<Bilingual th="รหัสไปรษณีย์" en="Postal code" />} inputMode="numeric" maxLength={5} autoComplete="shipping postal-code" required />
                   <Select
                     name="tambon"
-                    label="Tambon/Khwaeng"
+                    label={<Bilingual th="ตำบล/แขวง" en="Subdistrict" />}
                     required
                     disabled={placeList.length === 0}
                     value={placeIndex < 0 ? "" : String(placeIndex)}
@@ -338,9 +350,9 @@ export default function Checkout() {
                     <option value="" disabled>–</option>
                     {placeList.map((p, i) => <option key={i} value={i}>{p.tambon}</option>)}
                   </Select>
-                  <Input name="amphoe" label="Amphoe/Khet" value={place?.amphoe ?? ""} readOnly />
-                  <Input name="province" label="Province" value={place?.province ?? ""} readOnly />
-                  <Input {...field("details")} label="Details" autoComplete="shipping street-address" required className="w-full" />
+                  <Input name="amphoe" label={<Bilingual th="อำเภอ/เขต" en="District" />} value={place?.amphoe ?? ""} readOnly />
+                  <Input name="province" label={<Bilingual th="จังหวัด" en="Province" />} value={place?.province ?? ""} readOnly />
+                  <Input {...field("details")} label={<Bilingual th="บ้านเลขที่ ซอย ถนน" en="House no., soi, road" />} autoComplete="shipping street-address" required className="w-full" />
                 </fieldset>
 
                 {place && values.details.trim() ? (
@@ -349,31 +361,30 @@ export default function Checkout() {
                   </p>
                 ) : null}
 
-                <Button type="submit" disabled={!quote} className="mt-6">Next</Button>
+                <Button type="submit" disabled={!quote} className="mt-6"><Bilingual th="ถัดไป" en="Next" /></Button>
               </form>
             ) : null}
           </section>
 
           <section hidden={step !== 2} aria-labelledby="step-2">
-            <h2 id="step-2" tabIndex={-1} className="mb-4 text-h3">② Payment</h2>
+            <h2 id="step-2" tabIndex={-1} className="mb-4 text-h3">② <Bilingual th="ชำระเงิน" en="Payment" /></h2>
             {quote ? <PaymentQR promptpayId={quote.promptpay_id} name={quote.promptpay_name} amount={quote.total} /> : null}
             <div className="my-6">
-              {/* TODO(Thai copy for "Upload slip" and "Slip read") */}
-              <Input key={slipKey} type="file" accept="image/*" label="Upload slip" onChange={pickSlip} />
+              <Input key={slipKey} type="file" accept="image/*" label={<Bilingual th="อัปโหลดสลิป" en="Upload slip" />} onChange={pickSlip} />
               <p aria-live="polite" className="mt-2">
-                {reading ? "…" : slip === null ? QR_NOT_READ : slip ? "Slip read" : null}
+                {reading ? "…" : slip === null ? QR_NOT_READ : slip ? <Bilingual th="อ่าน QR จากสลิปแล้ว" en="Read the QR on your slip" /> : null}
               </p>
             </div>
             {quote ? (
               <CartTicket count={count} total={quote.total} action={
-                <Button variant="secondary" disabled={!slip || reading} onClick={() => go(3)}>Next</Button>
+                <Button variant="secondary" disabled={!slip || reading} onClick={() => go(3)}><Bilingual th="ถัดไป" en="Next" /></Button>
               } />
             ) : null}
             {back(1)}
           </section>
 
           <section hidden={step !== 3} aria-labelledby="step-3">
-            <h2 id="step-3" tabIndex={-1} className="mb-4 text-h3">③ Confirm order</h2>
+            <h2 id="step-3" tabIndex={-1} className="mb-4 text-h3">③ <Bilingual th="ยืนยันคำสั่งซื้อ" en="Confirm order" /></h2>
             {checked ? (
               <div className="mb-6">
                 <p>{checked.recipient.first_name} {checked.recipient.last_name} ({checked.recipient.nickname}) {checked.recipient.phone}</p>
@@ -382,7 +393,7 @@ export default function Checkout() {
             ) : null}
             {quote ? (
               <CartTicket count={count} total={quote.total} action={
-                <Button variant="secondary" disabled={!slip || placing} onClick={placeOrder}>สั่งซื้อ</Button>
+                <Button variant="secondary" disabled={!slip || placing} onClick={placeOrder}><Bilingual th="สั่งซื้อ" en="Place order" /></Button>
               } />
             ) : null}
             {back(2)}
@@ -390,9 +401,8 @@ export default function Checkout() {
         </>
       ) : null}
 
-      <Dialog open={placed} onClose={() => router.push("/")} title="สั่งซื้อแล้ว">
-        {/* TODO(Thai copy for the button that closes "Order placed") */}
-        <Button onClick={() => router.push("/")}>Done</Button>
+      <Dialog open={placed} onClose={() => router.push("/")} title={<Bilingual th="สั่งซื้อแล้ว" en="Order placed" />}>
+        <Button onClick={() => router.push("/")}><Bilingual th="กลับไปหน้าร้าน" en="Back to the shop" /></Button>
       </Dialog>
     </main>
   );

@@ -1,11 +1,9 @@
 "use client";
 
 import { isPromptpayId } from "@merch/shared";
+import { Bilingual } from "./Bilingual";
 import { Price } from "./Price";
 
-// TODO(Thai copy): accessible name of the QR, and the label before the account
-const LABEL = "PromptPay QR";
-const ACCOUNT = "PromptPay";
 
 type PaymentQRProps = {
   /** `promptpay_id` from `POST /quote` (the server's PROMPTPAY_ID). */
@@ -29,7 +27,7 @@ export function PaymentQR({ promptpayId, name, amount }: PaymentQRProps) {
     <figure className="flex flex-col items-center gap-2">
       <img
         src={`https://promptpay.io/${id}/${amount}.png`}
-        alt={LABEL}
+        alt="คิวอาร์โค้ดพร้อมเพย์"
         // promptpay.io needs the ID and amount, not which checkout page asked.
         referrerPolicy="no-referrer"
         width={240}
@@ -41,7 +39,7 @@ export function PaymentQR({ promptpayId, name, amount }: PaymentQRProps) {
           <Price amount={amount} />
         </span>
         <span>
-          {ACCOUNT}: {name} · {id}
+          <Bilingual th="บัญชีพร้อมเพย์" en="PromptPay account" />: {name} · {id}
         </span>
       </figcaption>
     </figure>

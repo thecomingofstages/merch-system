@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CatalogProduct, CatalogPromotion, CatalogResponse, CatalogVariant, CartLine } from "@merch/shared";
-import { Button, CartTicket, maxCount, ProductCard, ProductPopup, PromotionCard, PromotionPopup, useCart } from "@merch/ui";
+import { Bilingual, Button, CartTicket, maxCount, ProductCard, ProductPopup, PromotionCard, PromotionPopup, useCart } from "@merch/ui";
 import { clientApi } from "../lib/api";
 
 export default function Home() {
@@ -64,9 +64,8 @@ export default function Home() {
 
         {catalog?.promotions.length ? (
           <section aria-labelledby="promotions" className="mb-10">
-            {/* TODO(Thai copy for the promotions heading) */}
             <h2 id="promotions" className="mb-4 text-h3 text-fg">
-              Promotions
+              <Bilingual th="โปรโมชัน" en="Promotions" />
             </h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
               {catalog.promotions.map((promotion) => (
@@ -109,7 +108,7 @@ export default function Home() {
               total={cart.subtotal}
               action={
                 <Button variant="secondary" onClick={() => router.push("/checkout")}>
-                  ชำระเงิน
+                  <Bilingual th="ชำระเงิน" en="Checkout" />
                 </Button>
               }
             />
