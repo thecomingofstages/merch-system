@@ -30,7 +30,7 @@ export function CartTicket({ count, total, action }: CartTicketProps) {
 
   return (
     <div style={notches} className="flex items-center gap-4 bg-gold px-8 py-3 text-canvas">
-      <span className="tabular-nums">{count} ชิ้น</span>
+      <span className="whitespace-nowrap tabular-nums">{count} ชิ้น</span>
       <span
         key={flash}
         className={`ml-auto rounded-sm px-1 text-right font-display text-h3 tabular-nums ${flash ? "motion-safe:animate-flash" : ""}`}
