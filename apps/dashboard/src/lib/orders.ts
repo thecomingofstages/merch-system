@@ -96,6 +96,4 @@ export function formatBuyerSummary(
   return `${order.recipient.first_name} ${order.recipient.last_name} (${order.recipient.nickname})`;
 }
 
-export function shortOrderId(id: string): string {
-  return id.length > 8 ? `#${id.slice(-6).toUpperCase()}` : `#${id}`;
-}
+export { shortOrderId } from "@merch/shared";

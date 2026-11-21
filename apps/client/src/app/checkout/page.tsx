@@ -7,6 +7,7 @@ import {
   CreateOrderRequest,
   formatThaiAddress,
   setRequest,
+  shortOrderId,
   stockShortfalls,
   unavailableSets,
   type CartLine,
@@ -30,6 +31,14 @@ const QR_NOT_READ = "อ่าน QR จากสลิปไม่ได้ ล
 const PAID_OUT_OF_STOCK = "สินค้าบางรายการหมดก่อนบันทึกคำสั่งซื้อ ร้านจะติดต่อทาง LINE เพื่อคืนเงินที่โอนมา";
 const SIGNED_OUT = "หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบอีกครั้ง";
 const NO_TAMBON = "ไม่พบตำบลของรหัสไปรษณีย์นี้";
+// Form errors in the buyer's words; the schema's own messages are for developers.
+const REQUIRED = "กรุณากรอกช่องนี้";
+const CHOOSE_TAMBON = "กรุณาเลือกตำบล/แขวง";
+const CHECK_FIELD = "ตรวจช่องนี้อีกครั้ง";
+const FORMAT: Partial<Record<keyof Details, string>> = {
+  phone: "เบอร์โทร 10 หลัก ขึ้นต้นด้วย 0 เช่น 0812345678",
+  postal_code: "รหัสไปรษณีย์ 5 หลัก",
+};
 const cartUpdated = (names: string) => `สินค้าบางรายการหมด เราปรับตะกร้าให้แล้ว: ${names}`;
 
 // How often the checkout re-checks stock (the server has no push; see docs/FRONTEND.md "apps/client").
@@ -65,7 +74,7 @@ function focusStep(step: number) {
 
 export default function Checkout() {
   const router = useRouter();
-  const { lines, sets, count, clear, setCount, removeSet } = useCart();
+  const { lines, sets, count, clear, setCount, remove, removeSet } = useCart();
   // `run` bumps on the way to payment, so the QR always shows a fresh quote.
   const [quoteRun, setQuoteRun] = useState(0);
   const [pricing, setPricing] = useState<{
@@ -91,7 +100,8 @@ export default function Checkout() {
   const [reading, setReading] = useState(false);
   const slipRun = useRef(0);
   const [placing, setPlacing] = useState(false);
-  const [placed, setPlaced] = useState(false);
+  // The new order's id once placed.
+  const [placed, setPlaced] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   // A previous quote must disappear as soon as the cart changes.
@@ -197,20 +207,36 @@ export default function Checkout() {
     name,
     value: values[name],
     error: errors[name],
-    onChange: (event: ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, [name]: event.target.value })),
+    onChange: (event: ChangeEvent<HTMLInputElement>) => {
+      setValues((v) => ({ ...v, [name]: event.target.value }));
+      setErrors((e) => ({ ...e, [name]: undefined })); // a fixed field shouldn't keep its old error
+    },
   });
+
+  /** The message for a field the schema refused: empty, or in the wrong form. */
+  const fieldError = (name: keyof Details): string => {
+    const value = name === "tambon" ? (place?.tambon ?? "") : values[name];
+    if (!value.trim()) return name === "tambon" ? CHOOSE_TAMBON : REQUIRED;
+    return FORMAT[name] ?? CHECK_FIELD;
+  };
 
   function next(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!quote || !me) return;
     const parsed = detailsSchema.safeParse({
-      recipient: { ...values, line_id: values.line_id || null, email: me.email },
+      // Spaces and dashes are how people write phone numbers ("081-234-5678"); the number is the digits.
+      recipient: { ...values, phone: values.phone.replace(/[\s-]/g, ""), line_id: values.line_id || null, email: me.email },
       // Tambon, amphoe and province only ever come from the lookup of this postcode.
       shipping_address: { details: values.details, postal_code: values.postal_code, ...EMPTY_PLACE, ...place },
     });
     const fieldErrors: Partial<Record<keyof Details, string>> = parsed.success
       ? {}
-      : Object.fromEntries(parsed.error.issues.map((issue) => [issue.path.at(-1), issue.message]));
+      : Object.fromEntries(
+          parsed.error.issues
+            .map((issue) => issue.path.at(-1))
+            .filter((key): key is keyof Details => typeof key === "string" && key in EMPTY)
+            .map((key) => [key, fieldError(key)]),
+        );
     if (postcodeError) fieldErrors.postal_code = postcodeError;
     setErrors(fieldErrors);
     const first = Object.keys(fieldErrors)[0];
@@ -242,13 +268,13 @@ export default function Checkout() {
     setPlacing(true);
     setNotice(null);
     try {
-      await clientApi.createOrder({
+      const order = await clientApi.createOrder({
         ...cartRequest(lines, sets),
         ...checked,
         slip_qr_data: slip,
       });
       clear();
-      setPlaced(true);
+      setPlaced(order._id);
     } catch (cause) {
       if (cause instanceof ApiError && cause.code === "DUPLICATE_SLIP") {
         setSlip(undefined);
@@ -284,7 +310,15 @@ export default function Checkout() {
       </header>
 
       <section aria-label="สรุปคำสั่งซื้อ" aria-busy={hasItems && !currentPricing} className="mb-8 rounded-xl border border-line bg-surface p-5">
-        <CartSummary lines={quote?.lines ?? lines} sets={quote?.promotions ?? sets} shippingFee={quote?.shipping_fee} total={quote?.total} />
+        {/* Remove only while filling in details: from ② on, the buyer may have paid this total. */}
+        <CartSummary
+          lines={quote?.lines ?? lines}
+          sets={quote?.promotions ?? sets}
+          shippingFee={quote?.shipping_fee}
+          total={quote?.total}
+          onRemoveLine={step === 1 ? remove : undefined}
+          onRemoveSet={step === 1 ? (i) => { const key = sets[i]?.key; if (key) removeSet(key); } : undefined}
+        />
         {currentPricing?.error ? <p role="alert" className="mt-4">{currentPricing.error}</p> : null}
       </section>
 
@@ -329,6 +363,7 @@ export default function Checkout() {
                     onChange={(event) => {
                       const picked = placeList[Number(event.target.value)];
                       if (picked) setValues((v) => ({ ...v, ...picked }));
+                      setErrors((e) => ({ ...e, tambon: undefined }));
                     }}
                   >
                     <option value="" disabled>–</option>
@@ -385,7 +420,17 @@ export default function Checkout() {
         </>
       ) : null}
 
-      <Dialog open={placed} onClose={() => router.push("/")} title="สั่งซื้อแล้ว">
+      <Dialog open={placed !== null} onClose={() => router.push("/")} title="สั่งซื้อแล้ว">
+        {placed ? (
+          <div className="mb-6 flex flex-col gap-2">
+            <p>
+              {`หมายเลขคำสั่งซื้อ ${shortOrderId(placed)}`}
+            </p>
+            <p className="text-fg-2">
+              {`ระบบจะส่งอีเมลยืนยันไปที่ ${me?.email ?? ""}`}
+            </p>
+          </div>
+        ) : null}
         <Button onClick={() => router.push("/")}>กลับไปหน้าร้าน</Button>
       </Dialog>
     </main>

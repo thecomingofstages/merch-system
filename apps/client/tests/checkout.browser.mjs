@@ -123,4 +123,13 @@ export default async function checkCheckout(page) {
   await page.getByRole("link", { name: "ตะกร้า 1 ชิ้น", exact: true }).waitFor();
   await page.getByText("1 ชิ้น", { exact: true }).waitFor();
   assert(await page.getByText("1 ชิ้น", { exact: true }).locator("..").getByText("฿190", { exact: true }).count() === 1, "Back to shop preserves the cart");
+
+  // A reload (a phone does this after the bank app) keeps the cart; in step ① a line can be removed.
+  await page.reload();
+  await page.getByRole("link", { name: "ตะกร้า 1 ชิ้น", exact: true }).waitFor();
+  await press(button("ชำระเงิน"));
+  await press(page.getByRole("button", { name: /^ลบ หมวกแก๊ป/ }));
+  await page.getByText("ยังไม่มีสินค้าในตะกร้า").waitFor();
+  await page.reload();
+  await page.getByText("ยังไม่มีสินค้าในตะกร้า").waitFor();
 }

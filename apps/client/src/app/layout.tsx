@@ -18,7 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="th" className={`${prompt.variable} ${sarabun.variable}`}>
       <body className="antialiased">
-        <CartProvider>
+        <CartProvider storageKey="merch-cart">
           <SiteHeader />
           {children}
         </CartProvider>

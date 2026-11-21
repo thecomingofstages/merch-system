@@ -137,7 +137,7 @@ export default function PromotionsPage() {
                   <td className="px-4 py-3">
                     <input
                       type="checkbox"
-                      className="size-5"
+                      className="size-5 accent-gold"
                       checked={p.active ?? true}
                       onChange={() => toggle(p)}
                       aria-label={`${COPY.colActive}: ${p.name}`}
@@ -249,7 +249,7 @@ function SetForm({
       </div>
       <Input label={COPY.price} inputMode="numeric" value={draft.price} onChange={(e) => set({ price: e.target.value })} required />
       <label className="flex min-h-11 items-center gap-2">
-        <input type="checkbox" className="size-5" checked={draft.active} onChange={(e) => set({ active: e.target.checked })} />
+        <input type="checkbox" className="size-5 accent-gold" checked={draft.active} onChange={(e) => set({ active: e.target.checked })} />
         {COPY.active}
       </label>
 
@@ -287,7 +287,7 @@ function SetForm({
                       <label key={v._id} className="flex min-h-11 items-center gap-2">
                         <input
                           type="checkbox"
-                          className="size-5"
+                          className="size-5 accent-gold"
                           checked={item.variant_ids.includes(v._id)}
                           onChange={(e) =>
                             setItem(i, {

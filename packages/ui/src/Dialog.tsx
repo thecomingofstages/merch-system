@@ -41,11 +41,21 @@ export function Dialog({ open, onClose, title, children, sheet = false }: Dialog
     >
       {/* The padding lives here, not on <dialog>: a tap on the dialog's own padding
           would have the <dialog> as its target and close it by mistake. */}
-      <div className="p-6">
-        <h2 id={titleId} className="mb-4 font-display text-h3">
+      <div className="relative p-6">
+        <h2 id={titleId} className="mb-4 pr-10 font-display text-h3">
           {title}
         </h2>
         {children}
+        {/* A visible way out on a phone, where there's no Escape key and the sheet fills the screen.
+            Last in the markup so that opening the dialog still focuses its first field. */}
+        <button
+          type="button"
+          aria-label="ปิด"
+          onClick={onClose}
+          className="absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-lg text-h3 text-fg-2 hover:bg-raised hover:text-fg"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
       </div>
     </dialog>
   );

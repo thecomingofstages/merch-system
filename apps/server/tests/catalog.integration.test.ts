@@ -68,6 +68,17 @@ describe.skipIf(!uri)("catalog, admin API and quote (S2–S4)", { timeout: 60_00
     expect(product.body.variants.every((v: { online_stock: number }) => v.online_stock === 0)).toBe(true);
   });
 
+  it("refuses a second live shop with the same name, by create or rename", async () => {
+    const other = await request(app).post("/admin/shops").set(admin).send({ shop_name: `${tag} other` });
+    expect(other.status).toBe(201);
+    const again = await request(app).post("/admin/shops").set(admin).send({ shop_name: `${tag} shop` });
+    expect([again.status, again.body.error.code]).toEqual([409, "NAME_TAKEN"]);
+    const rename = await request(app).patch(`/admin/shops/${other.body._id}`).set(admin).send({ shop_name: `${tag} shop` });
+    expect([rename.status, rename.body.error.code]).toEqual([409, "NAME_TAKEN"]);
+    // Saving a shop under its own name is not a clash.
+    expect((await request(app).patch(`/admin/shops/${other.body._id}`).set(admin).send({ shop_name: `${tag} other` })).status).toBe(200);
+  });
+
   it("rejects bad bodies and unknown shops", async () => {
     const bad = await request(app).post("/admin/products").set(admin).send({ shop_id: shopId, name: "x", variants: [{ name: "x", price: 9.5 }] });
     expect(bad.status).toBe(400);

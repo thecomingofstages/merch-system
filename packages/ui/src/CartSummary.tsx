@@ -9,10 +9,22 @@ type CartSummaryProps = {
   shippingFee?: number;
   /** The total from `POST /quote`; left out while browsing. */
   total?: number;
+  /** Shows a remove button per line / per set (by its place in `sets`). Leave out where the cart is fixed. */
+  onRemoveLine?: (variantId: string) => void;
+  onRemoveSet?: (index: number) => void;
 };
 
+function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="min-h-11 shrink-0 px-2 text-small text-gold underline underline-offset-2">
+      ลบ
+      <span className="sr-only"> {label}</span>
+    </button>
+  );
+}
+
 /** Lines grouped by product, as in POC screen C ("Prod. X – Var. A ×1 100 ฿"). */
-export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummaryProps) {
+export function CartSummary({ lines, sets = [], shippingFee, total, onRemoveLine, onRemoveSet }: CartSummaryProps) {
   if (lines.length === 0 && sets.length === 0) return <p>ยังไม่มีสินค้าในตะกร้า</p>;
 
   const products = new Map<string, QuoteLine[]>();
@@ -25,11 +37,14 @@ export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummar
           <p className="font-medium">{group[0]?.product_name}</p>
           <ul>
             {group.map((line) => (
-              <li key={line.variant_id} className="flex justify-between gap-4">
+              <li key={line.variant_id} className="flex items-center justify-between gap-4">
                 <span>
                   {line.variant_name} ×{line.count}
                 </span>
-                <Price amount={line.unit_price * line.count} />
+                <span className="flex items-center gap-2">
+                  <Price amount={line.unit_price * line.count} />
+                  {onRemoveLine ? <RemoveButton label={`${line.product_name} ${line.variant_name}`} onClick={() => onRemoveLine(line.variant_id)} /> : null}
+                </span>
               </li>
             ))}
           </ul>
@@ -37,9 +52,12 @@ export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummar
       ))}
       {sets.map((set, i) => (
         <div key={i}>
-          <p className="flex justify-between gap-4 font-medium">
+          <p className="flex items-center justify-between gap-4 font-medium">
             <span>{set.name}</span>
-            <Price amount={set.price} />
+            <span className="flex items-center gap-2">
+              <Price amount={set.price} />
+              {onRemoveSet ? <RemoveButton label={set.name} onClick={() => onRemoveSet(i)} /> : null}
+            </span>
           </p>
           <ul className="text-small">
             {set.picks.flat().map((pick) => (

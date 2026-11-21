@@ -77,13 +77,13 @@ export const COPY = {
   colVariant: "Variant",
   colQuantity: "Qty",
   colUnitPrice: "Unit price",
-  subtotalLabel: "Subtotal (original_price)",
+  subtotalLabel: "Subtotal",
   shippingFeeLabel: "Shipping fee",
   totalLabel: "Total",
 
   // Payment check (D10)
   paymentSectionTitle: "Payment verification",
-  slipReferenceLabel: "Transaction reference (slip_qr_data)",
+  slipReferenceLabel: "Transaction reference",
   slipQrLabel: "Slip QR",
   slipQrInstruction: "Scan this with your banking app's slip check to see the amount and the receiving account.",
   expectedTotalLabel: "Expected total",
