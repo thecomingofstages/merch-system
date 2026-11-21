@@ -21,6 +21,10 @@
   --color-gold-hover: #e5c66e;
   --color-danger: #f07a72; /* errors and refusals, readable on canvas and surface */
   --color-spotlight: #f5dc8f; /* focus ring, changed-total flash; canvas text on top */
+  /* Google's own sign-in button colours (its branding rules), for the stand-in in fixtures mode */
+  --color-google: #ffffff;
+  --color-google-line: #747775;
+  --color-google-fg: #1f1f1f;
 
   --font-display: var(--font-prompt), sans-serif; /* headings, the wordmark, the ticket total */
   --font-text: var(--font-sarabun), sans-serif;

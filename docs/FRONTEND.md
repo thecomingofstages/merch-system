@@ -63,7 +63,7 @@ The POS never calls `apps/server` directly. Its browser calls the POS's own Next
 |---|---|---|
 | (no sign-in) | `ADMIN_ACCESS_TOKEN` is in the dashboard's server-side `.env`; the browser calls `/api/admin/*`, and the dashboard's own server adds the token and forwards to `apps/server` (D15). Tailscale is what keeps others out | 1.8 |
 | Dashboard | Empty state: "Sales overview comes later." | 1.8 |
-| Products | Shop dropdown, the chosen shop's name with Rename and Archive → products → variants table; every image field has "Upload from device" (shrunk to 1600 px WebP in the browser, stored in R2; a pasted link is copied into R2 on save, D17); Add stock; Transfer to POS | 1.9, 2.9 |
+| Products | Shop dropdown, the chosen shop's name with Rename and Archive → products → variants table; "Import from .xlsx" (D19: one row per variant, read and checked in the browser, problems listed by sheet row, template download); every image field has "Upload from device" (shrunk to 1600 px WebP in the browser, stored in R2; a pasted link is copied into R2 on save, D17); Add stock; Transfer to POS | 1.9, 2.9 |
 | Promotions | Sets: name, description, image URL, price, on/off switch, items (a product from any shop, its allowed variants, a count). Archiving a product or variant on Products lists the sets it deletes or changes first | D13 |
 | Orders | List with new-order badge, detail with the slip QR drawn again from `slip_qr_data` (`SlipQrCode`) for the admin to scan with a banking app's slip check, Submit for shipping | 2.8 |
 | POS | Create, list, stock table, End sale | 2.9 |
