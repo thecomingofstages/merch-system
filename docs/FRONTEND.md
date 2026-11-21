@@ -14,7 +14,7 @@ apps/
 ```
 - Each app's `next.config.ts` adds `transpilePackages: ["@merch/ui", "@merch/shared"]`.
 - Each app's `globals.css` does `@import "@merch/ui/styles.css";` and `@source "../../../../packages/ui/src";` so Tailwind sees the classes used inside `packages/ui` (adjust the relative path per app).
-- API base URL comes from `NEXT_PUBLIC_API_URL`. Request and response types come from `@merch/shared`; never redefine them in an app.
+- API base URL comes from `NEXT_PUBLIC_API_URL`. `NEXT_PUBLIC_*` values are written into the JavaScript at build time, so on Cloudflare they are **build** variables of `merch-client` (a change needs a new build). `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is the Web client ID from Google Cloud Console (Credentials → OAuth 2.0 Client IDs), the same value as the server's `GOOGLE_CLIENT_ID`, with the shop's URL under "Authorized JavaScript origins". Request and response types come from `@merch/shared`; never redefine them in an app.
 
 ## Rules every app follows
 1. **Never compute the amount to pay in the browser.** Show `cartSubtotal()` while browsing, but the QR and the "Total" on the payment step use the number from `POST /quote`. The server recomputes it again on order.

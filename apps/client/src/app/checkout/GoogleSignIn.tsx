@@ -41,7 +41,8 @@ export function GoogleSignIn({ onToken }: { onToken: (idToken: string) => void }
           const id = window.google?.accounts.id;
           if (!id || !button.current) return;
           id.initialize({
-            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "",
+            // Trimmed: a pasted trailing space makes Google answer "OAuth client was not found" (401 invalid_client).
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? "",
             callback: ({ credential }) => onToken(credential),
           });
           // "Continue with Google", outline: in Thai it reads "ดำเนินการต่อด้วย Google".
