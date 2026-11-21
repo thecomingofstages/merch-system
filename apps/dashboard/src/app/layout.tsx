@@ -8,7 +8,6 @@ const prompt = Prompt({ weight: ["500", "600"], subsets: ["thai", "latin"], vari
 const sarabun = Sarabun({ weight: ["400", "500", "600"], subsets: ["thai", "latin"], variable: "--font-sarabun" });
 
 export const metadata: Metadata = {
-  icons: { icon: "/favicon.svg" },
   title: "TCOS merch: Dashboard",
 };
 
