@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CatalogProduct, CatalogPromotion, CatalogResponse, CatalogVariant, CartLine } from "@merch/shared";
 import { Button, CartTicket, maxCount, ProductCard, ProductPopup, PromotionCard, PromotionPopup, useCart } from "@merch/ui";
+import { track } from "../lib/analytics";
 import { clientApi } from "../lib/api";
 
 export default function Home() {
@@ -31,6 +32,26 @@ export default function Home() {
     };
   }, []);
 
+  // D21: a card at least half on screen counts as seen, once per product per page.
+  useEffect(() => {
+    if (!catalog) return;
+    const seen = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.productId;
+          if (!entry.isIntersecting || !id || seen.has(id)) continue;
+          seen.add(id);
+          observer.unobserve(entry.target);
+          track("impression", id);
+        }
+      },
+      { threshold: 0.5 },
+    );
+    document.querySelectorAll<HTMLElement>("[data-product-id]").forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [catalog]);
+
   // Single lines and set pieces share the stock (D13); buy_limit counts single lines only.
   const inSingles = (variantId: string) => cart.lines.find((line) => line.variant_id === variantId)?.count ?? 0;
   const inSets = (variantId: string) =>
@@ -51,6 +72,7 @@ export default function Home() {
     };
 
     cart.add(line, maxCount(variant.buy_limit, variant.online_stock - inSets(variant._id)));
+    track("add_to_cart", activeProduct._id);
     setActiveProduct(null);
   }
 
@@ -87,12 +109,16 @@ export default function Home() {
             </h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
               {shop.products.map((product) => (
-                <ProductCard<CatalogVariant>
-                  key={product._id}
-                  product={product}
-                  stockOf={(variant) => variant.online_stock}
-                  onOpen={() => setActiveProduct(product)}
-                />
+                <div key={product._id} data-product-id={product._id}>
+                  <ProductCard<CatalogVariant>
+                    product={product}
+                    stockOf={(variant) => variant.online_stock}
+                    onOpen={() => {
+                      setActiveProduct(product);
+                      track("view", product._id);
+                    }}
+                  />
+                </div>
               ))}
             </div>
           </section>

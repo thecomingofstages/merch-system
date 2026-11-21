@@ -45,6 +45,7 @@ apps/
 | Product popup | `ProductPopup` | 1.1 |
 | Checkout ① details | Sprint 1: plain form. Sprint 2: Google sign-in required first, autofill from `/me` (all fields editable, email read-only), postcode → tambon dropdown → amphoe/province auto, details field, live address preview with `formatThaiAddress()` | 1.4, 2.1, 2.3 |
 | Checkout ② payment | `PaymentQR` with a total quoted again on the way to ②, "Upload slip" → `readSlipQr` → show read / not read. If the QR can't be read, "Place order" stays disabled (D5). | 1.5 |
+| Usage statistics (shop) | `lib/analytics.ts`: `track(step, productIds)` sends nothing without a recorded yes; impressions are cards at least half on screen (once per product per page), views are opened popups, then add to cart, checkout reached, order placed; batched every 3 s and on leaving the page, through the shop's `/api` (D21) | D21 |
 | Usage-statistics banner (every shop page) | Non-blocking card at the bottom, above the cart ticket: what is tracked and why, a link to `/privacy#analytics`, "ไม่ยอมรับ" and "ยอมรับ" in the same style. Shown until answered for the current policy version; the footer button "การเก็บสถิติการใช้งาน" shows it again (D20) | D20 |
 | Checkout ③ confirm | A checkbox "ฉันได้อ่านและยอมรับนโยบายความเป็นส่วนตัว / I have read and accept the privacy policy" (link opens `/privacy` in a new tab) must be ticked first (D20). "Place order" → `POST /orders` with `privacy_version` → popup "Order placed" → Home. `OUT_OF_STOCK` here means the buyer already paid: say the shop will refund over LINE (D11), and ask for a new slip. | 1.5 |
 | Stock re-check | While in checkout, `GET /catalog` every 15 s (`stockShortfalls()`): a line the stock no longer covers is reduced or removed, with a message, and the quote follows. Polling, because the server can't push. | 1.5 |
@@ -65,6 +66,7 @@ The POS never calls `apps/server` directly. Its browser calls the POS's own Next
 | Dashboard | Empty state: "Sales overview comes later." | 1.8 |
 | Products | Shop dropdown, the chosen shop's name with Rename and Archive → products → variants table; "Import from .xlsx" (D19: one row per variant, read and checked in the browser, problems listed by sheet row, template download); every image field has "Upload from device" (shrunk to 1600 px WebP in the browser, stored in R2; a pasted link is copied into R2 on save, D17); Add stock; Transfer to POS | 1.9, 2.9 |
 | Promotions | Sets: name, description, image URL, price, on/off switch, items (a product from any shop, its allowed variants, a count). Archiving a product or variant on Products lists the sets it deletes or changes first | D13 |
+| Analytics | Date range and "Count by" (sessions, visitors, hits); totals with sessions that ordered (isPurchased); the funnel per product with open, add and order rates; a daily trend chart for one product; delete statistics before a day, or all (D21) | D21 |
 | Orders | List with new-order badge, detail with the slip QR drawn again from `slip_qr_data` (`SlipQrCode`) for the admin to scan with a banking app's slip check, Submit for shipping | 2.8 |
 | POS | Create, list, stock table, End sale | 2.9 |
 
