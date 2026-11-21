@@ -488,8 +488,6 @@ export default function ProductsPage() {
             </div>
           )}
         </section>
-      ) : !loading && shops.length > 0 ? (
-        <p className="text-small text-fg-2">{COPY.selectShopPrompt}</p>
       ) : null}
 
       {/* Dialogs */}
