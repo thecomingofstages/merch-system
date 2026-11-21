@@ -14,8 +14,12 @@ export default async function checkCheckout(page) {
   };
   const noOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth);
   const addCapAndCheckout = async () => {
-    await page.getByRole("button", { name: /หมวกแก๊ป/ }).click();
-    await press(button("ใส่ตะกร้า"));
+    // The card's "ใส่ตะกร้า" opens the product with the popup's add button already focused.
+    await page.getByRole("button", { name: /^ใส่ตะกร้า หมวกแก๊ป/ }).click();
+    await page.getByRole("dialog", { name: /หมวกแก๊ป/ }).waitFor();
+    await page.waitForFunction(() => document.activeElement?.textContent === "ใส่ตะกร้า");
+    await page.keyboard.press("Enter");
+    await page.getByText("ในตะกร้า 1 ชิ้น").waitFor(); // the card's badge, as screen readers hear it
     await press(button("ชำระเงิน"));
     await page.getByRole("term").filter({ hasText: "ค่าส่ง" }).waitFor();
   };
