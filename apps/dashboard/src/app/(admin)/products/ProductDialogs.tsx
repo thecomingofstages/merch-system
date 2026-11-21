@@ -146,7 +146,7 @@ function ImageUrlRowsField({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-small font-medium text-ink">{COPY.productImagesLabel}</span>
+        <span className="text-small font-medium text-fg">{COPY.productImagesLabel}</span>
         <Button type="button" variant="secondary" disabled={disabled} onClick={onAddRow}>
           {COPY.addImageRow}
         </Button>
@@ -329,13 +329,13 @@ function VariantFieldsInputs({
         <UploadImageButton disabled={disabled} onUploaded={(url) => onChangeField("image", url)} />
       </div>
 
-      <label className="flex items-center gap-2 text-small text-ink">
+      <label className="flex items-center gap-2 text-small text-fg">
         <input
           type="checkbox"
           checked={fields.visible_to_online}
           disabled={disabled}
           onChange={(e) => onChangeField("visible_to_online", e.target.checked)}
-          className="h-4 w-4 accent-ink"
+          className="h-4 w-4 accent-gold"
         />
         <span>{COPY.variantVisibleLabel}</span>
       </label>
@@ -427,7 +427,7 @@ function ShopFormBody({
         }}
       />
       {apiError ? (
-        <p role="alert" className="text-small text-curtain">
+        <p role="alert" className="text-small text-danger">
           {apiError}
         </p>
       ) : null}
@@ -617,7 +617,7 @@ function CreateProductFormBody({
       />
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="create-product-description" className="text-small font-medium text-ink">
+        <label htmlFor="create-product-description" className="text-small font-medium text-fg">
           {COPY.productDescriptionLabel}
         </label>
         <textarea
@@ -626,7 +626,7 @@ function CreateProductFormBody({
           value={description}
           disabled={submitting}
           onChange={(e) => setDescription(e.target.value)}
-          className="rounded-lg border border-rigging bg-house px-3 py-2 text-body text-ink focus:outline-3 focus:outline-offset-2 focus:outline-spotlight"
+          className="rounded-lg border border-line bg-surface px-3 py-2 text-body text-fg focus:outline-3 focus:outline-offset-2 focus:outline-spotlight"
         />
       </div>
 
@@ -640,9 +640,9 @@ function CreateProductFormBody({
       />
 
       {/* Embedded variants rows */}
-      <div className="flex flex-col gap-3 border-t border-rigging pt-3">
+      <div className="flex flex-col gap-3 border-t border-line pt-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-small font-semibold text-ink">{COPY.variantsHeading}</span>
+          <span className="text-small font-semibold text-fg">{COPY.variantsHeading}</span>
           <Button
             type="button"
             variant="secondary"
@@ -658,10 +658,10 @@ function CreateProductFormBody({
           return (
             <div
               key={row.rowKey}
-              className="flex flex-col gap-3 rounded-lg border border-rigging bg-house p-3"
+              className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-3"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="text-small font-semibold text-ink">
+                <span className="text-small font-semibold text-fg">
                   {COPY.variantsHeading} #{index + 1}
                 </span>
                 {variantRows.length > 1 ? (
@@ -691,12 +691,12 @@ function CreateProductFormBody({
       </div>
 
       {generalError ? (
-        <p role="alert" className="text-small text-curtain">
+        <p role="alert" className="text-small text-danger">
           {generalError}
         </p>
       ) : null}
 
-      <div className="flex items-center justify-end gap-2 border-t border-rigging pt-3">
+      <div className="flex items-center justify-end gap-2 border-t border-line pt-3">
         <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}>
           {COPY.cancel}
         </Button>
@@ -817,7 +817,7 @@ function EditProductFormBody({
       />
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="edit-product-description" className="text-small font-medium text-ink">
+        <label htmlFor="edit-product-description" className="text-small font-medium text-fg">
           {COPY.productDescriptionLabel}
         </label>
         <textarea
@@ -826,7 +826,7 @@ function EditProductFormBody({
           value={description}
           disabled={submitting}
           onChange={(e) => setDescription(e.target.value)}
-          className="rounded-lg border border-rigging bg-house px-3 py-2 text-body text-ink focus:outline-3 focus:outline-offset-2 focus:outline-spotlight"
+          className="rounded-lg border border-line bg-surface px-3 py-2 text-body text-fg focus:outline-3 focus:outline-offset-2 focus:outline-spotlight"
         />
       </div>
 
@@ -841,12 +841,12 @@ function EditProductFormBody({
       />
 
       {generalError ? (
-        <p role="alert" className="text-small text-curtain">
+        <p role="alert" className="text-small text-danger">
           {generalError}
         </p>
       ) : null}
 
-      <div className="flex items-center justify-end gap-2 border-t border-rigging pt-3">
+      <div className="flex items-center justify-end gap-2 border-t border-line pt-3">
         <Button type="button" variant="secondary" disabled={submitting} onClick={onClose}>
           {COPY.cancel}
         </Button>
@@ -970,7 +970,7 @@ function VariantFormBody({
       />
 
       {apiError ? (
-        <p role="alert" className="text-small text-curtain">
+        <p role="alert" className="text-small text-danger">
           {apiError}
         </p>
       ) : null}
@@ -1067,14 +1067,14 @@ function AddStockFormBody({
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1 rounded-md border border-rigging bg-house p-3 text-small">
+      <div className="flex flex-col gap-1 rounded-md border border-line bg-surface p-3 text-small">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-ink/70">{COPY.variantNameLabel}</span>
-          <span className="font-semibold text-ink">{variant.name}</span>
+          <span className="text-fg-2">{COPY.variantNameLabel}</span>
+          <span className="font-semibold text-fg">{variant.name}</span>
         </div>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-ink/70">{COPY.currentStockLabel}</span>
-          <span className="font-mono font-semibold tabular-nums text-ink">
+          <span className="text-fg-2">{COPY.currentStockLabel}</span>
+          <span className="font-mono font-semibold tabular-nums text-fg">
             {variant.online_stock}
           </span>
         </div>
@@ -1096,7 +1096,7 @@ function AddStockFormBody({
       />
 
       {apiError ? (
-        <p role="alert" className="text-small text-curtain">
+        <p role="alert" className="text-small text-danger">
           {apiError}
         </p>
       ) : null}
@@ -1212,11 +1212,11 @@ function ArchiveConfirmBody({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-body font-semibold text-ink">{itemName}</p>
-      <p className="text-small text-ink/80">{COPY.confirmArchiveBody}</p>
-      {impact === null && !apiError ? <p className="text-small text-ink/70">{COPY.checkingSets}</p> : null}
+      <p className="text-body font-semibold text-fg">{itemName}</p>
+      <p className="text-small text-fg-2">{COPY.confirmArchiveBody}</p>
+      {impact === null && !apiError ? <p className="text-small text-fg-2">{COPY.checkingSets}</p> : null}
       {impact?.deleted.length ? (
-        <div className="text-small text-curtain">
+        <div className="text-small text-danger">
           <p className="font-semibold">{COPY.setsDeletedWarning}</p>
           <ul className="list-disc pl-5">
             {impact.deleted.map((s) => (
@@ -1226,7 +1226,7 @@ function ArchiveConfirmBody({
         </div>
       ) : null}
       {impact?.shrunk.length ? (
-        <div className="text-small text-ink">
+        <div className="text-small text-fg">
           <p className="font-semibold">{COPY.setsShrunkWarning}</p>
           <ul className="list-disc pl-5">
             {impact.shrunk.map((s) => (
@@ -1237,7 +1237,7 @@ function ArchiveConfirmBody({
       ) : null}
 
       {apiError ? (
-        <p role="alert" className="text-small text-curtain">
+        <p role="alert" className="text-small text-danger">
           {apiError}
         </p>
       ) : null}

@@ -279,30 +279,30 @@ export default function Checkout() {
   const back = (to: 1 | 2) => <Button variant="secondary" className="mt-6" onClick={() => go(to)}>Back</Button>;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <header className="mb-8 flex items-center justify-between gap-4">
-        <h1 className="text-h2 font-semibold">ชำระเงิน</h1>
-        <Link href="/" className="inline-flex min-h-11 items-center text-violet">Back</Link>
+        <h1 className="text-h2">ชำระเงิน</h1>
+        <Link href="/" className="inline-flex min-h-11 items-center text-gold">Back</Link>
       </header>
 
-      <section aria-label="Checkout" aria-busy={hasItems && !currentPricing} className="mb-8">
+      <section aria-label="Checkout" aria-busy={hasItems && !currentPricing} className="mb-8 rounded-xl border border-line bg-surface p-5">
         <CartSummary lines={quote?.lines ?? lines} sets={quote?.promotions ?? sets} shippingFee={quote?.shipping_fee} total={quote?.total} />
         {currentPricing?.error ? <p role="alert" className="mt-4">{currentPricing.error}</p> : null}
       </section>
 
-      {notice ? <p role="alert" className="mb-6 text-curtain">{notice}</p> : null}
+      {notice ? <p role="alert" className="mb-6 text-danger">{notice}</p> : null}
 
       {hasItems ? (
         <>
           {/* TODO(Thai copy for checkout steps, form labels, Back and Next): POC wording. */}
-          <ol className="mb-6 flex flex-wrap gap-x-6 gap-y-2">
+          <ol className="mb-6 flex flex-wrap gap-x-6 gap-y-2 text-fg-3 [&>[aria-current=step]]:font-medium [&>[aria-current=step]]:text-fg">
             <li aria-current={step === 1 ? "step" : undefined}>① Enter details</li>
             <li aria-current={step === 2 ? "step" : undefined}>② Payment</li>
             <li aria-current={step === 3 ? "step" : undefined}>③ Confirm order</li>
           </ol>
 
           <section hidden={step !== 1} aria-labelledby="step-1" aria-busy={me === undefined}>
-            <h2 id="step-1" tabIndex={-1} className="mb-4 text-h3 font-semibold">① Enter details</h2>
+            <h2 id="step-1" tabIndex={-1} className="mb-4 text-h3">① Enter details</h2>
             {me === null ? (
               <>
                 {/* TODO(Thai copy for "sign in to continue") */}
@@ -355,7 +355,7 @@ export default function Checkout() {
           </section>
 
           <section hidden={step !== 2} aria-labelledby="step-2">
-            <h2 id="step-2" tabIndex={-1} className="mb-4 text-h3 font-semibold">② Payment</h2>
+            <h2 id="step-2" tabIndex={-1} className="mb-4 text-h3">② Payment</h2>
             {quote ? <PaymentQR promptpayId={quote.promptpay_id} name={quote.promptpay_name} amount={quote.total} /> : null}
             <div className="my-6">
               {/* TODO(Thai copy for "Upload slip" and "Slip read") */}
@@ -373,7 +373,7 @@ export default function Checkout() {
           </section>
 
           <section hidden={step !== 3} aria-labelledby="step-3">
-            <h2 id="step-3" tabIndex={-1} className="mb-4 text-h3 font-semibold">③ Confirm order</h2>
+            <h2 id="step-3" tabIndex={-1} className="mb-4 text-h3">③ Confirm order</h2>
             {checked ? (
               <div className="mb-6">
                 <p>{checked.recipient.first_name} {checked.recipient.last_name} ({checked.recipient.nickname}) {checked.recipient.phone}</p>

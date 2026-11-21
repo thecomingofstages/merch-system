@@ -37,7 +37,7 @@ export function Dialog({ open, onClose, title, children, sheet = false }: Dialog
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
-      className={`${sheet ? "mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-xl rounded-t-2xl" : "m-auto w-[calc(100%-2rem)] max-w-md rounded-lg"} bg-house p-0 text-ink shadow-xl backdrop:bg-ink/50`}
+      className={`${sheet ? "mx-auto mt-auto mb-0 max-h-[90dvh] w-full max-w-xl rounded-t-2xl" : "m-auto w-[calc(100%-2rem)] max-w-md rounded-lg"} border border-line bg-surface p-0 text-fg shadow-xl backdrop:bg-sunk/80`}
     >
       {/* The padding lives here, not on <dialog>: a tap on the dialog's own padding
           would have the <dialog> as its target and close it by mistake. */}

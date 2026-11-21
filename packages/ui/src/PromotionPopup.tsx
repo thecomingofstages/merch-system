@@ -77,7 +77,7 @@ function PopupBody<V extends SetVariant>({
       {promotion.image ? <img src={promotion.image} alt={promotion.name} className="aspect-square w-full rounded-sm object-cover" /> : null}
       {promotion.description ? <p>{promotion.description}</p> : null}
       {promotion.items.map((item, i) => (
-        <fieldset key={i} className="flex min-w-0 flex-col gap-2 border-t border-rigging pt-3">
+        <fieldset key={i} className="flex min-w-0 flex-col gap-2 border-t border-line pt-3">
           {/* TODO(Thai copy for "pick N" and the stepper labels) */}
           <legend className="font-medium">
             {item.product_name} ×{item.count}

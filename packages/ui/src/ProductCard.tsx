@@ -29,13 +29,13 @@ export function ProductCard<V extends ShopVariant>({ product, stockOf, onOpen }:
       {image ? (
         <img src={image} alt={product.name} className={`aspect-square w-full rounded-sm object-cover ${fade}`} />
       ) : (
-        <div className={`aspect-square w-full rounded-sm bg-rigging ${fade}`} />
+        <div className={`aspect-square w-full rounded-sm bg-raised ${fade}`} />
       )}
-      <span className="font-medium">{product.name}</span>
+      <span className="mt-1 font-medium">{product.name}</span>
       {inStock.length === 0 ? (
-        <span>สินค้าหมด</span>
+        <span className="text-fg-3">สินค้าหมด</span>
       ) : (
-        <span>
+        <span className="text-fg-2 tabular-nums">
           <Price amount={low} />
           {high > low ? (
             <>

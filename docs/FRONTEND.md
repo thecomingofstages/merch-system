@@ -62,7 +62,7 @@ The POS never calls `apps/server` directly. Its browser calls the POS's own Next
 |---|---|---|
 | (no sign-in) | `ADMIN_ACCESS_TOKEN` is in the dashboard's server-side `.env`; the browser calls `/api/admin/*`, and the dashboard's own server adds the token and forwards to `apps/server` (D15). Tailscale is what keeps others out | 1.8 |
 | Dashboard | Empty state: "Sales overview comes later." | 1.8 |
-| Products | Shops → products → variants table; every image field has "Upload from device" (shrunk to 1600 px WebP in the browser, stored in R2; a pasted link is copied into R2 on save, D17); Add stock; Transfer to POS | 1.9, 2.9 |
+| Products | Shop dropdown, the chosen shop's name with Rename and Archive → products → variants table; every image field has "Upload from device" (shrunk to 1600 px WebP in the browser, stored in R2; a pasted link is copied into R2 on save, D17); Add stock; Transfer to POS | 1.9, 2.9 |
 | Promotions | Sets: name, description, image URL, price, on/off switch, items (a product from any shop, its allowed variants, a count). Archiving a product or variant on Products lists the sets it deletes or changes first | D13 |
 | Orders | List with new-order badge, detail with the slip QR drawn again from `slip_qr_data` (`SlipQrCode`) for the admin to scan with a banking app's slip check, Submit for shipping | 2.8 |
 | POS | Create, list, stock table, End sale | 2.9 |
@@ -71,56 +71,61 @@ The POS never calls `apps/server` directly. Its browser calls the POS's own Next
 
 **Subject.** A merch shop for The Coming of Stages, a Thai youth musical-theatre community. Buyers are Thai teens and young adults who arrive from an Instagram story on their phone. The main job is to pick items and pay **exactly the right amount**, which is what the old Google Form got wrong.
 
-**Where it comes from.** TCOS's own merch photos: red stage props and a red striped cap, the purple-neon Hidden Saloon artwork, and the box-office ticket.
+**Where it comes from (D18).** The other TCOS sites: [enroll.thecomingofstages.com](https://enroll.thecomingofstages.com) and the portfolio site. A black-box theatre with the house lights down: warm near-black surfaces, warm off-white text, gold programme foil. The TCOS logo (white) and "Merch" head every page. The design pass followed the [unslop](https://github.com/heydamir/unslop) skill by Damir Sokolovsky (CC BY 4.0).
 
 ### Palette
-| Name | Hex | Use |
+Dark only. The tokens are in `packages/ui/src/styles.css`; no colour value lives anywhere else.
+
+| Token | Hex | Use |
 |---|---|---|
-| Curtain red | `#B3122E` | Primary actions and the cart ticket. Nothing decorative. |
-| Stage ink | `#221B33` | Text. A deep aubergine instead of a grey near-black. |
-| House lights | `#F6F5FB` | Page background. Slightly cool, so it doesn't read as the generic cream. |
-| Saloon violet | `#5B3FD1` | Links and the selected variant outline |
-| Spotlight | `#FFD23F` | Keyboard focus ring, and the fill behind a just-changed total. Always with ink text on top. |
-| Rigging | `#DCD8E8` | Borders and dividers |
+| `sunk` | `#0e0e0c` | Deepest surface: the shop header, the dashboard sidebar |
+| `canvas` | `#131311` | Page background, and text on gold |
+| `surface` | `#1b1b19` | Cards, popups, dialogs |
+| `raised` | `#2a2a27` | Inputs, steppers, secondary buttons, table heads, the active row |
+| `line` | `#3a3833` | Hairlines and dividers |
+| `fg` / `fg-2` / `fg-3` | `#f4f0ea` / `#bdb6a9` / `#8f897e` | Primary, secondary and muted text (muted only for meta and captions) |
+| `gold` (`gold-hover`) | `#d8b85a` (`#e5c66e`) | The one accent, as on the enrollment site: primary actions, the cart ticket, links, the selection, the basket count. Canvas text on top |
+| `danger` | `#f07a72` | Errors and refusals |
+| `spotlight` | `#f5dc8f` | Keyboard focus ring, and the fill behind a just-changed total. Canvas text on top |
 
 ### Type
-Both fonts support Thai and come from Google Fonts via `next/font` with `subsets: ["thai", "latin"]`:
-- **Chonburi** (display, one weight): shop names, product names in the popup, and the total on the ticket. It has the look of a theatre marquee. Use only at 24px and above.
-- **Anuphan** (text, 400/500/600): everything else.
+Both fonts support Thai and come from Google Fonts via `next/font` with `subsets: ["thai", "latin"]`, set on `<html>` (the tokens read them on `:root`):
+- **Prompt** (500/600): headings, the "Merch" wordmark and the total on the ticket, as on the other TCOS sites.
+- **Sarabun** (400/500/600): everything else, chosen to be clear and easy to read.
 
-Scale (1.25 ratio): 13 / 16 / 20 / 25 / 31 / 39 px. Body 16px, line-height 1.6 for Thai (Thai needs more than Latin because of stacked vowels and tone marks). Prices use `tabular-nums`; check that Anuphan renders it, and if not, accept proportional figures.
+Scale: 13 / 16 / 18 / 22 / 28 / 36 px. Body 16px, line-height 1.6 for Thai (Thai needs more than Latin because of stacked vowels and tone marks). Prices use `tabular-nums`.
 
 ### The one bold element: the cart ticket
-The cart tray (client), the checkout pane (POS) and the total on the payment step are drawn as a **box-office ticket stub**: curtain-red, with perforated notches cut into the left and right edges (CSS `radial-gradient` mask) and the total set in Chonburi. It is the thing people remember, and it sits on the number the whole system exists to get right. When the total changes, it flashes a Spotlight fill once (skipped under `prefers-reduced-motion`). This is the only motion that isn't a direct response to a tap.
+The total in the shop, on the payment step and in the POS checkout pane is drawn as a **box-office ticket stub**: gold, with perforated notches cut into the left and right edges (CSS `radial-gradient` mask) and the total set in Prompt. It sits on the number the whole system exists to get right. In the shop it floats over the page with no tray behind it, and only appears (one short fade and rise) once the cart holds something. When the total changes, it flashes a Spotlight fill once (skipped under `prefers-reduced-motion`).
 
 Everything else stays quiet:
-- **Products have no card boxes.** Show the image (4px radius), then the name and price below on the page background. No shadows, no borders.
-- **Radius follows hierarchy:** inputs and buttons 8px, images 4px, the popup sheet 16px on the top corners only. Not one radius everywhere.
-- **Only the popup and dialogs have a shadow.**
-- **Sold out:** the image goes 40% opacity and the price is replaced with "สินค้าหมด". No ribbons or badges.
-- **The dashboard skips the ticket entirely.** It's a staff tool: dense tables, Anuphan only, curtain red only for primary buttons.
+- **The header** is the logo, "Merch", and a basket icon (lucide, 1.5 stroke) that goes to checkout. Its gold count badge shows only when the cart holds something.
+- **Products have no card boxes.** Show the image (4px radius), then the name and the price (secondary text) below on the page background.
+- **Radius follows hierarchy:** inputs and buttons 8px, images 4px, cards 12px, the popup sheet 16px on the top corners only.
+- **Depth comes from surface steps and hairlines.** Only popups, dialogs and the floating ticket have a shadow.
+- **Sold out:** the image goes 40% opacity and the price is replaced with "สินค้าหมด" in muted text. No ribbons or badges.
+- **The dashboard skips the ticket.** It's a staff tool: dense tables on `surface`, the sidebar on `sunk` with the logo, gold only for primary buttons and the new-order count.
 
 ### Layout
 ```
 Client (phone)                    POS (tablet, landscape)
 ┌──────────────────────┐          ┌──────────────────────┬─────────────┐
-│ TCOS            ตะกร้า 2│          │ จุดขาย: [Siam ▾]       │  ╭───────╮  │
+│ [logo] Merch [bskt 2]│          │ จุดขาย: [Siam ▾]       │  ╭───────╮  │
 │                      │          │                      │  ┊ ticket┊  │
-│ Shop name (Chonburi) │          │  [img] [img] [img]   │  ┊ lines ┊  │
+│ Shop name (Prompt)   │          │  [img] [img] [img]   │  ┊ lines ┊  │
 │ [img]      [img]     │          │  name   name  name   │  ┊ total ┊  │
 │ name ฿29   name ฿119 │          │  ฿29    ฿119  ฿269   │  ╰───────╯  │
 │                      │          │                      │ [ชำระเงิน]   │
-├─╮──────────────────╭─┤          └──────────────────────┴─────────────┘
-│ ┊ 2 ชิ้น  ฿270  ชำระเงิน ┊ │ ← ticket tray
-└─╯──────────────────╰─┘
+│ ╭─┊ 2 ชิ้น ฿270 ชำระเงิน ┊─╮ │ ← floats, only with items └──────────────────────┴─────────────┘
+└──────────────────────┘
 ```
 Text is left-aligned throughout, except the total on the ticket, which is right-aligned so the digits line up.
 
-### What I changed after checking against the generic defaults
-- First draft used a cream background. Changed it to the cool "House lights" tint, because cream plus a red accent is the most common generated look.
-- First draft themed every surface as a theatre programme. Cut that back to the ticket only, so the theme carries information (the money) instead of decorating everything.
+### What changed after checking against the generic defaults
+- The first design was light with a red accent and Chonburi/Anuphan. It moved to the TCOS family's dark and gold so the shop reads as part of TCOS, with the theme still carried only by the ticket.
 - Removed ALL-CAPS section labels and a monospace face for prices. Prices use the text font with tabular figures instead.
 - The checkout keeps ①②③ numbering because it really is a sequence. Nowhere else uses numbered markers.
+- "ตะกร้า 0" read as text, not a control: it is now the basket icon with a count.
 
 ### Copy
 Thai first, sentence case, plain verbs. An action keeps its name through the flow.

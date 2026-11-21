@@ -26,11 +26,11 @@ import { COPY, formatOrderStatus, formatPaymentStatus } from "../copy";
 // TODO(question 27): no endpoint to mark an order ARRIVED yet.
 
 const BACK_LINK_CLASS =
-  "inline-flex min-h-11 w-fit items-center justify-center rounded-lg border border-rigging bg-house px-4 font-medium text-ink hover:bg-rigging/40";
+  "inline-flex min-h-11 w-fit items-center justify-center rounded-lg border border-line bg-surface px-4 font-medium text-fg hover:bg-raised";
 
 function StatusBadge({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center rounded-sm border border-rigging bg-rigging/30 px-2.5 py-0.5 text-small font-semibold text-ink">
+    <span className="inline-flex items-center rounded-sm border border-line bg-raised px-2.5 py-0.5 text-small font-semibold text-fg">
       {label}
     </span>
   );
@@ -166,7 +166,7 @@ export default function OrderDetailPage() {
         <Link href="/orders" className={BACK_LINK_CLASS}>
           {COPY.backToOrders}
         </Link>
-        <p className="text-small text-ink/70">{COPY.loading}</p>
+        <p className="text-small text-fg-2">{COPY.loading}</p>
       </div>
     );
   }
@@ -180,7 +180,7 @@ export default function OrderDetailPage() {
         <div
           role="alert"
           aria-live="polite"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-curtain bg-house p-4 text-small text-curtain"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-danger bg-surface p-4 text-small text-danger"
         >
           <span>{pageError ?? COPY.notFoundError}</span>
           <Button
@@ -225,12 +225,12 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Order Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rigging pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-h2 font-semibold text-ink">{COPY.orderHeading(shortId)}</h1>
-          <p className="text-small text-ink/70">
+          <h1 className="text-h2 font-semibold text-fg">{COPY.orderHeading(shortId)}</h1>
+          <p className="text-small text-fg-2">
             {formatBangkokDateTime(order.created_at)} · {COPY.channelLabel}:{" "}
-            <strong className="font-semibold text-ink">
+            <strong className="font-semibold text-fg">
               {pos ? COPY.channelPos : COPY.channelOnline}
             </strong>
           </p>
@@ -248,7 +248,7 @@ export default function OrderDetailPage() {
         <div
           role="status"
           aria-live="polite"
-          className="rounded-lg border border-rigging bg-rigging/25 p-3 text-small text-ink"
+          className="rounded-lg border border-line bg-raised p-3 text-small text-fg"
         >
           {notice}
         </div>
@@ -263,28 +263,28 @@ export default function OrderDetailPage() {
       {!pos && order.recipient ? (
         <section
           aria-labelledby="buyer-section-heading"
-          className="flex flex-col gap-4 rounded-lg border border-rigging bg-house p-4"
+          className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4"
         >
-          <h2 id="buyer-section-heading" className="text-h3 font-semibold text-ink">
+          <h2 id="buyer-section-heading" className="text-h3 font-semibold text-fg">
             {COPY.buyerSectionTitle}
           </h2>
 
           <dl className="grid grid-cols-1 gap-3 text-small sm:grid-cols-2">
             <div className="flex flex-col gap-0.5">
-              <dt className="text-ink/70">{COPY.buyerNameLabel}</dt>
-              <dd className="font-semibold text-ink">
+              <dt className="text-fg-2">{COPY.buyerNameLabel}</dt>
+              <dd className="font-semibold text-fg">
                 {order.recipient.first_name} {order.recipient.last_name}
               </dd>
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <dt className="text-ink/70">{COPY.buyerNicknameLabel}</dt>
-              <dd className="font-semibold text-ink">{order.recipient.nickname}</dd>
+              <dt className="text-fg-2">{COPY.buyerNicknameLabel}</dt>
+              <dd className="font-semibold text-fg">{order.recipient.nickname}</dd>
             </div>
 
             <div className="flex flex-col gap-1">
-              <dt className="text-ink/70">{COPY.buyerPhoneLabel}</dt>
-              <dd className="flex flex-wrap items-center gap-2 font-mono tabular-nums text-ink">
+              <dt className="text-fg-2">{COPY.buyerPhoneLabel}</dt>
+              <dd className="flex flex-wrap items-center gap-2 font-mono tabular-nums text-fg">
                 <span>{order.recipient.phone}</span>
                 <Button
                   type="button"
@@ -298,21 +298,21 @@ export default function OrderDetailPage() {
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <dt className="text-ink/70">{COPY.buyerLineIdLabel}</dt>
-              <dd className="font-medium text-ink">
+              <dt className="text-fg-2">{COPY.buyerLineIdLabel}</dt>
+              <dd className="font-medium text-fg">
                 {order.recipient.line_id ?? COPY.noValue}
               </dd>
             </div>
 
             <div className="flex flex-col gap-0.5 sm:col-span-2">
-              <dt className="text-ink/70">{COPY.buyerEmailLabel}</dt>
-              <dd className="break-all font-medium text-ink">{order.recipient.email}</dd>
+              <dt className="text-fg-2">{COPY.buyerEmailLabel}</dt>
+              <dd className="break-all font-medium text-fg">{order.recipient.email}</dd>
             </div>
 
             {formattedAddress ? (
-              <div className="flex flex-col gap-1 border-t border-rigging pt-3 sm:col-span-2">
+              <div className="flex flex-col gap-1 border-t border-line pt-3 sm:col-span-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <dt className="text-ink/70">{COPY.shippingAddressLabel}</dt>
+                  <dt className="text-fg-2">{COPY.shippingAddressLabel}</dt>
                   <Button
                     type="button"
                     variant="secondary"
@@ -322,7 +322,7 @@ export default function OrderDetailPage() {
                     {copiedField === "address" ? COPY.copiedButton : COPY.copyButton}
                   </Button>
                 </div>
-                <dd className="break-words text-body text-ink">{formattedAddress}</dd>
+                <dd className="break-words text-body text-fg">{formattedAddress}</dd>
               </div>
             ) : null}
           </dl>
@@ -332,17 +332,17 @@ export default function OrderDetailPage() {
       {/* Ordered Items & Money */}
       <section
         aria-labelledby="items-section-heading"
-        className="flex flex-col gap-4 rounded-lg border border-rigging bg-house p-4"
+        className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4"
       >
-        <h2 id="items-section-heading" className="text-h3 font-semibold text-ink">
+        <h2 id="items-section-heading" className="text-h3 font-semibold text-fg">
           {COPY.itemsSectionTitle}
         </h2>
 
-        <div className="overflow-x-auto rounded-lg border border-rigging">
+        <div className="overflow-x-auto rounded-lg border border-line">
           <table className="w-full border-collapse text-left text-small">
             <caption className="sr-only">{COPY.itemsTableCaption}</caption>
             <thead>
-              <tr className="border-b border-rigging bg-rigging/30 text-ink">
+              <tr className="border-b border-line bg-raised text-fg">
                 <th scope="col" className="px-4 py-2.5 font-semibold">
                   {COPY.colProduct}
                 </th>
@@ -357,13 +357,13 @@ export default function OrderDetailPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-rigging">
+            <tbody className="divide-y divide-line">
               {variantLines.map((line) => (
-                <tr key={line.key} className="bg-house">
-                  <td className="px-4 py-2.5 font-medium text-ink">{line.product_name}</td>
-                  <td className="px-4 py-2.5 text-ink">{line.variant_name}</td>
-                  <td className="px-4 py-2.5 font-mono tabular-nums text-ink">{line.count}</td>
-                  <td className="px-4 py-2.5 text-right tabular-nums text-ink">
+                <tr key={line.key} className="bg-surface">
+                  <td className="px-4 py-2.5 font-medium text-fg">{line.product_name}</td>
+                  <td className="px-4 py-2.5 text-fg">{line.variant_name}</td>
+                  <td className="px-4 py-2.5 font-mono tabular-nums text-fg">{line.count}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-fg">
                     <Price amount={line.unit_price} />
                   </td>
                 </tr>
@@ -371,19 +371,19 @@ export default function OrderDetailPage() {
               {/* Promotion sets (D13): the set's price on its own row, then the pieces chosen. */}
               {order.promotions.map((set, i) => (
                 <Fragment key={`set-${i}`}>
-                  <tr className="bg-rigging/15">
-                    <td colSpan={3} className="px-4 py-2.5 font-semibold text-ink">
+                  <tr className="bg-raised">
+                    <td colSpan={3} className="px-4 py-2.5 font-semibold text-fg">
                       {set.promotion_name}
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums text-ink">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-fg">
                       <Price amount={set.price} />
                     </td>
                   </tr>
                   {set.variants.map((v) => (
-                    <tr key={`set-${i}-${v.variants_id}`} className="bg-house">
-                      <td className="py-2.5 pr-4 pl-8 text-ink">{v.product_name}</td>
-                      <td className="px-4 py-2.5 text-ink">{v.variant_name}</td>
-                      <td className="px-4 py-2.5 font-mono tabular-nums text-ink">{v.count}</td>
+                    <tr key={`set-${i}-${v.variants_id}`} className="bg-surface">
+                      <td className="py-2.5 pr-4 pl-8 text-fg">{v.product_name}</td>
+                      <td className="px-4 py-2.5 text-fg">{v.variant_name}</td>
+                      <td className="px-4 py-2.5 font-mono tabular-nums text-fg">{v.count}</td>
                       <td />
                     </tr>
                   ))}
@@ -393,22 +393,22 @@ export default function OrderDetailPage() {
           </table>
         </div>
 
-        <dl className="flex flex-col gap-2 border-t border-rigging pt-3 text-small">
+        <dl className="flex flex-col gap-2 border-t border-line pt-3 text-small">
           <div className="flex items-center justify-between gap-4">
-            <dt className="text-ink/80">{COPY.subtotalLabel}</dt>
-            <dd className="font-semibold tabular-nums text-ink">
+            <dt className="text-fg-2">{COPY.subtotalLabel}</dt>
+            <dd className="font-semibold tabular-nums text-fg">
               <Price amount={order.original_price} />
             </dd>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <dt className="text-ink/80">{COPY.shippingFeeLabel}</dt>
-            <dd className="font-semibold tabular-nums text-ink">
+            <dt className="text-fg-2">{COPY.shippingFeeLabel}</dt>
+            <dd className="font-semibold tabular-nums text-fg">
               <Price amount={order.shipping_fee} />
             </dd>
           </div>
-          <div className="flex items-center justify-between gap-4 border-t border-rigging pt-2 text-body">
-            <dt className="font-semibold text-ink">{COPY.totalLabel}</dt>
-            <dd className="font-semibold tabular-nums text-ink">
+          <div className="flex items-center justify-between gap-4 border-t border-line pt-2 text-body">
+            <dt className="font-semibold text-fg">{COPY.totalLabel}</dt>
+            <dd className="font-semibold tabular-nums text-fg">
               <Price amount={totalAmount} />
             </dd>
           </div>
@@ -425,9 +425,9 @@ export default function OrderDetailPage() {
       {!pos ? (
         <section
           aria-labelledby="tracking-section-heading"
-          className="flex flex-col gap-4 rounded-lg border border-rigging bg-house p-4"
+          className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4"
         >
-          <h2 id="tracking-section-heading" className="text-h3 font-semibold text-ink">
+          <h2 id="tracking-section-heading" className="text-h3 font-semibold text-fg">
             {COPY.trackingSectionTitle}
           </h2>
 
@@ -472,7 +472,7 @@ export default function OrderDetailPage() {
               </div>
 
               {!trackingAllowed ? (
-                <p id="tracking-disabled-reason" className="text-small text-ink/70">
+                <p id="tracking-disabled-reason" className="text-small text-fg-2">
                   {order.payment_status === "REJECTED"
                     ? COPY.trackingRejectedHint
                     : COPY.trackingDisabledHint}
@@ -480,7 +480,7 @@ export default function OrderDetailPage() {
               ) : null}
 
               {trackingApiError ? (
-                <p role="alert" aria-live="polite" className="text-small text-curtain">
+                <p role="alert" aria-live="polite" className="text-small text-danger">
                   {trackingApiError}
                 </p>
               ) : null}
@@ -498,12 +498,12 @@ export default function OrderDetailPage() {
             >
               {confirmTrackingId ? (
                 <div className="flex flex-col gap-4">
-                  <p className="text-body text-ink">
+                  <p className="text-body text-fg">
                     {COPY.trackingConfirmBody(confirmTrackingId, buyerFullName)}
                   </p>
 
                   {trackingApiError ? (
-                    <p role="alert" aria-live="polite" className="text-small text-curtain">
+                    <p role="alert" aria-live="polite" className="text-small text-danger">
                       {trackingApiError}
                     </p>
                   ) : null}

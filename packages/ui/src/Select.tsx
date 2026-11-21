@@ -12,20 +12,20 @@ export function Select({ label, error, id, className = "", children, ...props }:
   const errorId = `${selectId}-error`;
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={selectId} className="font-medium">
+      <label className="font-medium text-fg-2" htmlFor={selectId}>
         {label}
       </label>
       <select
         id={selectId}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className={`min-h-11 rounded-lg border bg-house px-3 text-ink disabled:opacity-40 ${error ? "border-curtain" : "border-rigging"} ${className}`}
+        className={`min-h-11 rounded-lg border bg-raised px-3 text-fg disabled:opacity-40 ${error ? "border-danger" : "border-line"} ${className}`}
         {...props}
       >
         {children}
       </select>
       {error ? (
-        <p id={errorId} className="text-small text-curtain">
+        <p id={errorId} className="text-small text-danger">
           {error}
         </p>
       ) : null}

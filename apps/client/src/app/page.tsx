@@ -56,18 +56,16 @@ export default function Home() {
 
   return (
     <>
-      <main aria-busy={catalog === null && error === null} className="mx-auto max-w-5xl px-4 pb-32 pt-6 sm:px-6">
-        <header className="mb-8 flex items-center justify-between gap-4">
-          <h1 className="font-display text-h1">TCOS</h1>
-          <p aria-live="polite" className="text-body">ตะกร้า {cart.count}</p>
-        </header>
+      <main aria-busy={catalog === null && error === null} className="mx-auto max-w-5xl px-4 pb-32 pt-8 sm:px-6">
+        {/* The header shows the logo; the page still needs its own h1 for screen readers. */}
+        <h1 className="sr-only">TCOS Merch</h1>
 
         {error ? <p role="alert">{error}</p> : null}
 
         {catalog?.promotions.length ? (
           <section aria-labelledby="promotions" className="mb-10">
             {/* TODO(Thai copy for the promotions heading) */}
-            <h2 id="promotions" className="mb-4 font-display text-h2 text-ink">
+            <h2 id="promotions" className="mb-4 text-h3 text-fg">
               Promotions
             </h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
@@ -85,7 +83,7 @@ export default function Home() {
 
         {catalog?.shops.map((shop) => (
           <section key={shop._id} aria-labelledby={`shop-${shop._id}`} className="mb-10">
-            <h2 id={`shop-${shop._id}`} className="mb-4 font-display text-h2 text-ink">
+            <h2 id={`shop-${shop._id}`} className="mb-4 text-h3 text-fg">
               {shop.shop_name}
             </h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
@@ -102,19 +100,22 @@ export default function Home() {
         ))}
       </main>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-rigging bg-house p-3 sm:px-6">
-        <div className="mx-auto max-w-5xl">
-          <CartTicket
-            count={cart.count}
-            total={cart.subtotal}
-            action={
-              <Button variant="secondary" disabled={cart.count === 0} onClick={() => router.push("/checkout")}>
-                ชำระเงิน
-              </Button>
-            }
-          />
+      {/* Only once something is in the cart: the ticket floats over the page, no tray behind it. */}
+      {cart.count > 0 ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 px-4 pb-4 sm:px-6 motion-safe:animate-rise">
+          <div className="mx-auto max-w-5xl shadow-xl shadow-sunk/60">
+            <CartTicket
+              count={cart.count}
+              total={cart.subtotal}
+              action={
+                <Button variant="secondary" onClick={() => router.push("/checkout")}>
+                  ชำระเงิน
+                </Button>
+              }
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <ProductPopup<CatalogVariant>
         product={activeProduct}

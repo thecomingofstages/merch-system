@@ -7,7 +7,7 @@ export default function PosPage() {
   return (
     <div className="flex flex-col gap-2">
       <h1 className="text-h2 font-semibold">{HEADING}</h1>
-      <p className="text-ink/70">{PLACEHOLDER}</p>
+      <p className="text-fg-2">{PLACEHOLDER}</p>
     </div>
   );
 }

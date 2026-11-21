@@ -42,7 +42,7 @@ export function UploadImageButton({ onUploaded, disabled }: { onUploaded: (url: 
       {/* A label styled as a button: the native file picker, so keyboard and phones work as usual. */}
       <label
         htmlFor={id}
-        className={`inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-rigging bg-house px-4 font-medium text-ink hover:bg-rigging/40 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-spotlight ${disabled || busy ? "pointer-events-none opacity-40" : ""}`}
+        className={`inline-flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-line bg-surface px-4 font-medium text-fg hover:bg-raised has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-spotlight ${disabled || busy ? "pointer-events-none opacity-40" : ""}`}
       >
         {busy ? COPY.uploading : COPY.upload}
         <input
@@ -58,7 +58,7 @@ export function UploadImageButton({ onUploaded, disabled }: { onUploaded: (url: 
         />
       </label>
       {error ? (
-        <p role="alert" className="text-small text-curtain">
+        <p role="alert" className="text-small text-danger">
           {error}
         </p>
       ) : null}

@@ -80,12 +80,12 @@ export function PaymentCheck({
     return (
       <section
         aria-labelledby="payment-section-heading"
-        className="flex flex-col gap-3 rounded-lg border border-rigging bg-house p-4"
+        className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4"
       >
-        <h2 id="payment-section-heading" className="text-h3 font-semibold text-ink">
+        <h2 id="payment-section-heading" className="text-h3 font-semibold text-fg">
           {COPY.paymentSectionTitle}
         </h2>
-        <p className="text-body text-ink">{COPY.posPaidOnSite}</p>
+        <p className="text-body text-fg">{COPY.posPaidOnSite}</p>
       </section>
     );
   }
@@ -94,12 +94,12 @@ export function PaymentCheck({
     return (
       <section
         aria-labelledby="payment-section-heading"
-        className="flex flex-col gap-3 rounded-lg border border-rigging bg-house p-4"
+        className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4"
       >
-        <h2 id="payment-section-heading" className="text-h3 font-semibold text-ink">
+        <h2 id="payment-section-heading" className="text-h3 font-semibold text-fg">
           {COPY.paymentSectionTitle}
         </h2>
-        <p className="text-small text-ink/70">{COPY.noSlipData}</p>
+        <p className="text-small text-fg-2">{COPY.noSlipData}</p>
       </section>
     );
   }
@@ -107,25 +107,25 @@ export function PaymentCheck({
   return (
     <section
       aria-labelledby="payment-section-heading"
-      className="flex flex-col gap-4 rounded-lg border border-rigging bg-house p-4"
+      className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 id="payment-section-heading" className="text-h3 font-semibold text-ink">
+        <h2 id="payment-section-heading" className="text-h3 font-semibold text-fg">
           {COPY.paymentSectionTitle}
         </h2>
-        <span className="inline-flex items-center rounded-sm border border-rigging bg-rigging/40 px-2.5 py-0.5 text-small font-semibold text-ink">
+        <span className="inline-flex items-center rounded-sm border border-line bg-raised px-2.5 py-0.5 text-small font-semibold text-fg">
           {formatPaymentStatus(order.payment_status)}
         </span>
       </div>
 
-      <p className="text-small text-ink/80">
+      <p className="text-small text-fg-2">
         {refundDue ? COPY.refundDueInstruction : COPY.paymentCheckInstruction}
       </p>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="flex flex-col gap-2 rounded-lg border border-rigging bg-rigging/15 p-3 md:col-span-2">
+        <div className="flex flex-col gap-2 rounded-lg border border-line bg-raised p-3 md:col-span-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-small font-medium text-ink/80">
+            <span className="text-small font-medium text-fg-2">
               {COPY.slipReferenceLabel}
             </span>
             <div className="flex items-center gap-2">
@@ -142,16 +142,16 @@ export function PaymentCheck({
               </Button>
             </div>
           </div>
-          <code className="block break-all rounded-sm border border-rigging bg-house p-2 text-small text-ink">
+          <code className="block break-all rounded-sm border border-line bg-surface p-2 text-small text-fg">
             {order.slip_qr_data}
           </code>
           <SlipQrCode data={order.slip_qr_data} label={COPY.slipQrLabel} />
-          <p className="text-small text-ink/80">{COPY.slipQrInstruction}</p>
+          <p className="text-small text-fg-2">{COPY.slipQrInstruction}</p>
         </div>
 
-        <div className="flex flex-col justify-between gap-2 rounded-lg border border-rigging bg-rigging/15 p-3">
-          <span className="text-small font-medium text-ink/80">{COPY.expectedTotalLabel}</span>
-          <div className="text-h2 font-semibold tabular-nums text-ink">
+        <div className="flex flex-col justify-between gap-2 rounded-lg border border-line bg-raised p-3">
+          <span className="text-small font-medium text-fg-2">{COPY.expectedTotalLabel}</span>
+          <div className="text-h2 font-semibold tabular-nums text-fg">
             <Price amount={expectedTotal} />
           </div>
         </div>
@@ -197,10 +197,10 @@ export function PaymentCheck({
           </Button>
         </div>
       ) : (
-        <div className="flex flex-wrap items-center gap-3 text-small text-ink/80">
+        <div className="flex flex-wrap items-center gap-3 text-small text-fg-2">
           <span>
             {COPY.paymentFilterLabel}:{" "}
-            <strong className="font-semibold text-ink">
+            <strong className="font-semibold text-fg">
               {formatPaymentStatus(order.payment_status)}
             </strong>
           </span>
@@ -213,7 +213,7 @@ export function PaymentCheck({
       )}
 
       {error ? (
-        <p role="alert" aria-live="polite" className="text-small text-curtain">
+        <p role="alert" aria-live="polite" className="text-small text-danger">
           {error}
         </p>
       ) : null}
@@ -235,25 +235,25 @@ export function PaymentCheck({
         >
           {confirmAction === "VERIFIED" ? (
             <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2 rounded-lg border border-rigging bg-rigging/20 p-3 text-small">
+              <div className="flex flex-col gap-2 rounded-lg border border-line bg-raised p-3 text-small">
                 <div className="flex flex-col gap-1">
-                  <span className="text-ink/70">{COPY.slipReferenceLabel}</span>
-                  <code className="break-all font-semibold text-ink">
+                  <span className="text-fg-2">{COPY.slipReferenceLabel}</span>
+                  <code className="break-all font-semibold text-fg">
                     {order.slip_qr_data}
                   </code>
                 </div>
-                <div className="flex items-center justify-between gap-2 border-t border-rigging pt-2">
-                  <span className="text-ink/70">{COPY.expectedTotalLabel}</span>
-                  <span className="font-semibold tabular-nums text-ink">
+                <div className="flex items-center justify-between gap-2 border-t border-line pt-2">
+                  <span className="text-fg-2">{COPY.expectedTotalLabel}</span>
+                  <span className="font-semibold tabular-nums text-fg">
                     <Price amount={expectedTotal} />
                   </span>
                 </div>
               </div>
 
-              <p className="text-body text-ink">{COPY.verifyConfirmQuestion}</p>
+              <p className="text-body text-fg">{COPY.verifyConfirmQuestion}</p>
 
               {error ? (
-                <p role="alert" aria-live="polite" className="text-small text-curtain">
+                <p role="alert" aria-live="polite" className="text-small text-danger">
                   {error}
                 </p>
               ) : null}
@@ -279,12 +279,12 @@ export function PaymentCheck({
             </div>
           ) : confirmAction === "REJECTED" ? (
             <div className="flex flex-col gap-4">
-              <p className="text-body text-ink">
+              <p className="text-body text-fg">
                 {refundDue ? COPY.refundConfirmBody : COPY.rejectConfirmBody}
               </p>
 
               {error ? (
-                <p role="alert" aria-live="polite" className="text-small text-curtain">
+                <p role="alert" aria-live="polite" className="text-small text-danger">
                   {error}
                 </p>
               ) : null}

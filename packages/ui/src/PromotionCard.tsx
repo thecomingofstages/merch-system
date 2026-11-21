@@ -19,10 +19,10 @@ export function PromotionCard<V extends SetVariant>({ promotion, stockOf, onOpen
       {promotion.image ? (
         <img src={promotion.image} alt={promotion.name} className={`aspect-square w-full rounded-sm object-cover ${fade}`} />
       ) : (
-        <div className={`aspect-square w-full rounded-sm bg-rigging ${fade}`} />
+        <div className={`aspect-square w-full rounded-sm bg-raised ${fade}`} />
       )}
-      <span className="font-medium">{promotion.name}</span>
-      {soldOut ? <span>สินค้าหมด</span> : <Price amount={promotion.price} />}
+      <span className="mt-1 font-medium">{promotion.name}</span>
+      {soldOut ? <span className="text-fg-3">สินค้าหมด</span> : <span className="text-fg-2 tabular-nums"><Price amount={promotion.price} /></span>}
     </button>
   );
 }

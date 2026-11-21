@@ -14,8 +14,8 @@ type CartTicketProps = {
 /** One notch cut into each side edge (docs/FRONTEND.md "The one bold element: the cart ticket"). A mask only reads alpha, so any opaque token works. */
 const notches = {
   mask: [
-    "radial-gradient(circle at left center, transparent 12px, var(--color-ink) 12.5px) left / 51% 100% no-repeat",
-    "radial-gradient(circle at right center, transparent 12px, var(--color-ink) 12.5px) right / 51% 100% no-repeat",
+    "radial-gradient(circle at left center, transparent 12px, var(--color-canvas) 12.5px) left / 51% 100% no-repeat",
+    "radial-gradient(circle at right center, transparent 12px, var(--color-canvas) 12.5px) right / 51% 100% no-repeat",
   ].join(", "),
 };
 
@@ -29,7 +29,7 @@ export function CartTicket({ count, total, action }: CartTicketProps) {
   }, [total]);
 
   return (
-    <div style={notches} className="flex items-center gap-4 bg-curtain px-8 py-3 text-house">
+    <div style={notches} className="flex items-center gap-4 bg-gold px-8 py-3 text-canvas">
       <span className="tabular-nums">{count} ชิ้น</span>
       <span
         key={flash}

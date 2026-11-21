@@ -34,7 +34,7 @@ export function PaymentQR({ promptpayId, name, amount }: PaymentQRProps) {
         referrerPolicy="no-referrer"
         width={240}
         height={240}
-        className="h-auto w-full max-w-60 bg-house"
+        className="h-auto w-full max-w-60 bg-surface"
       />
       <figcaption className="flex flex-col items-center text-center">
         <span className="font-display text-h3">

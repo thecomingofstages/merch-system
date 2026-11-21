@@ -61,7 +61,7 @@ describe("ProductPopup availability", () => {
     }));
 
     expect(html.includes("ใส่ตะกร้า")).toBe(can_add);
-    if (message) expect(html).toContain(`<p class="text-curtain">${message}</p>`);
+    if (message) expect(html).toContain(`<p class="text-danger">${message}</p>`);
     expect(html.includes("TODO(Thai copy for buy limit reached)")).toBe(message.startsWith("TODO("));
   });
 });

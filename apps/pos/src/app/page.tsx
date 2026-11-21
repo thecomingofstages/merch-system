@@ -5,8 +5,8 @@ import { Price } from "@merch/ui";
 export default function Home() {
   return (
     <main className="mx-auto max-w-xl p-6">
-      <h1 className="font-display text-h1 text-curtain">TCOS merch</h1>
-      <p className="mt-4 border-t border-rigging pt-4 text-body">
+      <h1 className="text-h1 text-fg">TCOS merch</h1>
+      <p className="mt-4 border-t border-line pt-4 text-body">
         POS app setup check. Total: <Price amount={270} />
       </p>
     </main>

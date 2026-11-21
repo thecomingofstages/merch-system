@@ -52,7 +52,7 @@ export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummar
       ))}
       {/* TODO(Thai copy for "Shipping" and "Total"): POC wording until the team picks the Thai */}
       {shippingFee !== undefined || total !== undefined ? (
-        <dl className="border-t border-rigging pt-3">
+        <dl className="border-t border-line pt-3">
           {shippingFee !== undefined ? (
             <div className="flex justify-between">
               <dt>Shipping</dt>

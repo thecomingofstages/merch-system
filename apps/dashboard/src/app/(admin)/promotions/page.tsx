@@ -91,28 +91,28 @@ export default function PromotionsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-h2 font-semibold text-ink">{COPY.pageTitle}</h1>
-          <p className="text-small text-ink/70">{COPY.intro}</p>
+          <h1 className="text-h2 font-semibold text-fg">{COPY.pageTitle}</h1>
+          <p className="text-small text-fg-2">{COPY.intro}</p>
         </div>
         <Button onClick={() => setEditing({ id: null, draft: emptyDraft() })}>{COPY.newSet}</Button>
       </div>
 
       {error ? (
-        <p role="alert" className="rounded-lg border border-curtain bg-house p-4 text-small text-curtain">
+        <p role="alert" className="rounded-lg border border-danger bg-surface p-4 text-small text-danger">
           {error}
         </p>
       ) : null}
 
       {sets === null ? (
-        <p className="text-small text-ink/70">{COPY.loading}</p>
+        <p className="text-small text-fg-2">{COPY.loading}</p>
       ) : sets.length === 0 ? (
-        <p className="rounded-lg border border-rigging bg-house p-6 text-small text-ink/70">{COPY.empty}</p>
+        <p className="rounded-lg border border-line bg-surface p-6 text-small text-fg-2">{COPY.empty}</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-rigging bg-house">
+        <div className="overflow-x-auto rounded-lg border border-line bg-surface">
           <table className="w-full border-collapse text-left text-small">
             <caption className="sr-only">{COPY.tableCaption}</caption>
             <thead>
-              <tr className="border-b border-rigging bg-rigging/30 text-ink">
+              <tr className="border-b border-line bg-raised text-fg">
                 <th scope="col" className="px-4 py-3 font-semibold">{COPY.colName}</th>
                 <th scope="col" className="px-4 py-3 font-semibold">{COPY.colItems}</th>
                 <th scope="col" className="px-4 py-3 font-semibold">{COPY.colPrice}</th>
@@ -122,7 +122,7 @@ export default function PromotionsPage() {
             </thead>
             <tbody>
               {sets.map((p) => (
-                <tr key={p._id} className="border-b border-rigging last:border-b-0">
+                <tr key={p._id} className="border-b border-line last:border-b-0">
                   <td className="px-4 py-3 font-medium">{p.name}</td>
                   <td className="px-4 py-3">
                     <ul>
@@ -258,7 +258,7 @@ function SetForm({
         {draft.items.map((item, i) => {
           const product = products.find((p) => p._id === item.product_id);
           return (
-            <fieldset key={i} className="flex min-w-0 flex-col gap-3 rounded-lg border border-rigging p-3">
+            <fieldset key={i} className="flex min-w-0 flex-col gap-3 rounded-lg border border-line p-3">
               <legend className="px-1 text-small font-medium">{COPY.item(i + 1)}</legend>
               <Select
                 label={COPY.product}
@@ -317,7 +317,7 @@ function SetForm({
       </fieldset>
 
       {error ? (
-        <p role="alert" className="text-small text-curtain">
+        <p role="alert" className="text-small text-danger">
           {error}
         </p>
       ) : null}
@@ -361,9 +361,9 @@ function DeleteBody({
   return (
     <div className="flex flex-col gap-4">
       <p className="font-semibold">{set.name}</p>
-      <p className="text-small text-ink/80">{COPY.deleteBody}</p>
+      <p className="text-small text-fg-2">{COPY.deleteBody}</p>
       {error ? (
-        <p role="alert" className="text-small text-curtain">
+        <p role="alert" className="text-small text-danger">
           {error}
         </p>
       ) : null}
