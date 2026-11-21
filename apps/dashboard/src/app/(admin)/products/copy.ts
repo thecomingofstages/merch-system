@@ -29,7 +29,6 @@ export const COPY = {
   createShopTitle: "Add shop",
   shopNameLabel: "Shop name",
   emptyShops: "No shops yet.",
-  selectShopPrompt: "Select a shop to view its products.",
 
   // Products section
   addProduct: "+ Add product",
