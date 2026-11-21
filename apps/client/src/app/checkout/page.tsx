@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type Rea
 import {
   CreateOrderRequest,
   formatThaiAddress,
+  PRIVACY_VERSION,
   setRequest,
   shortOrderId,
   stockShortfalls,
@@ -116,6 +117,8 @@ export default function Checkout() {
   const [reading, setReading] = useState(false);
   const slipRun = useRef(0);
   const [placing, setPlacing] = useState(false);
+  // D20: the buyer ticks that they read the privacy policy before the order can be placed.
+  const [accepted, setAccepted] = useState(false);
   // The new order's id once placed.
   const [placed, setPlaced] = useState<string | null>(null);
   const [notice, setNotice] = useState<ReactNode>(null);
@@ -288,6 +291,7 @@ export default function Checkout() {
         ...cartRequest(lines, sets),
         ...checked,
         slip_qr_data: slip,
+        privacy_version: PRIVACY_VERSION,
       });
       clear();
       setPlaced(order._id);
@@ -354,6 +358,13 @@ export default function Checkout() {
               <>
                 <p className="mb-4"><Bilingual th="เข้าสู่ระบบด้วย Google ก่อนกรอกข้อมูล" en="Sign in with Google to fill in your details" /></p>
                 <GoogleSignIn onToken={signIn} />
+                {/* PDPA s.23: the notice comes at or before collection, and signing in collects the email. */}
+                <p className="mt-4 text-small text-fg-2">
+                  <Bilingual th="ร้านจะเก็บอีเมลและชื่อจากบัญชี Google ของคุณ" en="The shop keeps the email and name from your Google account." stack />{" "}
+                  <a href="/privacy" target="_blank" rel="noopener" className="text-gold underline underline-offset-2">
+                    <Bilingual th="อ่านนโยบายความเป็นส่วนตัว" en="Read the privacy policy" />
+                  </a>
+                </p>
               </>
             ) : me ? (
               <form noValidate onSubmit={next}>
@@ -426,9 +437,21 @@ export default function Checkout() {
                 <p>{formatThaiAddress(checked.shipping_address)}</p>
               </div>
             ) : null}
+            <label className="mb-6 flex items-start gap-3">
+              <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1 size-5 shrink-0 accent-gold" />
+              {/* Each language a whole sentence, as Bilingual does; the links open a new tab so the order stays put. */}
+              <span>
+                ฉันได้อ่านและยอมรับ<a href="/privacy" target="_blank" rel="noopener" className="text-gold underline underline-offset-2">นโยบายความเป็นส่วนตัว</a>
+                <br />
+                <span lang="en" className="font-normal">
+                  I have read and accept the{" "}
+                  <a href="/privacy" target="_blank" rel="noopener" className="text-gold underline underline-offset-2">privacy policy</a>
+                </span>
+              </span>
+            </label>
             {quote ? (
               <CartTicket count={count} total={quote.total} action={
-                <Button variant="secondary" disabled={!slip || placing} onClick={placeOrder}><Bilingual th="สั่งซื้อ" en="Place order" /></Button>
+                <Button variant="secondary" disabled={!slip || placing || !accepted} onClick={placeOrder}><Bilingual th="สั่งซื้อ" en="Place order" /></Button>
               } />
             ) : null}
             {back(2)}

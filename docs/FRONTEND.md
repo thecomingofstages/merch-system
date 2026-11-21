@@ -45,7 +45,7 @@ apps/
 | Product popup | `ProductPopup` | 1.1 |
 | Checkout ① details | Sprint 1: plain form. Sprint 2: Google sign-in required first, autofill from `/me` (all fields editable, email read-only), postcode → tambon dropdown → amphoe/province auto, details field, live address preview with `formatThaiAddress()` | 1.4, 2.1, 2.3 |
 | Checkout ② payment | `PaymentQR` with a total quoted again on the way to ②, "Upload slip" → `readSlipQr` → show read / not read. If the QR can't be read, "Place order" stays disabled (D5). | 1.5 |
-| Checkout ③ confirm | "Place order" → `POST /orders` → popup "Order placed" → Home. `OUT_OF_STOCK` here means the buyer already paid: say the shop will refund over LINE (D11), and ask for a new slip. | 1.5 |
+| Checkout ③ confirm | A checkbox "ฉันได้อ่านและยอมรับนโยบายความเป็นส่วนตัว / I have read and accept the privacy policy" (link opens `/privacy` in a new tab) must be ticked first (D20). "Place order" → `POST /orders` with `privacy_version` → popup "Order placed" → Home. `OUT_OF_STOCK` here means the buyer already paid: say the shop will refund over LINE (D11), and ask for a new slip. | 1.5 |
 | Stock re-check | While in checkout, `GET /catalog` every 15 s (`stockShortfalls()`): a line the stock no longer covers is reduced or removed, with a message, and the quote follows. Polling, because the server can't push. | 1.5 |
 
 ### apps/pos (FE3)

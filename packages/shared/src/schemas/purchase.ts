@@ -82,6 +82,8 @@ export const CreateOrderRequest = z.object({
   recipient: Recipient,
   shipping_address: Address,
   slip_qr_data: SlipQrData,
+  /** The privacy policy version the buyer ticked "accepted" for (D20, PRIVACY_VERSION). */
+  privacy_version: z.string().trim().min(1).max(32),
 });
 export type CreateOrderRequest = z.input<typeof CreateOrderRequest>;
 

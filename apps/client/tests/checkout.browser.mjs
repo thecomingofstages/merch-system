@@ -98,6 +98,9 @@ export default async function checkCheckout(page) {
   await step("③ ยืนยันคำสั่งซื้อ Confirm order").waitFor();
   await page.getByText("1 Road ตำบลTambon 2 อำเภอAmphoe 1 จังหวัดProvince 1 10200", { exact: true }).last().waitFor();
   assert(await noOverflow(), "No overflow at 360px on confirm");
+  // D20: no order until the buyer ticks that they read the privacy policy.
+  assert(await button("สั่งซื้อ Place order").isDisabled(), "Privacy policy not accepted: can't order");
+  await page.getByRole("checkbox", { name: /ฉันได้อ่านและยอมรับ/ }).check();
   await press(button("สั่งซื้อ Place order"));
   await page.getByRole("dialog", { name: "สั่งซื้อแล้ว" }).waitFor();
   await press(button("กลับไปหน้าร้าน Back to the shop"));
@@ -110,6 +113,7 @@ export default async function checkCheckout(page) {
   await press(button("ถัดไป Next"));
   await upload(slip);
   await press(next);
+  await page.getByRole("checkbox", { name: /ฉันได้อ่านและยอมรับ/ }).check();
   await press(button("สั่งซื้อ Place order"));
   await page.getByText("สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้").waitFor();
   assert(await step("② ชำระเงิน Payment").isVisible(), "A duplicate slip goes back to payment");

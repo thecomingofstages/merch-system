@@ -36,7 +36,7 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
 
   const recipient = { first_name: "A", last_name: "B", nickname: "C", phone: "0812345678", email: "Buyer@Example.com" };
   const shipping_address = { details: "1 Road", tambon: "T", amphoe: "A", province: "P", postal_code: "10200" };
-  const order = (items: object[], slip = `${tag}-${Math.random()}`) => ({ items, recipient, shipping_address, slip_qr_data: slip });
+  const order = (items: object[], slip = `${tag}-${Math.random()}`) => ({ items, recipient, shipping_address, slip_qr_data: slip, privacy_version: "test-v1" });
   const stockOf = async (vid: string) =>
     (await m.Product.findById(productId).lean())!.variants.find((v) => v._id.equals(vid))!.online_stock;
 
@@ -87,6 +87,8 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
     expect(saved!.products[0]).toMatchObject({ product_name: `${tag} shirt` });
     expect(saved!.products[0]!.variants[0]).toMatchObject({ variant_name: "M", count: 2, unit_price: 250 });
     expect(saved!.recipient!.email).toBe(`${tag}@example.com`);
+    // D20: which privacy policy the buyer accepted, and when
+    expect(saved!.privacy_accepted).toMatchObject({ version: "test-v1", at: expect.any(Date) });
     expect(await stockOf(shirt)).toBe(8);
     // S10: one confirmation, for this order, after it was saved
     expect(sendOrderConfirmation).toHaveBeenCalledTimes(1);
@@ -154,7 +156,7 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
     expect(res.body.error.code).toBe("BUY_LIMIT");
   });
 
-  it("rejects an order without slip_qr_data (D5) or with a bad phone", async () => {
+  it("rejects an order without slip_qr_data (D5), with a bad phone, or without the accepted privacy policy (D20)", async () => {
     const items = [{ product_id: productId, variant_id: shirt, count: 1 }];
     const { slip_qr_data: _, ...noSlip } = order(items);
     const res = await post(noSlip);
@@ -163,5 +165,10 @@ describe.skipIf(!uri)("POST /orders (S5)", { timeout: 60_000 }, () => {
 
     const badPhone = await post({ ...order(items), recipient: { ...recipient, phone: "12345" } });
     expect(badPhone.status).toBe(400);
+
+    const { privacy_version: __, ...noPolicy } = order(items);
+    const unaccepted = await post(noPolicy);
+    expect(unaccepted.status).toBe(400);
+    expect(unaccepted.body.error.message).toContain("privacy_version");
   });
 });

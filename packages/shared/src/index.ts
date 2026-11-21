@@ -15,3 +15,4 @@ export * from "./cart";
 export * from "./promptpay";
 export * from "./promotions";
 export * from "./orderId";
+export * from "./privacy";

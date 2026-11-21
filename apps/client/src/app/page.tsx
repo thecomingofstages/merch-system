@@ -56,7 +56,7 @@ export default function Home() {
 
   return (
     <>
-      <main aria-busy={catalog === null && error === null} className="mx-auto max-w-5xl px-4 pb-32 pt-8 sm:px-6">
+      <main aria-busy={catalog === null && error === null} className="mx-auto max-w-5xl px-4 pb-8 pt-8 sm:px-6">
         {/* The header shows the logo; the page still needs its own h1 for screen readers. */}
         <h1 className="sr-only">TCOS Merch</h1>
 
