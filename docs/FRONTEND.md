@@ -130,7 +130,7 @@ Text is left-aligned throughout, except the total on the ticket, which is right-
 ### Copy
 Thai first, sentence case, plain verbs. An action keeps its name through the flow.
 
-The shop shows the English after the Thai, a step quieter: `<Bilingual th en />` from `@merch/ui` (`stack` puts a sentence's English on its own line). Text only a screen reader hears (`aria-label`, the QR's alt, the header's cart count) stays Thai, since the page is `lang="th"`. "N ชิ้น" counts stay Thai. Server error messages, form-field errors from the zod schemas, the buyer emails and the dashboard are not translated yet.
+The shop shows the English after the Thai, one weight lighter, same colour (dimming it broke contrast): `<Bilingual th en />` from `@merch/ui` (`stack` puts a sentence's English on its own line). Text only a screen reader hears (`aria-label`, the QR's alt, the header's cart count) stays Thai, since the page is `lang="th"`. "N ชิ้น" counts stay Thai. Server error messages, form-field errors from the zod schemas, the buyer emails and the dashboard are not translated yet.
 
 | Situation | Thai | English |
 |---|---|---|
