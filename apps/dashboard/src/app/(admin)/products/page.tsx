@@ -6,6 +6,7 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 import { listProducts, listShops } from "@/lib/api";
 import { COPY } from "./copy";
 import { ImagePreview, mapDashboardError } from "./helpers";
+import { ImportDialog } from "./ImportDialog";
 import {
   AddStockDialog,
   ArchiveConfirmDialog,
@@ -35,6 +36,8 @@ export default function ProductsPage() {
   const [expandedProductIds, setExpandedProductIds] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Dialog states
   const [shopModal, setShopModal] = useState<{ open: boolean; shop: Shop | null }>({
@@ -125,6 +128,9 @@ export default function ProductsPage() {
             <span>{COPY.showArchived}</span>
           </label>
 
+          <Button type="button" variant="secondary" onClick={() => setImportOpen(true)}>
+            {COPY.importButton}
+          </Button>
           <Button
             type="button"
             variant="primary"
@@ -134,6 +140,12 @@ export default function ProductsPage() {
           </Button>
         </div>
       </div>
+
+      {notice ? (
+        <p role="status" className="rounded-lg border border-line bg-surface p-4 text-small text-fg">
+          {notice}
+        </p>
+      ) : null}
 
       {/* Page-level Error */}
       {pageError ? (
@@ -528,6 +540,15 @@ export default function ProductsPage() {
         variant={stockModal.variant}
         onClose={() => setStockModal({ open: false, productId: "", variant: null })}
         onSuccess={refreshData}
+      />
+
+      <ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onDone={async (message) => {
+          await refreshData();
+          setNotice(message);
+        }}
       />
 
       <ArchiveConfirmDialog

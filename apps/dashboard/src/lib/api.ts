@@ -6,6 +6,8 @@ import {
   deleteImpact,
   ErrorBody,
   ImageUploadResponse,
+  ImportRequest,
+  ImportResponse,
   type ErrorCode,
   fixtureOrders,
   fixtureProducts,
@@ -364,6 +366,39 @@ export async function addStock(productId: string, variantId: string, body: Stock
     { method: "POST", body: JSON.stringify(body) },
     Product,
   );
+}
+
+// Import (D19)
+
+/** Creates shops, products and variants from a parsed sheet, all or nothing. */
+export async function importCatalog(body: ImportRequest): Promise<ImportResponse> {
+  if (isFixturesMode()) {
+    const parsed = ImportRequest.parse(body);
+    let shops_created = 0;
+    let variants_created = 0;
+    for (const s of parsed.shops) {
+      let shop = memoryShops.find((x) => x.shop_name === s.shop_name && !x.archived);
+      if (!shop) {
+        shop = { _id: makeFixtureId("65"), shop_name: s.shop_name, archived: false };
+        memoryShops.push(shop);
+        shops_created += 1;
+      }
+      for (const p of s.products) {
+        variants_created += p.variants.length;
+        memoryProducts.push({
+          _id: makeFixtureId("66"),
+          shop_id: shop._id,
+          name: p.name,
+          description: p.description,
+          image: p.image,
+          archived: false,
+          variants: p.variants.map((v) => ({ ...v, _id: makeFixtureId("67"), archived: false })),
+        });
+      }
+    }
+    return { shops_created, products_created: parsed.shops.reduce((n, s) => n + s.products.length, 0), variants_created };
+  }
+  return requestAdmin("/admin/import", { method: "POST", body: JSON.stringify(body) }, ImportResponse);
 }
 
 // Images (D17)
