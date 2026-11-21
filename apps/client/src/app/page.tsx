@@ -64,9 +64,8 @@ export default function Home() {
 
         {catalog?.promotions.length ? (
           <section aria-labelledby="promotions" className="mb-10">
-            {/* TODO(Thai copy for the promotions heading) */}
             <h2 id="promotions" className="mb-4 text-h3 text-fg">
-              Promotions
+              โปรโมชัน
             </h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
               {catalog.promotions.map((promotion) => (

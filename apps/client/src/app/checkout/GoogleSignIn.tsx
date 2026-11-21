@@ -21,8 +21,11 @@ export function GoogleSignIn({ onToken }: { onToken: (idToken: string) => void }
   const button = useRef<HTMLDivElement>(null);
 
   if (isFixturesMode()) {
-    // TODO(Thai copy for the sign-in button)
-    return <Button onClick={() => onToken("fixture-id-token")}>Sign in with Google</Button>;
+    return (
+      <Button onClick={() => onToken("fixture-id-token")}>
+        เข้าสู่ระบบด้วย Google
+      </Button>
+    );
   }
 
   return (

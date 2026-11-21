@@ -54,9 +54,8 @@ function PopupBody<V extends ShopVariant>({
     <div className="flex flex-col gap-4">
       {image ? <img src={image} alt={product.name} className="aspect-square w-full rounded-sm object-cover" /> : null}
       {product.description ? <p>{product.description}</p> : null}
-      {/* TODO(Thai copy for "Variant", "Amount" and "Total price"): POC wording until the team picks the Thai */}
       <Select
-        label="Variant"
+        label="ตัวเลือก"
         value={variantId}
         onChange={(e) => {
           setVariantId(e.target.value);
@@ -75,11 +74,11 @@ function PopupBody<V extends ShopVariant>({
       {max > 0 && variant ? (
         <>
           <div className="flex items-center justify-between">
-            <span className="font-medium">Amount</span>
+            <span className="font-medium">จำนวน</span>
             <QuantityStepper value={selectedCount} onChange={setCount} max={max} />
           </div>
           <p className="flex items-center justify-between">
-            <span>Total price</span>
+            <span>ราคารวม</span>
             <Price amount={variant.price * selectedCount} />
           </p>
           <Button onClick={() => onAdd(variant._id, selectedCount)}>ใส่ตะกร้า</Button>
@@ -87,7 +86,7 @@ function PopupBody<V extends ShopVariant>({
       ) : (
         <p className="text-danger">
           {variant && stockOf(variant) > (inCart?.(variant._id) ?? 0)
-            ? "TODO(Thai copy for buy limit reached)"
+            ? `จำกัด ${variant.buy_limit} ชิ้นต่อคำสั่งซื้อ ใส่ตะกร้าครบแล้ว`
             : "สินค้าหมด"}
         </p>
       )}

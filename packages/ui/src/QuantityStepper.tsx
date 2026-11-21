@@ -16,8 +16,8 @@ export function QuantityStepper({
   onChange,
   min = 1,
   max,
-  decreaseLabel = "Decrease",
-  increaseLabel = "Increase",
+  decreaseLabel = "ลดจำนวน",
+  increaseLabel = "เพิ่มจำนวน",
 }: QuantityStepperProps) {
   const atMin = value <= min;
   const atMax = max !== undefined && value >= max;

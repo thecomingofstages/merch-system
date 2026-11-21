@@ -50,12 +50,11 @@ export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummar
           </ul>
         </div>
       ))}
-      {/* TODO(Thai copy for "Shipping" and "Total"): POC wording until the team picks the Thai */}
       {shippingFee !== undefined || total !== undefined ? (
         <dl className="border-t border-line pt-3">
           {shippingFee !== undefined ? (
             <div className="flex justify-between">
-              <dt>Shipping</dt>
+              <dt>ค่าส่ง</dt>
               <dd>
                 <Price amount={shippingFee} />
               </dd>
@@ -63,7 +62,7 @@ export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummar
           ) : null}
           {total !== undefined ? (
             <div className="flex justify-between font-semibold">
-              <dt>Total</dt>
+              <dt>ยอดรวม</dt>
               <dd>
                 <Price amount={total} />
               </dd>
