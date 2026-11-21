@@ -39,8 +39,9 @@ export function isFixturesMode(): boolean {
   return process.env.NEXT_PUBLIC_USE_FIXTURES === "true";
 }
 
+// Through the shop's own /api proxy (app/api/[...path]), so the session cookie is first-party.
 function getBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
+  return "/api";
 }
 
 async function requestJson<T>(
