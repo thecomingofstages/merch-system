@@ -1,7 +1,6 @@
 "use client";
 
 import type { CatalogProduct, CatalogVariant } from "@merch/shared";
-import { Bilingual } from "./Bilingual";
 import { Price } from "./Price";
 
 /** The fields the product parts read, taken from the shared catalog types. Stock comes from `stockOf`, so client and POS variants both fit. */
@@ -34,7 +33,7 @@ export function ProductCard<V extends ShopVariant>({ product, stockOf, onOpen }:
       )}
       <span className="mt-1 font-medium">{product.name}</span>
       {inStock.length === 0 ? (
-        <span className="text-fg-3"><Bilingual th="สินค้าหมด" en="Sold out" /></span>
+        <span className="text-fg-3">สินค้าหมด</span>
       ) : (
         <span className="text-fg-2 tabular-nums">
           <Price amount={low} />

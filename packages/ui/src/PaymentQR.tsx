@@ -1,7 +1,6 @@
 "use client";
 
 import { isPromptpayId } from "@merch/shared";
-import { Bilingual } from "./Bilingual";
 import { Price } from "./Price";
 
 
@@ -39,7 +38,7 @@ export function PaymentQR({ promptpayId, name, amount }: PaymentQRProps) {
           <Price amount={amount} />
         </span>
         <span>
-          <Bilingual th="บัญชีพร้อมเพย์" en="PromptPay account" />: {name} · {id}
+          บัญชีพร้อมเพย์: {name} · {id}
         </span>
       </figcaption>
     </figure>

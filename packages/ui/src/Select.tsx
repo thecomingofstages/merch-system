@@ -1,8 +1,8 @@
-import { useId, type ReactNode, type SelectHTMLAttributes } from "react";
+import { useId, type SelectHTMLAttributes } from "react";
 
 type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
-  label: ReactNode;
-  error?: ReactNode;
+  label: string;
+  error?: string;
 };
 
 /** A native select, so the keyboard and the phone pickers work as users expect. Pass `<option>`s as children. */

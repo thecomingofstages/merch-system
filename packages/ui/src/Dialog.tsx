@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 type DialogProps = {
   open: boolean;
   onClose: () => void;
-  title: ReactNode;
+  title: string;
   children: ReactNode;
   /** A bottom sheet with 16px top corners (the product popup) instead of a centred box. */
   sheet?: boolean;
@@ -50,7 +50,7 @@ export function Dialog({ open, onClose, title, children, sheet = false }: Dialog
             Last in the markup so that opening the dialog still focuses its first field. */}
         <button
           type="button"
-          aria-label="ปิด Close"
+          aria-label="ปิด"
           onClick={onClose}
           className="absolute right-3 top-3 inline-flex size-11 items-center justify-center rounded-lg text-h3 text-fg-2 hover:bg-raised hover:text-fg"
         >

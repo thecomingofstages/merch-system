@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 import { useRef } from "react";
-import { Bilingual, Button } from "@merch/ui";
+import { Button } from "@merch/ui";
 import { isFixturesMode } from "../../lib/api";
 
 type GoogleId = {
@@ -23,7 +23,7 @@ export function GoogleSignIn({ onToken }: { onToken: (idToken: string) => void }
   if (isFixturesMode()) {
     return (
       <Button onClick={() => onToken("fixture-id-token")}>
-        <Bilingual th="เข้าสู่ระบบด้วย Google" en="Sign in with Google" />
+        เข้าสู่ระบบด้วย Google
       </Button>
     );
   }
