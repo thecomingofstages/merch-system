@@ -5,6 +5,7 @@
 import { Router } from "express";
 import { Auth } from "../middleware/Auth";
 import { addressRoute } from "./address.route";
+import { analyticsRoute } from "./analytics.route";
 import { adminCatalogRoute } from "./admin/catalog.route";
 import { adminImageRoute } from "./admin/image.route";
 import { adminOrderRoute } from "./admin/order.route";
@@ -24,6 +25,7 @@ export function initRoutes(): Router {
   api.use(addressRoute);
   api.use(authRoute);
   api.use(orderRoute);
+  api.use(analyticsRoute);
   api.use(posRoute);
 
   // Admin (F6): every /admin/* path needs ADMIN_ACCESS_TOKEN, even ones that do not exist.

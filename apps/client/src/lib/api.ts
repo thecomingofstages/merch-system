@@ -1,4 +1,6 @@
 import {
+  AnalyticsConsentResponse,
+  type AnalyticsConsentRequest,
   CatalogResponse,
   CreateOrderRequest,
   CreateOrderResponse,
@@ -193,6 +195,12 @@ export async function getMe(): Promise<MeResponse> {
   return requestJson("/me", { method: "GET" }, MeResponse);
 }
 
+/** POST /analytics/consent (D20). Fixtures mode keeps nothing. */
+export async function recordConsent(body: AnalyticsConsentRequest): Promise<void> {
+  if (isFixturesMode()) return;
+  await requestJson("/analytics/consent", { method: "POST", body: JSON.stringify(body) }, AnalyticsConsentResponse);
+}
+
 export async function getPostcode(code: string): Promise<PostcodeLookupResponse> {
   if (isFixturesMode()) {
     // Synthetic places, so the tambon dropdown can be tried without the server's dataset.
@@ -213,5 +221,6 @@ export const clientApi = {
   googleSignIn,
   getMe,
   getPostcode,
+  recordConsent,
   resetClientFixtures,
 };

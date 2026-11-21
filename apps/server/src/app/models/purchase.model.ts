@@ -72,6 +72,8 @@ export const purchaseSchema = new Schema(
     shipping_address: { type: addressSchema, default: null },
     // No default: a sale without a slip leaves the field out, never null (see the index below).
     slip_qr_data: { type: String },
+    // Online orders: which privacy policy the buyer accepted, and when (D20). Null on POS sales.
+    privacy_accepted: { type: new Schema({ version: { type: String, required: true }, at: { type: Date, required: true } }, { _id: false }), default: null },
     verify_method: { type: String, enum: ["QR", "MANUAL"], required: true },
     payment_status: { type: String, enum: ["PENDING_CHECK", "VERIFIED", "REJECTED", "REFUND_DUE"], default: "PENDING_CHECK" },
     verified_at: { type: Date, default: null },

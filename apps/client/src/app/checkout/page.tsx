@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import {
   CreateOrderRequest,
   formatThaiAddress,
+  PRIVACY_VERSION,
   setRequest,
   shortOrderId,
   stockShortfalls,
@@ -100,6 +101,8 @@ export default function Checkout() {
   const [reading, setReading] = useState(false);
   const slipRun = useRef(0);
   const [placing, setPlacing] = useState(false);
+  // D20: the buyer ticks that they read the privacy policy before the order can be placed.
+  const [accepted, setAccepted] = useState(false);
   // The new order's id once placed.
   const [placed, setPlaced] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -272,6 +275,7 @@ export default function Checkout() {
         ...cartRequest(lines, sets),
         ...checked,
         slip_qr_data: slip,
+        privacy_version: PRIVACY_VERSION,
       });
       clear();
       setPlaced(order._id);
@@ -338,6 +342,13 @@ export default function Checkout() {
               <>
                 <p className="mb-4">เข้าสู่ระบบด้วย Google ก่อนกรอกข้อมูล</p>
                 <GoogleSignIn onToken={signIn} />
+                {/* PDPA s.23: the notice comes at or before collection, and signing in collects the email. */}
+                <p className="mt-4 text-small text-fg-2">
+                  ร้านจะเก็บอีเมลและชื่อจากบัญชี Google ของคุณ{" "}
+                  <a href="/privacy" target="_blank" rel="noopener" className="text-gold underline underline-offset-2">
+                    อ่านนโยบายความเป็นส่วนตัว
+                  </a>
+                </p>
               </>
             ) : me ? (
               <form noValidate onSubmit={next}>
@@ -410,9 +421,16 @@ export default function Checkout() {
                 <p>{formatThaiAddress(checked.shipping_address)}</p>
               </div>
             ) : null}
+            <label className="mb-6 flex items-start gap-3">
+              <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1 size-5 shrink-0 accent-gold" />
+              {/* The link opens a new tab, so the order in progress stays put. */}
+              <span>
+                ฉันได้อ่านและยอมรับ<a href="/privacy" target="_blank" rel="noopener" className="text-gold underline underline-offset-2">นโยบายความเป็นส่วนตัว</a>
+              </span>
+            </label>
             {quote ? (
               <CartTicket count={count} total={quote.total} action={
-                <Button variant="secondary" disabled={!slip || placing} onClick={placeOrder}>สั่งซื้อ</Button>
+                <Button variant="secondary" disabled={!slip || placing || !accepted} onClick={placeOrder}>สั่งซื้อ</Button>
               } />
             ) : null}
             {back(2)}

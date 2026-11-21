@@ -37,6 +37,7 @@ describe.skipIf(!uri)("Google sign-in and sessions (S6)", { timeout: 60_000 }, (
     recipient: { first_name: "Ann", last_name: "Lee", nickname: "A", phone, line_id: "ann", email: "other@example.com" },
     shipping_address: { details: "1 Road", tambon: "T", amphoe: "A", province: "P", postal_code: "10200" },
     slip_qr_data: `${tag}-${slip}`,
+    privacy_version: "test-v1",
   });
 
   beforeAll(async () => {

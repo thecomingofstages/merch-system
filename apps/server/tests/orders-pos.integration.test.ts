@@ -43,6 +43,7 @@ describe.skipIf(!uri)("admin orders, POS management, POS sales (S7–S9)", { tim
         recipient: { first_name: "A", last_name: "B", nickname: "C", phone: "0812345678", email: "a@example.com" },
         shipping_address: { details: "1", tambon: "T", amphoe: "A", province: "P", postal_code: "10200" },
         slip_qr_data: slip(s),
+        privacy_version: "test-v1",
       });
     expect(res.status).toBe(201);
     return res.body._id as string;
