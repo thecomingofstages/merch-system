@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Bilingual } from "./Bilingual";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
 import { Price } from "./Price";
@@ -56,7 +55,7 @@ function PopupBody<V extends ShopVariant>({
       {image ? <img src={image} alt={product.name} className="aspect-square w-full rounded-sm object-cover" /> : null}
       {product.description ? <p>{product.description}</p> : null}
       <Select
-        label={<Bilingual th="ตัวเลือก" en="Option" />}
+        label="ตัวเลือก"
         value={variantId}
         onChange={(e) => {
           setVariantId(e.target.value);
@@ -67,7 +66,7 @@ function PopupBody<V extends ShopVariant>({
           const soldOut = stockOf(v) <= 0;
           return (
             <option key={v._id} value={v._id} disabled={soldOut}>
-              {v.name} · {soldOut ? "สินค้าหมด / Sold out" : `฿${v.price.toLocaleString("th-TH")}`}
+              {v.name} · {soldOut ? "สินค้าหมด" : `฿${v.price.toLocaleString("th-TH")}`}
             </option>
           );
         })}
@@ -75,26 +74,20 @@ function PopupBody<V extends ShopVariant>({
       {max > 0 && variant ? (
         <>
           <div className="flex items-center justify-between">
-            <span className="font-medium"><Bilingual th="จำนวน" en="Quantity" /></span>
+            <span className="font-medium">จำนวน</span>
             <QuantityStepper value={selectedCount} onChange={setCount} max={max} />
           </div>
           <p className="flex items-center justify-between">
-            <span><Bilingual th="ราคารวม" en="Total" /></span>
+            <span>ราคารวม</span>
             <Price amount={variant.price * selectedCount} />
           </p>
-          <Button onClick={() => onAdd(variant._id, selectedCount)}><Bilingual th="ใส่ตะกร้า" en="Add to cart" /></Button>
+          <Button onClick={() => onAdd(variant._id, selectedCount)}>ใส่ตะกร้า</Button>
         </>
       ) : (
         <p className="text-danger">
-          {variant && stockOf(variant) > (inCart?.(variant._id) ?? 0) ? (
-            <Bilingual
-              th={`จำกัด ${variant.buy_limit} ชิ้นต่อคำสั่งซื้อ ใส่ตะกร้าครบแล้ว`}
-              en={`You can buy up to ${variant.buy_limit} per order, and they're already in your cart.`}
-              stack
-            />
-          ) : (
-            <Bilingual th="สินค้าหมด" en="Sold out" />
-          )}
+          {variant && stockOf(variant) > (inCart?.(variant._id) ?? 0)
+            ? `จำกัด ${variant.buy_limit} ชิ้นต่อคำสั่งซื้อ ใส่ตะกร้าครบแล้ว`
+            : "สินค้าหมด"}
         </p>
       )}
     </div>

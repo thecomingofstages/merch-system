@@ -8,7 +8,7 @@ export default async function checkPromotions(page) {
 
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto(new URL("/", page.url()).href);
-  const heading = page.getByRole("heading", { name: "โปรโมชัน Promotions", exact: true });
+  const heading = page.getByRole("heading", { name: "โปรโมชัน", exact: true });
   await heading.waitFor();
   const main = page.getByRole("main");
   assert(
@@ -20,7 +20,7 @@ export default async function checkPromotions(page) {
   await press(page.getByRole("button", { name: /Placeholder set/ }));
   const dialog = page.getByRole("dialog", { name: "Placeholder set" });
   await dialog.waitFor();
-  const add = dialog.getByRole("button", { name: "ใส่ตะกร้า Add to cart", exact: true });
+  const add = dialog.getByRole("button", { name: "ใส่ตะกร้า", exact: true });
   assert(await add.isDisabled(), "Nothing picked: can't add");
   assert(await dialog.getByRole("button", { name: "เพิ่ม XL", exact: true }).isDisabled(), "A sold-out variant can't be picked");
 
@@ -43,7 +43,7 @@ export default async function checkPromotions(page) {
   for (let i = 0; i < 20 && !(await more.isDisabled()); i++) await press(more);
   assert(await product.locator("output").textContent() === "9", "Single M is capped by the stock left after the set");
   await page.keyboard.press("Escape");
-  await press(page.getByRole("button", { name: "ชำระเงิน Checkout", exact: true }));
+  await press(page.getByRole("button", { name: "ชำระเงิน", exact: true }));
   const summary = page.getByRole("region", { name: "สรุปคำสั่งซื้อ", exact: true });
   await summary.getByText("Placeholder set", { exact: true }).waitFor();
   await summary.getByText("฿659", { exact: true }).waitFor(); // 599 + 60 shipping, from the quote

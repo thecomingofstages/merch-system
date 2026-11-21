@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 type DialogProps = {
   open: boolean;
   onClose: () => void;
-  title: ReactNode;
+  title: string;
   children: ReactNode;
   /** A bottom sheet with 16px top corners (the product popup) instead of a centred box. */
   sheet?: boolean;

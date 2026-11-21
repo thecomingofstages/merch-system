@@ -1,5 +1,4 @@
 import type { QuoteLine, QuotePromotion } from "@merch/shared";
-import { Bilingual } from "./Bilingual";
 import { Price } from "./Price";
 
 type CartSummaryProps = {
@@ -14,7 +13,7 @@ type CartSummaryProps = {
 
 /** Lines grouped by product, as in POC screen C ("Prod. X – Var. A ×1 100 ฿"). */
 export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummaryProps) {
-  if (lines.length === 0 && sets.length === 0) return <p><Bilingual th="ยังไม่มีสินค้าในตะกร้า" en="Your cart is empty" /></p>;
+  if (lines.length === 0 && sets.length === 0) return <p>ยังไม่มีสินค้าในตะกร้า</p>;
 
   const products = new Map<string, QuoteLine[]>();
   for (const line of lines) products.set(line.product_id, [...(products.get(line.product_id) ?? []), line]);
@@ -55,7 +54,7 @@ export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummar
         <dl className="border-t border-line pt-3">
           {shippingFee !== undefined ? (
             <div className="flex justify-between">
-              <dt><Bilingual th="ค่าส่ง" en="Shipping" /></dt>
+              <dt>ค่าส่ง</dt>
               <dd>
                 <Price amount={shippingFee} />
               </dd>
@@ -63,7 +62,7 @@ export function CartSummary({ lines, sets = [], shippingFee, total }: CartSummar
           ) : null}
           {total !== undefined ? (
             <div className="flex justify-between font-semibold">
-              <dt><Bilingual th="ยอดรวม" en="Total" /></dt>
+              <dt>ยอดรวม</dt>
               <dd>
                 <Price amount={total} />
               </dd>
