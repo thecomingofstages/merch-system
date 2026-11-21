@@ -128,7 +128,7 @@ export default async function checkCheckout(page) {
   await page.reload();
   await page.getByRole("link", { name: "ตะกร้า 1 ชิ้น", exact: true }).waitFor();
   await press(button("ชำระเงิน Checkout"));
-  await press(page.getByRole("button", { name: /^ลบ หมวกแก๊ป/ }));
+  await press(page.getByRole("button", { name: /^ลบ Remove หมวกแก๊ป/ }));
   await page.getByText("ยังไม่มีสินค้าในตะกร้า").waitFor();
   await page.reload();
   await page.getByText("ยังไม่มีสินค้าในตะกร้า").waitFor();

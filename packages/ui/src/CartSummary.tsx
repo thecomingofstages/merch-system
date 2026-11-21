@@ -17,8 +17,9 @@ type CartSummaryProps = {
 
 function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button type="button" aria-label={`ลบ ${label}`} onClick={onClick} className="min-h-11 shrink-0 px-2 text-small text-gold underline underline-offset-2">
+    <button type="button" onClick={onClick} className="min-h-11 shrink-0 px-2 text-small text-gold underline underline-offset-2">
       <Bilingual th="ลบ" en="Remove" />
+      <span className="sr-only"> {label}</span>
     </button>
   );
 }

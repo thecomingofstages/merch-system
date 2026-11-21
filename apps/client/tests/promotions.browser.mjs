@@ -45,7 +45,7 @@ export default async function checkPromotions(page) {
   await page.keyboard.press("Escape");
   await press(page.getByRole("button", { name: "ชำระเงิน Checkout", exact: true }));
   const summary = page.getByRole("region", { name: "สรุปคำสั่งซื้อ", exact: true });
-  await summary.getByText("Placeholder set", { exact: true }).waitFor();
+  await summary.getByText("Placeholder set", { exact: true }).first().waitFor();
   await summary.getByText("฿659", { exact: true }).waitFor(); // 599 + 60 shipping, from the quote
   assert(await summary.getByText("฿599", { exact: true }).count() === 1, "The set shows its own price");
   assert(await summary.getByText(/\(S\) ×1/).count() === 1 && await summary.getByText(/\(M\) ×1/).count() === 1, "The picks are listed");
