@@ -63,7 +63,7 @@ export async function createOrder(
       return { response, order: order!.toObject() };
     });
     // After the commit, so a retried transaction can't send it twice (S10). Never throws.
-    await sendOrderConfirmation(order, config);
+    await sendOrderConfirmation(order, config, m);
     return response;
   } catch (err) {
     if (err instanceof ApiError && err.code === "OUT_OF_STOCK") await saveRefundDue(m, userId, body, config);

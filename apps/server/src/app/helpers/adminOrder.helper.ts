@@ -85,7 +85,7 @@ export async function setTracking(m: Models, id: Id, tracking_id: string, config
     { new: true },
   ).lean();
   if (order) {
-    await sendShippingUpdate(order, config);
+    await sendShippingUpdate(order, config, m);
     return order;
   }
   const exists = await m.Purchase.findById(id).lean();
