@@ -41,7 +41,7 @@ export default async function checkCheckout(page) {
 
   // 2.1: no details form (so no step ②) before signing in; the email then comes from Google, read-only.
   assert(await box("ชื่อ").count() === 0, "Details need a sign-in first");
-  await press(button("เข้าสู่ระบบด้วย Google"));
+  await press(button("ดำเนินการต่อด้วย Google"));
   await box("ชื่อ").waitFor();
   assert(await box("อีเมล").inputValue() === "buyer@example.com", "Email comes from the sign-in");
   assert(await box("อีเมล").getAttribute("readonly") !== null, "Email is read-only");
