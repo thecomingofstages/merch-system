@@ -9,6 +9,7 @@ export * from "./schemas/user";
 export * from "./schemas/purchase";
 export * from "./schemas/pos";
 export * from "./schemas/promotion";
+export * from "./schemas/analytics";
 export * from "./address";
 export * from "./fixtures";
 export * from "./cart";

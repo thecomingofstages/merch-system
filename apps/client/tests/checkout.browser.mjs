@@ -31,6 +31,23 @@ export default async function checkCheckout(page) {
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto(new URL("/checkout", page.url()).href);
   await page.getByText("ยังไม่มีสินค้าในตะกร้า").waitFor();
+
+  // D20: the statistics question is asked on its own, nothing is kept before an answer,
+  // "no" is as easy as "yes", and the footer button asks again.
+  const stored = async () => JSON.parse(await page.evaluate(() => localStorage.getItem("merch-analytics-consent")));
+  const consent = page.getByRole("region", { name: "ขอเก็บสถิติการใช้งานแบบไม่ระบุตัวตนได้ไหม" });
+  await consent.waitFor();
+  assert(await stored() === null, "Nothing kept before an answer");
+  await press(consent.getByRole("button", { name: "ไม่ยอมรับ", exact: true }));
+  await consent.waitFor({ state: "detached" });
+  assert((await stored()).accepted === false && (await stored()).visitor_id === undefined, "A no keeps no id");
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  assert(await consent.count() === 0, "The answer is remembered");
+  await press(page.getByRole("button", { name: "การเก็บสถิติการใช้งาน", exact: true }));
+  await press(consent.getByRole("button", { name: "ยอมรับ", exact: true }));
+  await consent.waitFor({ state: "detached" });
+  assert(typeof (await stored()).visitor_id === "string", "A yes makes the random id");
   assert(await button("ถัดไป").count() === 0, "Empty cart must not continue");
   await page.getByRole("link", { name: "กลับ", exact: true }).click();
   await addCapAndCheckout();

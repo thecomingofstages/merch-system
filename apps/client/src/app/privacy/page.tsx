@@ -50,7 +50,7 @@ export default function PrivacyPage() {
           <li>ข้อมูลที่กรอกตอนชำระเงิน: ชื่อ นามสกุล ชื่อเล่น เบอร์โทร LINE ID (ถ้าใส่) และที่อยู่จัดส่ง</li>
           <li>ข้อความใน QR บนสลิปโอนเงิน (เลขอ้างอิงรายการ) รูปสลิปไม่ถูกส่งออกจากเครื่องของคุณ เบราว์เซอร์อ่าน QR แล้วส่งมาเฉพาะข้อความ</li>
           <li>รายการสินค้า ยอดเงิน และเวลาที่สั่งซื้อ</li>
-          <li>คุกกี้ <code>merch_session</code> ที่ทำให้คุณยังเข้าสู่ระบบอยู่ อายุไม่เกิน 30 วัน และของในตะกร้า ซึ่งเก็บไว้ในเบราว์เซอร์ของคุณเท่านั้น</li>
+          <li>คุกกี้ <code>merch_session</code> ที่ทำให้คุณยังเข้าสู่ระบบอยู่ อายุไม่เกิน 30 วัน ส่วนของในตะกร้าและคำตอบเรื่องสถิติการใช้งานเก็บไว้ในเบราว์เซอร์ของคุณเท่านั้น</li>
         </ul>
       </Section>
 
@@ -78,6 +78,22 @@ export default function PrivacyPage() {
           <li>คุกกี้เข้าสู่ระบบ: ไม่เกิน 30 วัน</li>
         </ul>
       </Section>
+
+      <section id="analytics" className="flex scroll-mt-24 flex-col gap-3">
+        <h2 className="text-h3">สถิติการใช้งาน (เมื่อคุณยอมรับเท่านั้น)</h2>
+        <p>
+          ตอนเปิดร้านครั้งแรก ร้านจะถามว่ายอมให้เก็บสถิติการใช้งานไหม ถ้าไม่ยอมรับ ร้านจะไม่เก็บ และซื้อของได้ตามปกติ ถ้ายอมรับ ร้านจะเก็บ
+        </p>
+        <ul className="list-disc pl-6">
+          <li>รหัสสุ่มประจำเบราว์เซอร์ ซึ่งสร้างตอนคุณกดยอมรับ และรหัสของแต่ละรอบที่เข้าร้าน</li>
+          <li>สินค้าที่คุณเห็น เปิดดู ใส่ตะกร้า และเริ่มชำระเงิน และว่ารอบนั้นมีการสั่งซื้อหรือไม่</li>
+        </ul>
+        <p>
+          สถิตินี้ไม่ผูกกับชื่อ อีเมล บัญชี Google หรือคำสั่งซื้อของคุณ ใช้เพื่อดูว่าสินค้าไหนคนสนใจและจัดร้านให้ดีขึ้น โดยอาศัยความยินยอมของคุณ (มาตรา 19)
+          ร้านบันทึกว่าคุณยอมรับหรือเปลี่ยนใจเมื่อไร พร้อมรหัสสุ่มและฉบับของนโยบาย เพื่อแสดงได้ว่าได้รับความยินยอมแล้ว
+          สถิติเก็บไว้จนกว่าทีมงานจะลบ หรือคุณขอให้ลบ เปลี่ยนใจได้ทุกเมื่อที่ปุ่ม &quot;การเก็บสถิติการใช้งาน&quot; ด้านล่างของทุกหน้า ร้านจะหยุดเก็บทันที
+        </p>
+      </section>
 
       <Section title="สิทธิของคุณ">
         <p>
@@ -110,7 +126,7 @@ export default function PrivacyPage() {
             <li>What you fill in at checkout: first name, last name, nickname, phone, LINE ID (if given) and shipping address</li>
             <li>The text in the QR on your transfer slip (the transaction reference). The slip image never leaves your device: your browser reads the QR and sends only its text</li>
             <li>The items, amounts and time of your order</li>
-            <li>The <code>merch_session</code> cookie that keeps you signed in, for up to 30 days, and your cart, which stays in your browser</li>
+            <li>The <code>merch_session</code> cookie that keeps you signed in, for up to 30 days. Your cart and your answer about usage statistics stay in your browser</li>
           </ul>
         </Section>
 
@@ -138,6 +154,22 @@ export default function PrivacyPage() {
             <li>The sign-in cookie: up to 30 days</li>
           </ul>
         </Section>
+
+        <section className="flex flex-col gap-3">
+          <h2 className="text-h3">Usage statistics (only if you agree)</h2>
+          <p>
+            The first time you open the shop, it asks whether it may collect usage statistics. If you say no, nothing is collected and you can shop as usual. If you say yes, the shop collects
+          </p>
+          <ul className="list-disc pl-6">
+            <li>a random ID for your browser, made when you say yes, and an ID for each visit</li>
+            <li>which products you see, open, add to your cart and start to check out, and whether that visit ended in an order</li>
+          </ul>
+          <p>
+            These statistics aren&apos;t linked to your name, email, Google account or orders. They show which products people are interested in, so we can arrange the shop better, and rest on your consent (section 19).
+            We record when you agreed or changed your mind, with the random ID and the policy version, so we can show we had your consent.
+            The statistics are kept until the team deletes them or you ask us to. Change your mind any time with the &quot;การเก็บสถิติการใช้งาน&quot; button at the bottom of every page; collecting stops at once.
+          </p>
+        </section>
 
         <Section title="Your rights">
           <p>
