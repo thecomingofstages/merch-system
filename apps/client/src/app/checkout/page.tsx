@@ -19,6 +19,7 @@ import {
 } from "@merch/shared";
 import { Button, CartSummary, CartTicket, Dialog, Input, PaymentQR, readSlipQr, Select, useCart } from "@merch/ui";
 import type { z } from "zod";
+import { track, flush } from "../../lib/analytics";
 import { ApiError, clientApi } from "../../lib/api";
 import { GoogleSignIn } from "./GoogleSignIn";
 
@@ -117,6 +118,14 @@ export default function Checkout() {
     : placeList.findIndex((p) => p.tambon === values.tambon && p.amphoe === values.amphoe && p.province === values.province);
   const place = placeList[placeIndex];
   const postcodeError = currentPlaces?.error ?? (currentPlaces?.list?.length === 0 ? NO_TAMBON : undefined);
+
+  // D21: reaching checkout counts once per page, for each product in the cart.
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current || lines.length === 0) return;
+    checkoutTracked.current = true;
+    track("checkout", [...new Set(lines.map((l) => l.product_id))]);
+  }, [lines]);
 
   useEffect(() => {
     if (lines.length + sets.length === 0) return;
@@ -277,6 +286,9 @@ export default function Checkout() {
         slip_qr_data: slip,
         privacy_version: PRIVACY_VERSION,
       });
+      // D21: the visit is labelled isPurchased through these; nothing ties them to the order.
+      track("purchase", [...new Set(lines.map((l) => l.product_id))]);
+      flush();
       clear();
       setPlaced(order._id);
     } catch (cause) {

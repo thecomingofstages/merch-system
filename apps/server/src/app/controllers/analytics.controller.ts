@@ -1,6 +1,7 @@
 /** POST /analytics/consent (D20): records a visitor's yes, or their later no. */
-import { AnalyticsConsentRequest, type AnalyticsConsentResponse } from "@merch/shared";
+import { AnalyticsConsentRequest, type AnalyticsConsentResponse, AnalyticsEventsRequest } from "@merch/shared";
 import type { RequestHandler } from "express";
+import { recordEvents } from "../helpers/analytics.helper";
 import { withModels } from "../utils/models";
 
 export const AnalyticsController = {
@@ -14,6 +15,13 @@ export const AnalyticsController = {
         { upsert: true },
       ),
     );
+    res.json({ ok: true } satisfies AnalyticsConsentResponse);
+  }) satisfies RequestHandler,
+
+  /** POST /analytics/events (D21): a batch from the shop; 409 NO_CONSENT without a recorded yes. */
+  events: (async (req, res) => {
+    const body = AnalyticsEventsRequest.parse(req.body);
+    await withModels(req, (m) => recordEvents(m, body));
     res.json({ ok: true } satisfies AnalyticsConsentResponse);
   }) satisfies RequestHandler,
 };

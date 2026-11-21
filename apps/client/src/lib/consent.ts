@@ -48,7 +48,7 @@ export const analyticsVisitorId = () => {
 };
 
 /** randomUUID needs a secure context (not a LAN dev server); getRandomValues works everywhere. */
-function newVisitorId(): string {
+export function newVisitorId(): string {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
   const b = crypto.getRandomValues(new Uint8Array(16));
   b[6] = (b[6]! & 0x0f) | 0x40; // version 4

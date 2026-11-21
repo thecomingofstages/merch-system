@@ -1,4 +1,11 @@
 import {
+  ANALYTICS_STEPS,
+  type AnalyticsCounts,
+  type AnalyticsStep,
+  AnalyticsDailyResponse,
+  AnalyticsDeleteResponse,
+  type AnalyticsRange,
+  AnalyticsSummaryResponse,
   AdminOrdersCountQuery,
   AdminOrdersCountResponse,
   AdminOrdersQuery,
@@ -454,6 +461,51 @@ export async function archivePromotion(id: string): Promise<void> {
     return;
   }
   await requestAdmin(`/admin/promotions/${encodeURIComponent(id)}`, { method: "DELETE" }, z.undefined());
+}
+
+// Usage statistics (D21)
+
+const rangeQuery = (range: AnalyticsRange, extra: Record<string, string> = {}) => {
+  const q = new URLSearchParams({ ...(range.from && { from: range.from }), ...(range.to && { to: range.to }), ...extra }).toString();
+  return q ? `?${q}` : "";
+};
+
+/** Fixtures mode: a fixed, made-up funnel per fixture product, so the page can be tried offline. */
+const fixtureSteps = (n: number) =>
+  Object.fromEntries(
+    ANALYTICS_STEPS.map((s, i) => {
+      const sessions = Math.max(Math.round(n / (i + 1) ** 1.4), i === 4 ? 1 : 0);
+      return [s, { hits: sessions + Math.round(sessions / 3), sessions, visitors: Math.round(sessions * 0.8) }];
+    }),
+  ) as Record<AnalyticsStep, AnalyticsCounts>;
+
+export async function getAnalytics(range: AnalyticsRange): Promise<AnalyticsSummaryResponse> {
+  if (isFixturesMode()) {
+    return {
+      totals: { visitors: 96, sessions: 120, purchased_sessions: 14 },
+      products: memoryProducts.filter((p) => !p.archived).map((p, i) => ({ ...fixtureSteps(80 - i * 15), product_id: p._id, product_name: p.name })),
+    };
+  }
+  return requestAdmin(`/admin/analytics${rangeQuery(range)}`, { method: "GET" }, AnalyticsSummaryResponse);
+}
+
+export async function getAnalyticsDaily(productId: string, range: AnalyticsRange): Promise<AnalyticsDailyResponse> {
+  if (isFixturesMode()) {
+    const today = new Date();
+    return {
+      days: Array.from({ length: 10 }, (_, i) => {
+        const d = new Date(today.getTime() - (9 - i) * 86_400_000).toISOString().slice(0, 10);
+        return { ...fixtureSteps(12 + ((i * 7) % 9)), date: d };
+      }),
+    };
+  }
+  return requestAdmin(`/admin/analytics/${encodeURIComponent(productId)}/daily${rangeQuery(range)}`, { method: "GET" }, AnalyticsDailyResponse);
+}
+
+/** Every event before that day (YYYY-MM-DD), or all of them. */
+export async function deleteAnalytics(before?: string): Promise<AnalyticsDeleteResponse> {
+  if (isFixturesMode()) return { deleted: 0 };
+  return requestAdmin(`/admin/analytics${rangeQuery({}, before ? { before } : {})}`, { method: "DELETE" }, AnalyticsDeleteResponse);
 }
 
 // Orders (2.8)

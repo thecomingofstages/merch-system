@@ -6,6 +6,7 @@ import { Router } from "express";
 import { Auth } from "../middleware/Auth";
 import { addressRoute } from "./address.route";
 import { analyticsRoute } from "./analytics.route";
+import { adminAnalyticsRoute } from "./admin/analytics.route";
 import { adminCatalogRoute } from "./admin/catalog.route";
 import { adminImageRoute } from "./admin/image.route";
 import { adminOrderRoute } from "./admin/order.route";
@@ -36,6 +37,7 @@ export function initRoutes(): Router {
   api.use("/admin", adminOrderRoute);
   api.use("/admin", adminPosRoute);
   api.use("/admin", adminPromotionRoute);
+  api.use("/admin", adminAnalyticsRoute);
 
   return api;
 }

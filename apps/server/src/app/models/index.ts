@@ -4,6 +4,7 @@
  */
 import type { Connection } from "mongoose";
 import { analyticsConsentSchema } from "./analyticsConsent.model";
+import { analyticsEventSchema } from "./analyticsEvent.model";
 import { posSchema } from "./pos.model";
 import { productSchema } from "./product.model";
 import { promotionSchema } from "./promotion.model";
@@ -20,6 +21,7 @@ export function models(db: Connection) {
     Pos: db.model("Pos", posSchema, "pos"),
     Promotion: db.model("Promotion", promotionSchema, "promotions"),
     AnalyticsConsent: db.model("AnalyticsConsent", analyticsConsentSchema, "analytics_consents"),
+    AnalyticsEvent: db.model("AnalyticsEvent", analyticsEventSchema, "analytics_events"),
   };
 }
 
