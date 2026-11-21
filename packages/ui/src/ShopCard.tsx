@@ -43,12 +43,12 @@ export function ShopCard({ name, image, soldOut, price, inCart, onDetails, onBuy
         {inCart > 0 ? <span className="sr-only"> ในตะกร้า {inCart} ชิ้น</span> : null}
       </p>
       {price}
-      <div className="mt-2 flex flex-col gap-2">
-        <Button variant="secondary" onClick={onDetails}>
+      <div className="mt-2 flex flex-col gap-1.5">
+        <Button variant="secondary" size="sm" onClick={onDetails}>
           ดูรายละเอียด<span className="sr-only"> {name}</span>
         </Button>
         {onBuy ? (
-          <Button disabled={soldOut} onClick={onBuy}>
+          <Button size="sm" disabled={soldOut} onClick={onBuy}>
             ใส่ตะกร้า<span className="sr-only"> {name}</span>
           </Button>
         ) : null}
