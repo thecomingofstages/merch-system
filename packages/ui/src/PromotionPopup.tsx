@@ -78,12 +78,11 @@ function PopupBody<V extends SetVariant>({
       {promotion.description ? <p>{promotion.description}</p> : null}
       {promotion.items.map((item, i) => (
         <fieldset key={i} className="flex min-w-0 flex-col gap-2 border-t border-line pt-3">
-          {/* TODO(Thai copy for "pick N" and the stepper labels) */}
           <legend className="font-medium">
-            {item.product_name} ×{item.count}
+            {item.product_name}: เลือก {item.count} ชิ้น
           </legend>
           <p aria-live="polite" className="text-small">
-            {picked(i)} / {item.count}
+            {`เลือกแล้ว ${picked(i)} จาก ${item.count}`}
           </p>
           {item.variants.map((v) => {
             const value = counts[i]?.[v._id] ?? 0;
@@ -98,8 +97,8 @@ function PopupBody<V extends SetVariant>({
                   value={value}
                   min={0}
                   max={max}
-                  decreaseLabel={`Fewer ${v.name}`}
-                  increaseLabel={`More ${v.name}`}
+                  decreaseLabel={`ลด ${v.name}`}
+                  increaseLabel={`เพิ่ม ${v.name}`}
                   onChange={(n) => setCounts((all) => all.map((c, j) => (j === i ? { ...c, [v._id]: n } : c)))}
                 />
               </div>
@@ -108,7 +107,7 @@ function PopupBody<V extends SetVariant>({
         </fieldset>
       ))}
       <p className="flex items-center justify-between font-semibold">
-        <span>Total price</span>
+        <span>ราคารวม</span>
         <Price amount={promotion.price} />
       </p>
       <Button disabled={!complete} onClick={add}>

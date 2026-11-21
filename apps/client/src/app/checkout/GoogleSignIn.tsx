@@ -2,7 +2,6 @@
 
 import Script from "next/script";
 import { useRef } from "react";
-import { Button } from "@merch/ui";
 import { isFixturesMode } from "../../lib/api";
 
 type GoogleId = {
@@ -21,8 +20,17 @@ export function GoogleSignIn({ onToken }: { onToken: (idToken: string) => void }
   const button = useRef<HTMLDivElement>(null);
 
   if (isFixturesMode()) {
-    // TODO(Thai copy for the sign-in button)
-    return <Button onClick={() => onToken("fixture-id-token")}>Sign in with Google</Button>;
+    // Looks like Google's real button below (outline, "continue with"), so fixtures screens match.
+    return (
+      <button
+        type="button"
+        onClick={() => onToken("fixture-id-token")}
+        className="inline-flex min-h-11 items-center gap-3 rounded-md border border-google-line bg-google px-4 font-medium text-google-fg"
+      >
+        <img src="/google-g.svg" alt="" width={20} height={20} />
+        ดำเนินการต่อด้วย Google
+      </button>
+    );
   }
 
   return (
@@ -36,7 +44,8 @@ export function GoogleSignIn({ onToken }: { onToken: (idToken: string) => void }
             client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "",
             callback: ({ credential }) => onToken(credential),
           });
-          id.renderButton(button.current, { theme: "outline", size: "large", text: "signin_with", locale: "th" });
+          // "Continue with Google", outline: in Thai it reads "ดำเนินการต่อด้วย Google".
+          id.renderButton(button.current, { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", logo_alignment: "left", locale: "th" });
         }}
       />
       <div ref={button} className="min-h-11" />

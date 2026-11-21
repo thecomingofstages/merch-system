@@ -1,7 +1,8 @@
 /** /admin/shops and /admin/products (S2). Bodies are checked with the @merch/shared schemas. */
-import { ProductPatch, ProductRequest, ShopRequest, StockRequest, VariantPatch, VariantRequest } from "@merch/shared";
+import { ImportRequest, ProductPatch, ProductRequest, ShopRequest, StockRequest, VariantPatch, VariantRequest } from "@merch/shared";
 import type { RequestHandler } from "express";
 import * as catalog from "../../helpers/catalog.helper";
+import { importCatalog } from "../../helpers/import.helper";
 import { idParam } from "../../utils/id";
 import { imageStore } from "../../helpers/images.helper";
 import { getConfig } from "../../utils/config";
@@ -83,5 +84,11 @@ export const AdminCatalogController = {
     const vid = idParam(req.params.vid);
     const { amount } = StockRequest.parse(req.body);
     res.json(await withModels(req, (m) => catalog.addStock(m, id, vid, amount)));
+  }) satisfies RequestHandler,
+
+  /** POST /admin/import (D19): a whole sheet of shops, products and variants, all or nothing. */
+  importCatalog: (async (req, res) => {
+    const body = ImportRequest.parse(req.body);
+    res.status(201).json(await withModels(req, (m, db) => importCatalog(m, db, imageStore(getConfig(req)), body)));
   }) satisfies RequestHandler,
 };

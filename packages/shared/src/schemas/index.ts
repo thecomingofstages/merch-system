@@ -7,3 +7,5 @@ export * from "./user";
 export * from "./purchase";
 export * from "./pos";
 export * from "./promotion";
+export * from "./import";
+export * from "./analytics";

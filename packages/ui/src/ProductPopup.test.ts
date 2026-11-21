@@ -42,7 +42,7 @@ describe("remainingCount", () => {
 
 describe("ProductPopup availability", () => {
   it.each([
-    { stock: 7, buy_limit: 2, in_cart: 2, message: "TODO(Thai copy for buy limit reached)", can_add: false },
+    { stock: 7, buy_limit: 2, in_cart: 2, message: "จำกัด 2 ชิ้นต่อคำสั่งซื้อ ใส่ตะกร้าครบแล้ว", can_add: false },
     { stock: 0, buy_limit: 2, in_cart: 2, message: "สินค้าหมด", can_add: false },
     { stock: -1, buy_limit: 0, in_cart: 0, message: "สินค้าหมด", can_add: false },
     { stock: 3, buy_limit: 0, in_cart: 3, message: "สินค้าหมด", can_add: false },
@@ -60,8 +60,9 @@ describe("ProductPopup availability", () => {
       onClose: () => {},
     }));
 
-    expect(html.includes("ใส่ตะกร้า")).toBe(can_add);
+    // The button, not the text: the buy-limit message itself says "ใส่ตะกร้าครบแล้ว".
+    expect(html.includes(">ใส่ตะกร้า</button>")).toBe(can_add);
     if (message) expect(html).toContain(`<p class="text-danger">${message}</p>`);
-    expect(html.includes("TODO(Thai copy for buy limit reached)")).toBe(message.startsWith("TODO("));
+    expect(html).not.toContain("TODO(");
   });
 });

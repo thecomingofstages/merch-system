@@ -6,7 +6,9 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import {
   CreateOrderRequest,
   formatThaiAddress,
+  PRIVACY_VERSION,
   setRequest,
+  shortOrderId,
   stockShortfalls,
   unavailableSets,
   type CartLine,
@@ -27,10 +29,18 @@ type CheckedDetails = z.output<typeof detailsSchema>;
 const OUT_OF_STOCK = "สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า";
 const DUPLICATE_SLIP = "สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้";
 const QR_NOT_READ = "อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น";
-// TODO(Thai copy for stock running out during checkout)
-const PAID_OUT_OF_STOCK =
-  "Some items sold out before your order was saved. The shop will contact you on LINE to refund this payment.";
-const cartUpdated = (names: string) => `Some items sold out, so your cart was updated: ${names}`;
+const PAID_OUT_OF_STOCK = "สินค้าบางรายการหมดก่อนบันทึกคำสั่งซื้อ ร้านจะติดต่อทาง LINE เพื่อคืนเงินที่โอนมา";
+const SIGNED_OUT = "หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบอีกครั้ง";
+const NO_TAMBON = "ไม่พบตำบลของรหัสไปรษณีย์นี้";
+// Form errors in the buyer's words; the schema's own messages are for developers.
+const REQUIRED = "กรุณากรอกช่องนี้";
+const CHOOSE_TAMBON = "กรุณาเลือกตำบล/แขวง";
+const CHECK_FIELD = "ตรวจช่องนี้อีกครั้ง";
+const FORMAT: Partial<Record<keyof Details, string>> = {
+  phone: "เบอร์โทร 10 หลัก ขึ้นต้นด้วย 0 เช่น 0812345678",
+  postal_code: "รหัสไปรษณีย์ 5 หลัก",
+};
+const cartUpdated = (names: string) => `สินค้าบางรายการหมด เราปรับตะกร้าให้แล้ว: ${names}`;
 
 // How often the checkout re-checks stock (the server has no push; see docs/FRONTEND.md "apps/client").
 const STOCK_CHECK_MS = 15_000;
@@ -65,7 +75,7 @@ function focusStep(step: number) {
 
 export default function Checkout() {
   const router = useRouter();
-  const { lines, sets, count, clear, setCount, removeSet } = useCart();
+  const { lines, sets, count, clear, setCount, remove, removeSet } = useCart();
   // `run` bumps on the way to payment, so the QR always shows a fresh quote.
   const [quoteRun, setQuoteRun] = useState(0);
   const [pricing, setPricing] = useState<{
@@ -91,7 +101,10 @@ export default function Checkout() {
   const [reading, setReading] = useState(false);
   const slipRun = useRef(0);
   const [placing, setPlacing] = useState(false);
-  const [placed, setPlaced] = useState(false);
+  // D20: the buyer ticks that they read the privacy policy before the order can be placed.
+  const [accepted, setAccepted] = useState(false);
+  // The new order's id once placed.
+  const [placed, setPlaced] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   // A previous quote must disappear as soon as the cart changes.
@@ -103,8 +116,7 @@ export default function Checkout() {
     ? 0
     : placeList.findIndex((p) => p.tambon === values.tambon && p.amphoe === values.amphoe && p.province === values.province);
   const place = placeList[placeIndex];
-  // TODO(Thai copy for a postcode with no tambon)
-  const postcodeError = currentPlaces?.error ?? (currentPlaces?.list?.length === 0 ? "No tambon found for this postal code" : undefined);
+  const postcodeError = currentPlaces?.error ?? (currentPlaces?.list?.length === 0 ? NO_TAMBON : undefined);
 
   useEffect(() => {
     if (lines.length + sets.length === 0) return;
@@ -198,20 +210,36 @@ export default function Checkout() {
     name,
     value: values[name],
     error: errors[name],
-    onChange: (event: ChangeEvent<HTMLInputElement>) => setValues((v) => ({ ...v, [name]: event.target.value })),
+    onChange: (event: ChangeEvent<HTMLInputElement>) => {
+      setValues((v) => ({ ...v, [name]: event.target.value }));
+      setErrors((e) => ({ ...e, [name]: undefined })); // a fixed field shouldn't keep its old error
+    },
   });
+
+  /** The message for a field the schema refused: empty, or in the wrong form. */
+  const fieldError = (name: keyof Details): string => {
+    const value = name === "tambon" ? (place?.tambon ?? "") : values[name];
+    if (!value.trim()) return name === "tambon" ? CHOOSE_TAMBON : REQUIRED;
+    return FORMAT[name] ?? CHECK_FIELD;
+  };
 
   function next(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!quote || !me) return;
     const parsed = detailsSchema.safeParse({
-      recipient: { ...values, line_id: values.line_id || null, email: me.email },
+      // Spaces and dashes are how people write phone numbers ("081-234-5678"); the number is the digits.
+      recipient: { ...values, phone: values.phone.replace(/[\s-]/g, ""), line_id: values.line_id || null, email: me.email },
       // Tambon, amphoe and province only ever come from the lookup of this postcode.
       shipping_address: { details: values.details, postal_code: values.postal_code, ...EMPTY_PLACE, ...place },
     });
     const fieldErrors: Partial<Record<keyof Details, string>> = parsed.success
       ? {}
-      : Object.fromEntries(parsed.error.issues.map((issue) => [issue.path.at(-1), issue.message]));
+      : Object.fromEntries(
+          parsed.error.issues
+            .map((issue) => issue.path.at(-1))
+            .filter((key): key is keyof Details => typeof key === "string" && key in EMPTY)
+            .map((key) => [key, fieldError(key)]),
+        );
     if (postcodeError) fieldErrors.postal_code = postcodeError;
     setErrors(fieldErrors);
     const first = Object.keys(fieldErrors)[0];
@@ -243,13 +271,14 @@ export default function Checkout() {
     setPlacing(true);
     setNotice(null);
     try {
-      await clientApi.createOrder({
+      const order = await clientApi.createOrder({
         ...cartRequest(lines, sets),
         ...checked,
         slip_qr_data: slip,
+        privacy_version: PRIVACY_VERSION,
       });
       clear();
-      setPlaced(true);
+      setPlaced(order._id);
     } catch (cause) {
       if (cause instanceof ApiError && cause.code === "DUPLICATE_SLIP") {
         setSlip(undefined);
@@ -265,8 +294,7 @@ export default function Checkout() {
         go(2);
       } else if (cause instanceof ApiError && cause.status === 401) {
         setMe(null);
-        // TODO(Thai copy for an expired sign-in)
-        setNotice("Please sign in again.");
+        setNotice(SIGNED_OUT);
         go(1);
       } else {
         setNotice(errorText(cause));
@@ -276,17 +304,25 @@ export default function Checkout() {
     }
   }
 
-  const back = (to: 1 | 2) => <Button variant="secondary" className="mt-6" onClick={() => go(to)}>Back</Button>;
+  const back = (to: 1 | 2) => <Button variant="secondary" className="mt-6" onClick={() => go(to)}>กลับ</Button>;
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
       <header className="mb-8 flex items-center justify-between gap-4">
         <h1 className="text-h2">ชำระเงิน</h1>
-        <Link href="/" className="inline-flex min-h-11 items-center text-gold">Back</Link>
+        <Link href="/" className="inline-flex min-h-11 items-center text-gold">กลับ</Link>
       </header>
 
-      <section aria-label="Checkout" aria-busy={hasItems && !currentPricing} className="mb-8 rounded-xl border border-line bg-surface p-5">
-        <CartSummary lines={quote?.lines ?? lines} sets={quote?.promotions ?? sets} shippingFee={quote?.shipping_fee} total={quote?.total} />
+      <section aria-label="สรุปคำสั่งซื้อ" aria-busy={hasItems && !currentPricing} className="mb-8 rounded-xl border border-line bg-surface p-5">
+        {/* Remove only while filling in details: from ② on, the buyer may have paid this total. */}
+        <CartSummary
+          lines={quote?.lines ?? lines}
+          sets={quote?.promotions ?? sets}
+          shippingFee={quote?.shipping_fee}
+          total={quote?.total}
+          onRemoveLine={step === 1 ? remove : undefined}
+          onRemoveSet={step === 1 ? (i) => { const key = sets[i]?.key; if (key) removeSet(key); } : undefined}
+        />
         {currentPricing?.error ? <p role="alert" className="mt-4">{currentPricing.error}</p> : null}
       </section>
 
@@ -294,38 +330,43 @@ export default function Checkout() {
 
       {hasItems ? (
         <>
-          {/* TODO(Thai copy for checkout steps, form labels, Back and Next): POC wording. */}
           <ol className="mb-6 flex flex-wrap gap-x-6 gap-y-2 text-fg-3 [&>[aria-current=step]]:font-medium [&>[aria-current=step]]:text-fg">
-            <li aria-current={step === 1 ? "step" : undefined}>① Enter details</li>
-            <li aria-current={step === 2 ? "step" : undefined}>② Payment</li>
-            <li aria-current={step === 3 ? "step" : undefined}>③ Confirm order</li>
+            <li aria-current={step === 1 ? "step" : undefined}>① กรอกข้อมูล</li>
+            <li aria-current={step === 2 ? "step" : undefined}>② ชำระเงิน</li>
+            <li aria-current={step === 3 ? "step" : undefined}>③ ยืนยันคำสั่งซื้อ</li>
           </ol>
 
           <section hidden={step !== 1} aria-labelledby="step-1" aria-busy={me === undefined}>
-            <h2 id="step-1" tabIndex={-1} className="mb-4 text-h3">① Enter details</h2>
+            <h2 id="step-1" tabIndex={-1} className="mb-4 text-h3">① กรอกข้อมูล</h2>
             {me === null ? (
               <>
-                {/* TODO(Thai copy for "sign in to continue") */}
-                <p className="mb-4">Sign in with Google to continue.</p>
+                <p className="mb-4">เข้าสู่ระบบด้วย Google ก่อนกรอกข้อมูล</p>
                 <GoogleSignIn onToken={signIn} />
+                {/* PDPA s.23: the notice comes at or before collection, and signing in collects the email. */}
+                <p className="mt-4 text-small text-fg-2">
+                  ร้านจะเก็บอีเมลและชื่อจากบัญชี Google ของคุณ{" "}
+                  <a href="/privacy" target="_blank" rel="noopener" className="text-gold underline underline-offset-2">
+                    อ่านนโยบายความเป็นส่วนตัว
+                  </a>
+                </p>
               </>
             ) : me ? (
               <form noValidate onSubmit={next}>
                 <fieldset className="grid min-w-0 gap-4 sm:grid-cols-2">
-                  <Input {...field("first_name")} label="First name" autoComplete="given-name" required />
-                  <Input {...field("last_name")} label="Last name" autoComplete="family-name" required />
-                  <Input {...field("nickname")} label="Nickname" autoComplete="nickname" required />
-                  <Input {...field("phone")} label="Phone" type="tel" autoComplete="tel" required />
+                  <Input {...field("first_name")} label="ชื่อ" autoComplete="given-name" required />
+                  <Input {...field("last_name")} label="นามสกุล" autoComplete="family-name" required />
+                  <Input {...field("nickname")} label="ชื่อเล่น" autoComplete="nickname" required />
+                  <Input {...field("phone")} label="เบอร์โทร" type="tel" autoComplete="tel" required />
                   <Input {...field("line_id")} label="LINE ID" />
-                  <Input name="email" label="Email" type="email" value={me.email} readOnly />
+                  <Input name="email" label="อีเมล" type="email" value={me.email} readOnly />
                 </fieldset>
 
                 <fieldset className="mt-6 grid min-w-0 gap-4 sm:grid-cols-2">
-                  <legend className="mb-4 text-h4 font-semibold">Shipping address</legend>
-                  <Input {...field("postal_code")} error={errors.postal_code ?? postcodeError} label="Postal code" inputMode="numeric" maxLength={5} autoComplete="shipping postal-code" required />
+                  <legend className="mb-4 text-h4 font-semibold">ที่อยู่จัดส่ง</legend>
+                  <Input {...field("postal_code")} error={errors.postal_code ?? postcodeError} label="รหัสไปรษณีย์" inputMode="numeric" maxLength={5} autoComplete="shipping postal-code" required />
                   <Select
                     name="tambon"
-                    label="Tambon/Khwaeng"
+                    label="ตำบล/แขวง"
                     required
                     disabled={placeList.length === 0}
                     value={placeIndex < 0 ? "" : String(placeIndex)}
@@ -333,14 +374,15 @@ export default function Checkout() {
                     onChange={(event) => {
                       const picked = placeList[Number(event.target.value)];
                       if (picked) setValues((v) => ({ ...v, ...picked }));
+                      setErrors((e) => ({ ...e, tambon: undefined }));
                     }}
                   >
                     <option value="" disabled>–</option>
                     {placeList.map((p, i) => <option key={i} value={i}>{p.tambon}</option>)}
                   </Select>
-                  <Input name="amphoe" label="Amphoe/Khet" value={place?.amphoe ?? ""} readOnly />
-                  <Input name="province" label="Province" value={place?.province ?? ""} readOnly />
-                  <Input {...field("details")} label="Details" autoComplete="shipping street-address" required className="w-full" />
+                  <Input name="amphoe" label="อำเภอ/เขต" value={place?.amphoe ?? ""} readOnly />
+                  <Input name="province" label="จังหวัด" value={place?.province ?? ""} readOnly />
+                  <Input {...field("details")} label="บ้านเลขที่ ซอย ถนน" autoComplete="shipping street-address" required className="w-full" />
                 </fieldset>
 
                 {place && values.details.trim() ? (
@@ -349,40 +391,46 @@ export default function Checkout() {
                   </p>
                 ) : null}
 
-                <Button type="submit" disabled={!quote} className="mt-6">Next</Button>
+                <Button type="submit" disabled={!quote} className="mt-6">ถัดไป</Button>
               </form>
             ) : null}
           </section>
 
           <section hidden={step !== 2} aria-labelledby="step-2">
-            <h2 id="step-2" tabIndex={-1} className="mb-4 text-h3">② Payment</h2>
+            <h2 id="step-2" tabIndex={-1} className="mb-4 text-h3">② ชำระเงิน</h2>
             {quote ? <PaymentQR promptpayId={quote.promptpay_id} name={quote.promptpay_name} amount={quote.total} /> : null}
             <div className="my-6">
-              {/* TODO(Thai copy for "Upload slip" and "Slip read") */}
-              <Input key={slipKey} type="file" accept="image/*" label="Upload slip" onChange={pickSlip} />
+              <Input key={slipKey} type="file" accept="image/*" label="อัปโหลดสลิป" onChange={pickSlip} />
               <p aria-live="polite" className="mt-2">
-                {reading ? "…" : slip === null ? QR_NOT_READ : slip ? "Slip read" : null}
+                {reading ? "…" : slip === null ? QR_NOT_READ : slip ? "อ่าน QR จากสลิปแล้ว" : null}
               </p>
             </div>
             {quote ? (
               <CartTicket count={count} total={quote.total} action={
-                <Button variant="secondary" disabled={!slip || reading} onClick={() => go(3)}>Next</Button>
+                <Button variant="secondary" disabled={!slip || reading} onClick={() => go(3)}>ถัดไป</Button>
               } />
             ) : null}
             {back(1)}
           </section>
 
           <section hidden={step !== 3} aria-labelledby="step-3">
-            <h2 id="step-3" tabIndex={-1} className="mb-4 text-h3">③ Confirm order</h2>
+            <h2 id="step-3" tabIndex={-1} className="mb-4 text-h3">③ ยืนยันคำสั่งซื้อ</h2>
             {checked ? (
               <div className="mb-6">
                 <p>{checked.recipient.first_name} {checked.recipient.last_name} ({checked.recipient.nickname}) {checked.recipient.phone}</p>
                 <p>{formatThaiAddress(checked.shipping_address)}</p>
               </div>
             ) : null}
+            <label className="mb-6 flex items-start gap-3">
+              <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1 size-5 shrink-0 accent-gold" />
+              {/* The link opens a new tab, so the order in progress stays put. */}
+              <span>
+                ฉันได้อ่านและยอมรับ<a href="/privacy" target="_blank" rel="noopener" className="text-gold underline underline-offset-2">นโยบายความเป็นส่วนตัว</a>
+              </span>
+            </label>
             {quote ? (
               <CartTicket count={count} total={quote.total} action={
-                <Button variant="secondary" disabled={!slip || placing} onClick={placeOrder}>สั่งซื้อ</Button>
+                <Button variant="secondary" disabled={!slip || placing || !accepted} onClick={placeOrder}>สั่งซื้อ</Button>
               } />
             ) : null}
             {back(2)}
@@ -390,9 +438,18 @@ export default function Checkout() {
         </>
       ) : null}
 
-      <Dialog open={placed} onClose={() => router.push("/")} title="สั่งซื้อแล้ว">
-        {/* TODO(Thai copy for the button that closes "Order placed") */}
-        <Button onClick={() => router.push("/")}>Done</Button>
+      <Dialog open={placed !== null} onClose={() => router.push("/")} title="สั่งซื้อแล้ว">
+        {placed ? (
+          <div className="mb-6 flex flex-col gap-2">
+            <p>
+              {`หมายเลขคำสั่งซื้อ ${shortOrderId(placed)}`}
+            </p>
+            <p className="text-fg-2">
+              {`ระบบจะส่งอีเมลยืนยันไปที่ ${me?.email ?? ""}`}
+            </p>
+          </div>
+        ) : null}
+        <Button onClick={() => router.push("/")}>กลับไปหน้าร้าน</Button>
       </Dialog>
     </main>
   );

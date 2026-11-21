@@ -19,3 +19,5 @@ adminCatalogRoute.post("/products/:id/variants", C.addVariant);
 adminCatalogRoute.patch("/products/:id/variants/:vid", C.updateVariant);
 adminCatalogRoute.delete("/products/:id/variants/:vid", C.archiveVariant);
 adminCatalogRoute.post("/products/:id/variants/:vid/stock", C.addStock);
+
+adminCatalogRoute.post("/import", C.importCatalog);

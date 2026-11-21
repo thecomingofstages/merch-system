@@ -56,7 +56,7 @@ export default function Home() {
 
   return (
     <>
-      <main aria-busy={catalog === null && error === null} className="mx-auto max-w-5xl px-4 pb-32 pt-8 sm:px-6">
+      <main aria-busy={catalog === null && error === null} className="mx-auto max-w-5xl px-4 pb-8 pt-8 sm:px-6">
         {/* The header shows the logo; the page still needs its own h1 for screen readers. */}
         <h1 className="sr-only">TCOS Merch</h1>
 
@@ -64,9 +64,8 @@ export default function Home() {
 
         {catalog?.promotions.length ? (
           <section aria-labelledby="promotions" className="mb-10">
-            {/* TODO(Thai copy for the promotions heading) */}
             <h2 id="promotions" className="mb-4 text-h3 text-fg">
-              Promotions
+              โปรโมชัน
             </h2>
             <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
               {catalog.promotions.map((promotion) => (

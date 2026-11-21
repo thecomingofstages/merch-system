@@ -41,6 +41,7 @@ export async function createOrder(
             recipient: { ...body.recipient, email: user.email },
             shipping_address: body.shipping_address,
             slip_qr_data: body.slip_qr_data,
+            privacy_accepted: { version: body.privacy_version, at: new Date() },
             verify_method: "QR",
           },
         ],

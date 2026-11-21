@@ -45,7 +45,8 @@ apps/
 | Product popup | `ProductPopup` | 1.1 |
 | Checkout ① details | Sprint 1: plain form. Sprint 2: Google sign-in required first, autofill from `/me` (all fields editable, email read-only), postcode → tambon dropdown → amphoe/province auto, details field, live address preview with `formatThaiAddress()` | 1.4, 2.1, 2.3 |
 | Checkout ② payment | `PaymentQR` with a total quoted again on the way to ②, "Upload slip" → `readSlipQr` → show read / not read. If the QR can't be read, "Place order" stays disabled (D5). | 1.5 |
-| Checkout ③ confirm | "Place order" → `POST /orders` → popup "Order placed" → Home. `OUT_OF_STOCK` here means the buyer already paid: say the shop will refund over LINE (D11), and ask for a new slip. | 1.5 |
+| Usage-statistics banner (every shop page) | Non-blocking card at the bottom, above the cart ticket: what is tracked and why, a link to `/privacy#analytics`, "ไม่ยอมรับ" and "ยอมรับ" in the same style. Shown until answered for the current policy version; the footer button "การเก็บสถิติการใช้งาน" shows it again (D20) | D20 |
+| Checkout ③ confirm | A checkbox "ฉันได้อ่านและยอมรับนโยบายความเป็นส่วนตัว / I have read and accept the privacy policy" (link opens `/privacy` in a new tab) must be ticked first (D20). "Place order" → `POST /orders` with `privacy_version` → popup "Order placed" → Home. `OUT_OF_STOCK` here means the buyer already paid: say the shop will refund over LINE (D11), and ask for a new slip. | 1.5 |
 | Stock re-check | While in checkout, `GET /catalog` every 15 s (`stockShortfalls()`): a line the stock no longer covers is reduced or removed, with a message, and the quote follows. Polling, because the server can't push. | 1.5 |
 
 ### apps/pos (FE3)
@@ -62,7 +63,7 @@ The POS never calls `apps/server` directly. Its browser calls the POS's own Next
 |---|---|---|
 | (no sign-in) | `ADMIN_ACCESS_TOKEN` is in the dashboard's server-side `.env`; the browser calls `/api/admin/*`, and the dashboard's own server adds the token and forwards to `apps/server` (D15). Tailscale is what keeps others out | 1.8 |
 | Dashboard | Empty state: "Sales overview comes later." | 1.8 |
-| Products | Shop dropdown, the chosen shop's name with Rename and Archive → products → variants table; every image field has "Upload from device" (shrunk to 1600 px WebP in the browser, stored in R2; a pasted link is copied into R2 on save, D17); Add stock; Transfer to POS | 1.9, 2.9 |
+| Products | Shop dropdown, the chosen shop's name with Rename and Archive → products → variants table; "Import from .xlsx" (D19: one row per variant, read and checked in the browser, problems listed by sheet row, template download); every image field has "Upload from device" (shrunk to 1600 px WebP in the browser, stored in R2; a pasted link is copied into R2 on save, D17); Add stock; Transfer to POS | 1.9, 2.9 |
 | Promotions | Sets: name, description, image URL, price, on/off switch, items (a product from any shop, its allowed variants, a count). Archiving a product or variant on Products lists the sets it deletes or changes first | D13 |
 | Orders | List with new-order badge, detail with the slip QR drawn again from `slip_qr_data` (`SlipQrCode`) for the admin to scan with a banking app's slip check, Submit for shipping | 2.8 |
 | POS | Create, list, stock table, End sale | 2.9 |
@@ -130,16 +131,33 @@ Text is left-aligned throughout, except the total on the ticket, which is right-
 ### Copy
 Thai first, sentence case, plain verbs. An action keeps its name through the flow.
 
-| Situation | Text |
-|---|---|
-| Add button | ใส่ตะกร้า |
-| Go to checkout | ชำระเงิน |
-| Submit online order | สั่งซื้อ → popup "สั่งซื้อแล้ว" |
-| POS manual verify | ยืนยันสลิปด้วยตนเอง |
-| Duplicate slip | สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้ |
-| Out of stock at order | สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า |
-| QR not read from slip | อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น |
-| Empty cart | ยังไม่มีสินค้าในตะกร้า |
+The shop is in Thai only. The English column below is for the team (what each line means), not shown to buyers. Server error messages, form-field errors from the zod schemas, the buyer emails and the dashboard are not translated yet.
+
+| Situation | Thai | English (meaning, not shown) |
+|---|---|---|
+| Add button | ใส่ตะกร้า | Add to cart |
+| Go to checkout, its heading | ชำระเงิน | Checkout |
+| Sold out | สินค้าหมด | Sold out |
+| Product popup | ตัวเลือก · จำนวน · ราคารวม | Option · Quantity · Total |
+| Buy limit reached | จำกัด N ชิ้นต่อคำสั่งซื้อ ใส่ตะกร้าครบแล้ว | You can buy up to N per order, and they're already in your cart. |
+| Promotion item | {product}: เลือก N ชิ้น · เลือกแล้ว 1 จาก 2 | Pick N · 1 of 2 picked |
+| Cart summary | ค่าส่ง · ยอดรวม | Shipping · Total |
+| Empty cart | ยังไม่มีสินค้าในตะกร้า | Your cart is empty |
+| Checkout steps | ① กรอกข้อมูล · ② ชำระเงิน · ③ ยืนยันคำสั่งซื้อ | Your details · Payment · Confirm order |
+| Back, Next | กลับ · ถัดไป | Back · Next |
+| Sign in | เข้าสู่ระบบด้วย Google ก่อนกรอกข้อมูล | Sign in with Google to fill in your details |
+| Signed out mid-order | หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบอีกครั้ง | You were signed out. Please sign in again. |
+| Details form | ชื่อ · นามสกุล · ชื่อเล่น · เบอร์โทร · LINE ID · อีเมล | First name · Last name · Nickname · Phone · Email |
+| Address | ที่อยู่จัดส่ง · รหัสไปรษณีย์ · ตำบล/แขวง · อำเภอ/เขต · จังหวัด · บ้านเลขที่ ซอย ถนน | Shipping address · Postal code · Subdistrict · District · Province · House no., soi, road |
+| Postcode with no tambon | ไม่พบตำบลของรหัสไปรษณีย์นี้ | No subdistrict found for this postal code |
+| Payment | บัญชีพร้อมเพย์ · อัปโหลดสลิป · อ่าน QR จากสลิปแล้ว | PromptPay account · Upload slip · Read the QR on your slip |
+| QR not read from slip | อ่าน QR จากสลิปไม่ได้ ลองอัปโหลดรูปที่ชัดขึ้น | We couldn't read the QR on this slip. Try a sharper photo. |
+| Duplicate slip | สลิปนี้ใช้กับคำสั่งซื้ออื่นแล้ว กรุณาอัปโหลดสลิปของคำสั่งซื้อนี้ | This slip was already used for another order. Please upload the slip for this order. |
+| Out of stock at order | สินค้าบางรายการหมดแล้ว กรุณาแก้ไขตะกร้า | Some items have sold out. Please update your cart. |
+| Cart updated in checkout | สินค้าบางรายการหมด เราปรับตะกร้าให้แล้ว: {names} | Some items sold out, so we updated your cart: {names} |
+| Paid, then sold out | สินค้าบางรายการหมดก่อนบันทึกคำสั่งซื้อ ร้านจะติดต่อทาง LINE เพื่อคืนเงินที่โอนมา | Some items sold out before we could save your order. The shop will contact you on LINE to refund your payment. |
+| Submit online order | สั่งซื้อ → popup "สั่งซื้อแล้ว" → กลับไปหน้าร้าน | Place order → "Order placed" → Back to the shop |
+| POS manual verify | ยืนยันสลิปด้วยตนเอง | – |
 
 Have a native speaker on the team check the Thai before release.
 

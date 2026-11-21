@@ -28,9 +28,24 @@ type Parsed<S extends z.ZodTypeAny> = z.output<S>;
 export const listShops = (m: Models, includeArchived: boolean) =>
   m.Shop.find(includeArchived ? {} : { archived: false }).sort({ shop_name: 1 }).lean();
 
-export const createShop = async (m: Models, body: ShopRequest) => (await m.Shop.create(body)).toObject();
+/**
+ * Live shop names are unique: the .xlsx import (D19) finds shops by name, so two of the same
+ * name would leave it guessing. shortcut: checked, not indexed; two admins saving the same new
+ * name in the same instant could both pass. Add a unique partial index if that ever matters.
+ */
+async function assertNameFree(m: Models, shop_name: string, except?: Id) {
+  if (await m.Shop.exists({ shop_name, archived: false, ...(except ? { _id: { $ne: except } } : {}) })) {
+    throw ApiError.conflict("NAME_TAKEN", `A shop named "${shop_name}" already exists`);
+  }
+}
+
+export async function createShop(m: Models, body: ShopRequest) {
+  await assertNameFree(m, body.shop_name);
+  return (await m.Shop.create(body)).toObject();
+}
 
 export async function updateShop(m: Models, id: Id, body: ShopRequest) {
+  await assertNameFree(m, body.shop_name, id);
   const shop = await m.Shop.findOneAndUpdate({ _id: id, archived: false }, body, { new: true, runValidators: true }).lean();
   if (!shop) throw ApiError.notFound("Shop not found");
   return shop;

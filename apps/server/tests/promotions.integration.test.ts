@@ -53,6 +53,7 @@ describe.skipIf(!uri)("promotion sets (D13)", { timeout: 60_000 }, () => {
         recipient: { first_name: "A", last_name: "B", nickname: "C", phone: "0812345678", email: "a@example.com" },
         shipping_address: { details: "1", tambon: "T", amphoe: "A", province: "P", postal_code: "10200" },
         slip_qr_data: slip,
+        privacy_version: "test-v1",
         ...body,
       });
   const stock = async (product: string, variant: string) =>

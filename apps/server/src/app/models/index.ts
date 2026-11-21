@@ -3,6 +3,7 @@
  * global mongoose instance, so they are built from schemas on each connection.
  */
 import type { Connection } from "mongoose";
+import { analyticsConsentSchema } from "./analyticsConsent.model";
 import { posSchema } from "./pos.model";
 import { productSchema } from "./product.model";
 import { promotionSchema } from "./promotion.model";
@@ -18,6 +19,7 @@ export function models(db: Connection) {
     Purchase: db.model("Purchase", purchaseSchema, "purchases"),
     Pos: db.model("Pos", posSchema, "pos"),
     Promotion: db.model("Promotion", promotionSchema, "promotions"),
+    AnalyticsConsent: db.model("AnalyticsConsent", analyticsConsentSchema, "analytics_consents"),
   };
 }
 
