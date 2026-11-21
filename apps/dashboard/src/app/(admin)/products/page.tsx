@@ -1,7 +1,7 @@
 "use client";
 
 import type { Product, Shop, Variant } from "@merch/shared";
-import { Button, Price } from "@merch/ui";
+import { Button, Price, Select } from "@merch/ui";
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { listProducts, listShops } from "@/lib/api";
 import { COPY } from "./copy";
@@ -167,77 +167,59 @@ export default function ProductsPage() {
         </div>
       ) : null}
 
-      {/* Shops Section */}
-      <section aria-labelledby="shops-heading" className="flex flex-col gap-3">
-        <h2 id="shops-heading" className="text-h3 font-semibold text-fg">
-          {COPY.shopsHeading}
-        </h2>
-
-        {loading && shops.length === 0 ? (
-          <p className="text-small text-fg-2">{COPY.loading}</p>
-        ) : shops.length === 0 ? (
-          <p className="rounded-lg border border-line bg-surface p-4 text-small text-fg-2">
-            {COPY.emptyShops}
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-3">
-            {shops.map((shop) => {
-              const isSelected = activeShop?._id === shop._id;
-              return (
-                <div
-                  key={shop._id}
-                  className={`flex flex-wrap items-center gap-2 rounded-lg border p-3 transition-colors ${
-                    isSelected
-                      ? "border-gold bg-raised"
-                      : "border-line bg-surface"
-                  } ${shop.archived ? "opacity-75" : ""}`}
-                >
-                  <button
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => setSelectedShopId(shop._id)}
-                    className="flex min-h-11 items-center gap-2 rounded-sm px-2 py-1 text-left text-body font-semibold text-fg"
-                  >
-                    <span>{shop.shop_name}</span>
-                    {shop.archived ? <ArchivedBadge /> : null}
-                  </button>
-
-                  {!shop.archived ? (
-                    <div className="flex items-center gap-2 border-l border-line pl-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        aria-label={`${COPY.rename} ${shop.shop_name}`}
-                        onClick={() => setShopModal({ open: true, shop })}
-                      >
-                        {COPY.rename}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        aria-label={`${COPY.archive} ${shop.shop_name}`}
-                        onClick={() => setArchiveTarget({ kind: "shop", shop })}
-                      >
-                        {COPY.archive}
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      {/* Shop picker: one dropdown; the chosen shop's name carries its own Rename and Archive. */}
+      {loading && shops.length === 0 ? (
+        <p className="text-small text-fg-2">{COPY.loading}</p>
+      ) : shops.length === 0 ? (
+        <p className="rounded-lg border border-line bg-surface p-4 text-small text-fg-2">
+          {COPY.emptyShops}
+        </p>
+      ) : (
+        <div className="w-full sm:max-w-sm">
+          <Select
+            label={COPY.shopSelect}
+            value={activeShop?._id ?? ""}
+            onChange={(e) => setSelectedShopId(e.target.value)}
+          >
+            {shops.map((shop) => (
+              <option key={shop._id} value={shop._id}>
+                {shop.archived ? `${shop.shop_name} (${COPY.archivedBadge})` : shop.shop_name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      )}
 
       {/* Products Section for Selected Shop */}
       {activeShop ? (
         <section aria-labelledby="products-heading" className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <h2 id="products-heading" className="text-h3 font-semibold text-fg">
-                {COPY.productsHeading} — {activeShop.shop_name}
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 id="products-heading" className="mr-2 text-h3 font-semibold text-fg">
+                {activeShop.shop_name}
               </h2>
-              {activeShop.archived ? <ArchivedBadge /> : null}
+              {activeShop.archived ? (
+                <ArchivedBadge />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    aria-label={`${COPY.rename} ${activeShop.shop_name}`}
+                    onClick={() => setShopModal({ open: true, shop: activeShop })}
+                  >
+                    {COPY.rename}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    aria-label={`${COPY.archive} ${activeShop.shop_name}`}
+                    onClick={() => setArchiveTarget({ kind: "shop", shop: activeShop })}
+                  >
+                    {COPY.archive}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {!activeShop.archived ? (

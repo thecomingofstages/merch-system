@@ -8,7 +8,7 @@ export const COPY = {
   retry: "Retry",
 
   // Shops section
-  shopsHeading: "Shops",
+  shopSelect: "Shop",
   addShop: "+ Add shop",
   importButton: "Import from .xlsx",
   importTitle: "Import shops and products",
@@ -32,7 +32,6 @@ export const COPY = {
   selectShopPrompt: "Select a shop to view its products.",
 
   // Products section
-  productsHeading: "Products",
   addProduct: "+ Add product",
   createProductTitle: "Add product",
   editProductTitle: "Edit product",
