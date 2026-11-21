@@ -1,4 +1,7 @@
 // TODO(Thai copy for Products page): POC and docs/BACKEND.md wording until the team picks the Thai
+/** "1 product", "2 products". */
+const count = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 export const COPY = {
   tokenRejected: "The dashboard's ADMIN_ACCESS_TOKEN (in its .env) doesn't match the server's.",
   pageTitle: "Products",
@@ -23,7 +26,7 @@ export const COPY = {
     `Ready: ${shops} shop${shops === 1 ? "" : "s"}, ${products} product${products === 1 ? "" : "s"}, ${variants} variant${variants === 1 ? "" : "s"}. Existing shops with the same name get the new products. Image links are copied into storage.`,
   importSubmit: "Import",
   importDone: (r: { shops_created: number; products_created: number; variants_created: number }) =>
-    `Imported ${r.products_created} products and ${r.variants_created} variants (${r.shops_created} new shops).`,
+    `Imported ${count(r.products_created, "product")} and ${count(r.variants_created, "variant")} (${count(r.shops_created, "new shop")}).`,
   importUnreadable: "This file can't be read as an .xlsx sheet.",
   editShopTitle: "Rename shop",
   createShopTitle: "Add shop",
