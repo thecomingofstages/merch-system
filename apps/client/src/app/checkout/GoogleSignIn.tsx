@@ -49,7 +49,8 @@ export function GoogleSignIn({ onToken }: { onToken: (idToken: string) => void }
           id.renderButton(button.current, { theme: "outline", size: "large", text: "continue_with", shape: "rectangular", logo_alignment: "left", locale: "th" });
         }}
       />
-      <div ref={button} className="min-h-11" />
+      {/* Light, like Google's frame inside: when the page (dark) and the frame differ, the browser paints the frame's background white. */}
+      <div ref={button} className="min-h-11 [color-scheme:light]" />
     </>
   );
 }
