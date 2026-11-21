@@ -1,9 +1,9 @@
-import { useId, type ReactNode, type InputHTMLAttributes } from "react";
+import { useId, type InputHTMLAttributes } from "react";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
-  label: ReactNode;
+  label: string;
   /** Shown under the field and announced with it; also marks the field invalid. */
-  error?: ReactNode;
+  error?: string;
 };
 
 export function Input({ label, error, id, className = "", ...props }: InputProps) {

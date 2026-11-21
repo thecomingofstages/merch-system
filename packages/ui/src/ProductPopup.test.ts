@@ -60,10 +60,9 @@ describe("ProductPopup availability", () => {
       onClose: () => {},
     }));
 
-    expect(html.includes("Add to cart")).toBe(can_add);
-    if (message) expect(html).toContain(`<p class="text-danger"><span>${message}`);
-    // The English goes with the Thai, and only the buy limit shows this one.
-    expect(html.includes("You can buy up to 2 per order, and they&#x27;re already in your cart.")).toBe(message.startsWith("จำกัด"));
+    // The button, not the text: the buy-limit message itself says "ใส่ตะกร้าครบแล้ว".
+    expect(html.includes(">ใส่ตะกร้า</button>")).toBe(can_add);
+    if (message) expect(html).toContain(`<p class="text-danger">${message}</p>`);
     expect(html).not.toContain("TODO(");
   });
 });
