@@ -27,7 +27,7 @@ apps/
 | Component / hook | Props (summary) | Used by | Task |
 |---|---|---|---|
 | `Button`, `Input`, `Select`, `Dialog`, `QuantityStepper`, `Price` | standard | all | F8 |
-| `ProductCard` | `product`, `stockOf(variant)`, `onOpen` | client, POS | 1.1 |
+| `ProductCard`, `PromotionCard` (body: `ShopCard`) | `product` or `promotion`, `stockOf(variant)`, `onOpen` ("ดูรายละเอียด" and the picture), optional `onBuy` ("ใส่ตะกร้า": the caller opens the item ready to add) and `inCart` (the gold badge on the picture) | client, POS | 1.1 |
 | `ProductPopup` | `product`, `stockOf(variant)`, optional `inCart(variantId)`, `onAdd(variantId, count)`; caps additions by stock, `buy_limit`, and the quantity already in the cart | client, POS | 1.1 |
 | `CartSummary` | `lines`, `sets?`, `shippingFee?`, `total?` (shipping hidden on POS) | client, POS | 1.1 |
 | `useCart()` | add / setCount / remove / clear, `sets` with addSet / removeSet (D13); lines grouped by product | client, POS | 1.2 |
@@ -41,7 +41,7 @@ apps/
 ### apps/client (FE1)
 | Screen | Notes | Task |
 |---|---|---|
-| Shop list | Header with cart count, promotion sets first (`PromotionCard` grid, `PromotionPopup`), one section per shop, `ProductCard` grid, `CartTicket` tray at the bottom | 1.3 |
+| Shop list | Header with cart count, promotion sets first (`PromotionCard` grid, `PromotionPopup`), one section per shop, `ProductCard` grid; each card has "ดูรายละเอียด" and "ใส่ตะกร้า" (opens the popup with its add button focused) and a badge with the number in the cart (products: single items; sets: sets); `CartTicket` at the bottom | 1.3 |
 | Product popup | `ProductPopup` | 1.1 |
 | Checkout ① details | Sprint 1: plain form. Sprint 2: Google sign-in required first, autofill from `/me` (all fields editable, email read-only), postcode → tambon dropdown → amphoe/province auto, details field, live address preview with `formatThaiAddress()` | 1.4, 2.1, 2.3 |
 | Checkout ② payment | `PaymentQR` with a total quoted again on the way to ②, "Upload slip" → `readSlipQr` → show read / not read. If the QR can't be read, "Place order" stays disabled (D5). | 1.5 |

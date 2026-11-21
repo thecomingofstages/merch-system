@@ -23,13 +23,15 @@ type ProductPopupProps<V extends ShopVariant> = {
   inCart?: (variantId: string) => number;
   onAdd: (variantId: string, count: number) => void;
   onClose: () => void;
+  /** Opened from a card's "ใส่ตะกร้า": the popup's own add button gets the focus. */
+  focusAdd?: boolean;
 };
 
-export function ProductPopup<V extends ShopVariant>({ product, stockOf, inCart, onAdd, onClose }: ProductPopupProps<V>) {
+export function ProductPopup<V extends ShopVariant>({ product, stockOf, inCart, onAdd, onClose, focusAdd = false }: ProductPopupProps<V>) {
   return (
     <Dialog open={product !== null} onClose={onClose} title={product?.name ?? ""} sheet>
       {/* key: a new product starts with its own first variant and an amount of 1 */}
-      {product ? <PopupBody key={product._id} product={product} stockOf={stockOf} inCart={inCart} onAdd={onAdd} /> : null}
+      {product ? <PopupBody key={product._id} product={product} stockOf={stockOf} inCart={inCart} onAdd={onAdd} focusAdd={focusAdd} /> : null}
     </Dialog>
   );
 }
@@ -39,7 +41,8 @@ function PopupBody<V extends ShopVariant>({
   stockOf,
   inCart,
   onAdd,
-}: Pick<ProductPopupProps<V>, "stockOf" | "inCart" | "onAdd"> & { product: ShopProduct<V> }) {
+  focusAdd,
+}: Pick<ProductPopupProps<V>, "stockOf" | "inCart" | "onAdd" | "focusAdd"> & { product: ShopProduct<V> }) {
   const firstInStock = product.variants.find((v) => stockOf(v) > 0) ?? product.variants[0];
   const [variantId, setVariantId] = useState(firstInStock?._id ?? "");
   const [count, setCount] = useState(1);
@@ -81,7 +84,7 @@ function PopupBody<V extends ShopVariant>({
             <span>ราคารวม</span>
             <Price amount={variant.price * selectedCount} />
           </p>
-          <Button onClick={() => onAdd(variant._id, selectedCount)}>ใส่ตะกร้า</Button>
+          <Button data-autofocus={focusAdd || undefined} onClick={() => onAdd(variant._id, selectedCount)}>ใส่ตะกร้า</Button>
         </>
       ) : (
         <p className="text-danger">

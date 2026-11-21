@@ -12,6 +12,8 @@ export default function Home() {
   const cart = useCart();
   const [catalog, setCatalog] = useState<CatalogResponse | null>(null);
   const [activeProduct, setActiveProduct] = useState<CatalogProduct | null>(null);
+  // Opened from a card's "ใส่ตะกร้า": the popup focuses its own add button.
+  const [buying, setBuying] = useState(false);
   const [activeSet, setActiveSet] = useState<CatalogPromotion | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +59,12 @@ export default function Home() {
   const inSets = (variantId: string) =>
     cart.sets.flatMap((s) => s.picks.flat()).reduce((sum, p) => sum + (p.variant_id === variantId ? p.count : 0), 0);
 
+  function openProduct(product: CatalogProduct, buy: boolean) {
+    setBuying(buy);
+    setActiveProduct(product);
+    track("view", product._id);
+  }
+
   function addToCart(variantId: string, count: number) {
     if (!activeProduct) return;
     const variant = activeProduct.variants.find((item) => item._id === variantId);
@@ -95,7 +103,9 @@ export default function Home() {
                   key={promotion._id}
                   promotion={promotion}
                   stockOf={(variant) => variant.online_stock}
+                  inCart={cart.sets.filter((s) => s.promotion_id === promotion._id).length}
                   onOpen={() => setActiveSet(promotion)}
+                  onBuy={() => setActiveSet(promotion)}
                 />
               ))}
             </div>
@@ -113,10 +123,9 @@ export default function Home() {
                   <ProductCard<CatalogVariant>
                     product={product}
                     stockOf={(variant) => variant.online_stock}
-                    onOpen={() => {
-                      setActiveProduct(product);
-                      track("view", product._id);
-                    }}
+                    inCart={cart.lines.filter((l) => l.product_id === product._id).reduce((n, l) => n + l.count, 0)}
+                    onOpen={() => openProduct(product, false)}
+                    onBuy={() => openProduct(product, true)}
                   />
                 </div>
               ))}
@@ -147,6 +156,7 @@ export default function Home() {
         stockOf={(variant) => variant.online_stock - inSets(variant._id)}
         inCart={inSingles}
         onAdd={addToCart}
+        focusAdd={buying}
         onClose={() => setActiveProduct(null)}
       />
 

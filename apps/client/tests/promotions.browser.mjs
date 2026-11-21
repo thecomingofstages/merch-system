@@ -17,7 +17,7 @@ export default async function checkPromotions(page) {
   );
   assert(await page.getByText("Placeholder set (off)").count() === 0, "A set switched off isn't shown");
 
-  await press(page.getByRole("button", { name: /Placeholder set/ }));
+  await press(page.getByRole("button", { name: /^ดูรายละเอียด Placeholder set/ }));
   const dialog = page.getByRole("dialog", { name: "Placeholder set" });
   await dialog.waitFor();
   const add = dialog.getByRole("button", { name: "ใส่ตะกร้า", exact: true });
@@ -33,10 +33,11 @@ export default async function checkPromotions(page) {
   await press(add);
 
   await page.getByRole("link", { name: "ตะกร้า 3 ชิ้น", exact: true }).waitFor();
+  await page.getByText("Placeholder set ในตะกร้า 1 ชิ้น").waitFor(); // the set card's badge
   assert(await page.locator('[aria-live="polite"]', { hasText: "ตะกร้า 3 ชิ้น" }).count() === 1, "The new count is announced");
 
   // Set pieces use up stock for single lines too: M has 10, the set took 1, so 9 single M at most.
-  await press(page.getByRole("button", { name: /เสื้อยืด/ }));
+  await press(page.getByRole("button", { name: /^ดูรายละเอียด เสื้อยืด/ }));
   const product = page.getByRole("dialog", { name: /เสื้อยืด/ });
   await product.getByRole("combobox").selectOption({ label: "M · ฿290" });
   const more = product.getByRole("button", { name: "เพิ่มจำนวน", exact: true });
