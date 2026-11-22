@@ -78,6 +78,7 @@ export const COPY = {
   colQuantity: "Qty",
   colUnitPrice: "Unit price",
   subtotalLabel: "Subtotal",
+  discountLabel: "Set discount",
   shippingFeeLabel: "Shipping fee",
   totalLabel: "Total",
 

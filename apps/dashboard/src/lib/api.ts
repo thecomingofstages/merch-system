@@ -19,12 +19,14 @@ import {
   fixtureOrders,
   fixtureProducts,
   fixturePromotions,
+  fixtureSettings,
   fixtureShops,
   Product,
   ProductPatch,
   ProductRequest,
   Promotion,
   PromotionRequest,
+  Settings,
   Purchase,
   Shop,
   ShopRequest,
@@ -62,6 +64,7 @@ let memoryShops: Shop[] = structuredClone(fixtureShops);
 let memoryProducts: Product[] = structuredClone(fixtureProducts);
 let memoryOrders: Purchase[] = structuredClone(fixtureOrders);
 let memoryPromotions: Promotion[] = structuredClone(fixturePromotions);
+let memorySettings: Settings = structuredClone(fixtureSettings);
 let nextFixtureCounter = 100;
 
 function makeFixtureId(prefixHex2: string): string {
@@ -74,6 +77,7 @@ export function resetDashboardFixtures(): void {
   memoryProducts = structuredClone(fixtureProducts);
   memoryOrders = structuredClone(fixtureOrders);
   memoryPromotions = structuredClone(fixturePromotions);
+  memorySettings = structuredClone(fixtureSettings);
 }
 
 /** Fixtures mode: the server's cascade (D13) when products, or one variant, are deleted. */
@@ -420,6 +424,21 @@ export async function uploadImage(file: Blob): Promise<string> {
     ImageUploadResponse,
   );
   return res.url;
+}
+
+// Shop-wide promotion settings (D22)
+
+export async function getSettings(): Promise<Settings> {
+  if (isFixturesMode()) return structuredClone(memorySettings);
+  return requestAdmin("/admin/settings", { method: "GET" }, Settings);
+}
+
+export async function saveSettings(body: Settings): Promise<Settings> {
+  if (isFixturesMode()) {
+    memorySettings = Settings.parse(body);
+    return structuredClone(memorySettings);
+  }
+  return requestAdmin("/admin/settings", { method: "PATCH", body: JSON.stringify(body) }, Settings);
 }
 
 // Promotion sets (D13)

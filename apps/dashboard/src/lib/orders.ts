@@ -34,8 +34,8 @@ export function canSetTracking(order: Purchase): boolean {
  * Computes the display total from the two server-stored amounts on the purchase record.
  * Never recomputes from catalog prices or line items.
  */
-export function orderTotal(order: Pick<Purchase, "original_price" | "shipping_fee">): number {
-  return order.original_price + order.shipping_fee;
+export function orderTotal(order: Pick<Purchase, "original_price" | "discount" | "shipping_fee">): number {
+  return order.original_price - order.discount + order.shipping_fee;
 }
 
 /**

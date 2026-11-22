@@ -6,7 +6,7 @@ import type { CatalogPromotion } from "./schemas/catalog";
 import type { PromotionCartItem, QuotePromotion, SetPick } from "./schemas/quote";
 
 type SetProduct = { _id: string; name: string; variants: { _id: string; name: string; archived: boolean }[] };
-type SetPromotion = { _id: string; name: string; price: number; items: { product_id: string; variant_ids: string[]; count: number }[] };
+type SetPromotion = { _id: string; name: string; price: number; discount_percent?: number; free_shipping?: boolean; items: { product_id: string; variant_ids: string[]; count: number }[] };
 
 /** A set the request can't have. The server answers 400 VALIDATION with the message. */
 export class SetError extends Error {}
@@ -39,6 +39,26 @@ export function priceSets(entries: PromotionCartItem[], promotions: SetPromotion
     });
     return { promotion_id: promotion._id, name: promotion.name, price: promotion.price, picks };
   });
+}
+
+/**
+ * The two extras a set can bring (D22), and the shop's free-shipping threshold. The discount is
+ * the BEST single set's percent of the whole subtotal, rounded down (sets never add up). Shipping
+ * is free when any set says so, or when the subtotal after the discount reaches the threshold.
+ * POS never charges shipping, so there only the discount counts.
+ */
+export function priceExtras(o: {
+  subtotal: number;
+  sets: { discount_percent?: number; free_shipping?: boolean }[];
+  online: boolean;
+  fee: number;
+  settings: { free_shipping_enabled: boolean; free_shipping_min: number };
+}) {
+  const percent = Math.max(0, ...o.sets.map((s) => s.discount_percent ?? 0));
+  const discount = Math.floor((o.subtotal * percent) / 100);
+  const free =
+    o.sets.some((s) => s.free_shipping) || (o.settings.free_shipping_enabled && o.subtotal - discount >= o.settings.free_shipping_min);
+  return { discount, shipping_fee: o.online && !free ? o.fee : 0 };
 }
 
 /** Every variant the cart takes, single lines and set pieces added up: what the stock must cover. */
@@ -77,7 +97,7 @@ export function catalogPromotions(promotions: CatalogSourcePromotion[], products
       });
       if (items.some((i) => i.variants.length === 0)) return [];
       const sold_out = items.some((i) => i.variants.reduce((sum, v) => sum + Math.max(v.online_stock, 0), 0) < i.count);
-      return [{ _id: p._id, name: p.name, description: p.description, image: p.image, price: p.price, sold_out, items }];
+      return [{ _id: p._id, name: p.name, description: p.description, image: p.image, price: p.price, discount_percent: p.discount_percent ?? 0, free_shipping: p.free_shipping ?? false, sold_out, items }];
     });
 }
 

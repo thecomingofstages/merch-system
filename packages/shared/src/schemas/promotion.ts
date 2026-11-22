@@ -20,6 +20,10 @@ export const PromotionRequest = z.object({
   description: z.string().default(""),
   image: z.string().url().nullable().default(null),
   price: baht,
+  /** Percent off everything in the cart (sets included) while this set is in it. 0 = none. The best one in the cart wins. */
+  discount_percent: z.number().int().min(0).max(100).default(0),
+  /** Online shipping is free while this set is in the cart. */
+  free_shipping: z.boolean().default(false),
   /** Off hides the set everywhere without deleting it. */
   active: z.boolean().default(true),
   items: z.array(PromotionItem).min(1),

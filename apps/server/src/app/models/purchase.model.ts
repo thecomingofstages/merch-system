@@ -67,6 +67,7 @@ export const purchaseSchema = new Schema(
     products: { type: [lineSchema], required: true },
     promotions: { type: [setSchema], default: [] },
     original_price: { type: Number, required: true, min: 0, validate: Number.isInteger },
+    discount: { type: Number, default: 0, min: 0, validate: Number.isInteger },
     shipping_fee: { type: Number, required: true, min: 0, validate: Number.isInteger },
     recipient: { type: recipientSchema, default: null },
     shipping_address: { type: addressSchema, default: null },

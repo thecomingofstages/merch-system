@@ -16,6 +16,7 @@ import type { Types } from "mongoose";
 import type { z } from "zod";
 import type { Models } from "../models";
 import { plainSet } from "./pricing.helper";
+import { getSettings } from "./settings.helper";
 import { ApiError } from "../utils/ApiError";
 import { type ImageStore, releaseImages, storeLink, storeOptional } from "./images.helper";
 
@@ -214,12 +215,14 @@ async function assertNoStock(m: Models, productId: Id, variants: { _id: Id; onli
  * such variant are left out.
  */
 export async function getCatalog(m: Models): Promise<CatalogResponse> {
-  const [shops, products, promotions] = await Promise.all([
+  const [shops, products, promotions, settings] = await Promise.all([
     m.Shop.find({ archived: false }).sort({ shop_name: 1 }).lean(),
     m.Product.find({ archived: false }).sort({ name: 1 }).lean(),
     m.Promotion.find({ active: true, archived: false }).sort({ name: 1 }).lean(),
+    getSettings(m),
   ]);
   return {
+    free_shipping_over: settings.free_shipping_enabled ? settings.free_shipping_min : null,
     // Sets ignore visible_to_online (D13): a set may hold an item that isn't sold alone.
     promotions: catalogPromotions(
       promotions.map((p) => ({ ...plainSet(p), image: p.image ?? null })),

@@ -200,6 +200,7 @@ export async function createSale(posId: string, body: CreatePosSaleRequest): Pro
       verify_method: parsed.data.verify_method,
       payment_status: "VERIFIED",
       subtotal: priced.subtotal,
+      discount: priced.discount,
       shipping_fee: 0,
       total: priced.total,
       created_at: new Date().toISOString(),

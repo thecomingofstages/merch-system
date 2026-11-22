@@ -36,6 +36,7 @@ export async function createOrder(
             products: groupByProduct(priced.lines),
             promotions: purchaseSets(priced.promotions),
             original_price: priced.subtotal,
+            discount: priced.discount,
             shipping_fee: priced.shipping_fee,
             // The email is the signed-in one, whatever was sent (the form's field is read-only).
             recipient: { ...body.recipient, email: user.email },
@@ -56,6 +57,7 @@ export async function createOrder(
         status: "ORDERED",
         payment_status: "PENDING_CHECK",
         subtotal: priced.subtotal,
+        discount: priced.discount,
         shipping_fee: priced.shipping_fee,
         total: priced.total,
         created_at: order!.created_at.toISOString(),
@@ -89,6 +91,7 @@ async function saveRefundDue(m: Models, userId: string, body: Order, config: Pic
       products: groupByProduct(priced.lines),
       promotions: purchaseSets(priced.promotions),
       original_price: priced.subtotal,
+      discount: priced.discount,
       shipping_fee: priced.shipping_fee,
       recipient: { ...body.recipient, email: user.email },
       shipping_address: body.shipping_address,

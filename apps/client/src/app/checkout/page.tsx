@@ -330,6 +330,7 @@ export default function Checkout() {
         <CartSummary
           lines={quote?.lines ?? lines}
           sets={quote?.promotions ?? sets}
+          discount={quote?.discount}
           shippingFee={quote?.shipping_fee}
           total={quote?.total}
           onRemoveLine={step === 1 ? remove : undefined}

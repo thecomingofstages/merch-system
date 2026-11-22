@@ -1,10 +1,10 @@
 "use client";
 
-import { type Product, type Promotion, PromotionRequest, type Shop } from "@merch/shared";
+import { type Product, type Promotion, PromotionRequest, Settings, type Shop } from "@merch/shared";
 import { Button, Dialog, Input, Price, Select } from "@merch/ui";
 import { useEffect, useState, type FormEvent } from "react";
 import { mapDashboardError } from "@/app/(admin)/products/helpers";
-import { archivePromotion, listProducts, listPromotions, listShops, savePromotion } from "@/lib/api";
+import { archivePromotion, getSettings, listProducts, listPromotions, listShops, savePromotion, saveSettings } from "@/lib/api";
 import { UploadImageButton } from "@/components/UploadImageButton";
 import { COPY } from "./copy";
 
@@ -14,18 +14,22 @@ type Draft = {
   description: string;
   image: string;
   price: string;
+  discount_percent: string;
+  free_shipping: boolean;
   active: boolean;
   items: { product_id: string; variant_ids: string[]; count: string }[];
 };
 
 const emptyItem = () => ({ product_id: "", variant_ids: [], count: "1" });
-const emptyDraft = (): Draft => ({ name: "", description: "", image: "", price: "", active: true, items: [emptyItem()] });
+const emptyDraft = (): Draft => ({ name: "", description: "", image: "", price: "", discount_percent: "0", free_shipping: false, active: true, items: [emptyItem()] });
 
 const toDraft = (p: Promotion): Draft => ({
   name: p.name,
   description: p.description ?? "",
   image: p.image ?? "",
   price: String(p.price),
+  discount_percent: String(p.discount_percent),
+  free_shipping: p.free_shipping,
   active: p.active ?? true,
   items: p.items.map((i) => ({ product_id: i.product_id, variant_ids: [...i.variant_ids], count: String(i.count) })),
 });
@@ -36,6 +40,9 @@ const toRequest = (d: Draft): PromotionRequest => ({
   image: d.image.trim() || null,
   // Number("") is 0: an empty price must fail, not make a free set.
   price: d.price.trim() === "" ? NaN : Number(d.price),
+  // Number("") is 0, which is fine here: no discount.
+  discount_percent: Number(d.discount_percent),
+  free_shipping: d.free_shipping,
   active: d.active,
   items: d.items.map((i) => ({ product_id: i.product_id, variant_ids: i.variant_ids, count: Number(i.count) })),
 });
@@ -48,13 +55,15 @@ export default function PromotionsPage() {
   const [editing, setEditing] = useState<{ id: string | null; draft: Draft } | null>(null);
   const [deleting, setDeleting] = useState<Promotion | null>(null);
   const [reload, setReload] = useState(0);
+  const [settings, setSettings] = useState<Settings | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([listPromotions(), listShops(), listProducts()]).then(
-      ([s, sh, pr]) => {
+    Promise.all([listPromotions(), listShops(), listProducts(), getSettings()]).then(
+      ([s, sh, pr, st]) => {
         if (cancelled) return;
         setSets(s);
+        setSettings(st);
         setShops(sh);
         setProducts(pr);
         setError(null);
@@ -97,6 +106,8 @@ export default function PromotionsPage() {
         <Button onClick={() => setEditing({ id: null, draft: emptyDraft() })}>{COPY.newSet}</Button>
       </div>
 
+      {settings ? <ShippingSettings key={JSON.stringify(settings)} settings={settings} onSaved={setSettings} onError={setError} /> : null}
+
       {error ? (
         <p role="alert" className="rounded-lg border border-danger bg-surface p-4 text-small text-danger">
           {error}
@@ -116,6 +127,7 @@ export default function PromotionsPage() {
                 <th scope="col" className="px-4 py-3 font-semibold">{COPY.colName}</th>
                 <th scope="col" className="px-4 py-3 font-semibold">{COPY.colItems}</th>
                 <th scope="col" className="px-4 py-3 font-semibold">{COPY.colPrice}</th>
+                <th scope="col" className="px-4 py-3 font-semibold">{COPY.colPerks}</th>
                 <th scope="col" className="px-4 py-3 font-semibold">{COPY.colActive}</th>
                 <th scope="col" className="px-4 py-3 text-right font-semibold">{COPY.colActions}</th>
               </tr>
@@ -133,6 +145,11 @@ export default function PromotionsPage() {
                   </td>
                   <td className="px-4 py-3 tabular-nums">
                     <Price amount={p.price} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {[p.discount_percent > 0 && COPY.perkDiscount(p.discount_percent), p.free_shipping && COPY.perkFreeShipping]
+                      .filter(Boolean)
+                      .join(", ") || "-"}
                   </td>
                   <td className="px-4 py-3">
                     <input
@@ -194,6 +211,58 @@ export default function PromotionsPage() {
   );
 }
 
+/** The shop-wide rule at the top: free online shipping from a subtotal (D22). Saves with its own button. */
+function ShippingSettings({ settings, onSaved, onError }: { settings: Settings; onSaved: (s: Settings) => void; onError: (m: string | null) => void }) {
+  const [enabled, setEnabled] = useState(settings.free_shipping_enabled);
+  const [min, setMin] = useState(String(settings.free_shipping_min));
+  const [saving, setSaving] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    const parsed = Settings.safeParse({ free_shipping_enabled: enabled, free_shipping_min: min.trim() === "" ? NaN : Number(min) });
+    if (!parsed.success) {
+      setProblem(COPY.minInvalid);
+      return;
+    }
+    setProblem(null);
+    setSaving(true);
+    try {
+      onSaved(await saveSettings(parsed.data));
+      onError(null);
+    } catch (err) {
+      const msg = mapDashboardError(err);
+      if (msg) onError(msg);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form noValidate onSubmit={submit} aria-label={COPY.shippingTitle} className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
+      <h2 className="text-body font-semibold text-fg">{COPY.shippingTitle}</h2>
+      <p className="text-small text-fg-2">{COPY.shippingIntro}</p>
+      <div className="flex flex-wrap items-end gap-4">
+        <label className="flex min-h-11 items-center gap-2">
+          <input type="checkbox" className="size-5 accent-gold" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+          {COPY.shippingOn}
+        </label>
+        <div className="w-56">
+          <Input label={COPY.shippingMin} inputMode="numeric" value={min} onChange={(e) => setMin(e.target.value)} />
+        </div>
+        <Button type="submit" disabled={saving}>
+          {saving ? COPY.saving : COPY.save}
+        </Button>
+      </div>
+      {problem ? (
+        <p role="alert" className="text-small text-danger">
+          {problem}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
 function SetForm({
   id,
   initial,
@@ -248,6 +317,16 @@ function SetForm({
         <UploadImageButton onUploaded={(url) => set({ image: url })} />
       </div>
       <Input label={COPY.price} inputMode="numeric" value={draft.price} onChange={(e) => set({ price: e.target.value })} required />
+      <Input
+        label={COPY.discountPercent}
+        inputMode="numeric"
+        value={draft.discount_percent}
+        onChange={(e) => set({ discount_percent: e.target.value })}
+      />
+      <label className="flex min-h-11 items-center gap-2">
+        <input type="checkbox" className="size-5 accent-gold" checked={draft.free_shipping} onChange={(e) => set({ free_shipping: e.target.checked })} />
+        {COPY.freeShipping}
+      </label>
       <label className="flex min-h-11 items-center gap-2">
         <input type="checkbox" className="size-5 accent-gold" checked={draft.active} onChange={(e) => set({ active: e.target.checked })} />
         {COPY.active}

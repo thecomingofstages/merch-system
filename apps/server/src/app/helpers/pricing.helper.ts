@@ -3,16 +3,18 @@
  * POST /quote, POST /orders (S5) and POST /pos/:id/sales (S9) all call priceCart, so
  * the QR amount is the charged amount. Prices sent by a client are never read.
  */
-import { priceSets, SetError, stockDemand, type CartItem, type QuoteLine, type QuotePromotion, type QuoteRequest } from "@merch/shared";
+import { priceExtras, priceSets, SetError, stockDemand, type CartItem, type QuoteLine, type QuotePromotion, type QuoteRequest } from "@merch/shared";
 import { type ClientSession, Types } from "mongoose";
 import type { Config } from "../config/init";
 import type { Models } from "../models";
 import { ApiError } from "../utils/ApiError";
+import { getSettings } from "./settings.helper";
 
 export type PricedCart = {
   lines: QuoteLine[];
   promotions: QuotePromotion[];
   subtotal: number;
+  discount: number;
   shipping_fee: number;
   total: number;
 };
@@ -40,7 +42,8 @@ export const plainSet = <S extends StoredSet>(p: S) => ({
 
 /**
  * Prices a cart for a channel:
- * - ONLINE: visible_to_online variants only, against online_stock, plus SHIPPING_FEE once.
+ * - ONLINE: visible_to_online variants only, against online_stock, plus SHIPPING_FEE once
+ *   (free when a set says so or the subtotal after discount reaches the shop's threshold, D22).
  * - POS: variants of that POS's shops only, against its pos_stock, no shipping.
  * Promotion sets (D13) cost their own price, ignore buy_limit and visible_to_online, and
  * share the stock with single lines. Answers 409 BUY_LIMIT or OUT_OF_STOCK when a line can't
@@ -131,6 +134,13 @@ export async function priceCart(
   }
 
   const subtotal = lines.reduce((sum, l) => sum + l.unit_price * l.count, 0) + sets.reduce((sum, s) => sum + s.price, 0);
-  const shipping_fee = input.channel === "ONLINE" ? config.SHIPPING_FEE : 0;
-  return { lines, promotions: sets, subtotal, shipping_fee, total: subtotal + shipping_fee };
+  const byId = new Map(promotions.map((p) => [String(p._id), p]));
+  const { discount, shipping_fee } = priceExtras({
+    subtotal,
+    sets: sets.map((s) => byId.get(s.promotion_id)!),
+    online: input.channel === "ONLINE",
+    fee: config.SHIPPING_FEE,
+    settings: await getSettings(m, session),
+  });
+  return { lines, promotions: sets, subtotal, discount, shipping_fee, total: subtotal - discount + shipping_fee };
 }

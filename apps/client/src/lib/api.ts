@@ -160,6 +160,7 @@ export async function createOrder(body: CreateOrderRequest): Promise<CreateOrder
         status: "ORDERED",
         payment_status: "PENDING_CHECK",
         subtotal: priced.subtotal,
+        discount: priced.discount,
         shipping_fee: priced.shipping_fee,
         total: priced.total,
         created_at: new Date().toISOString(),

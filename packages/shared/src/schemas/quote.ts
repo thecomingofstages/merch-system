@@ -59,6 +59,9 @@ export const QuoteResponse = z.object({
   lines: z.array(QuoteLine),
   promotions: z.array(QuotePromotion),
   subtotal: baht,
+  /** Taken off the subtotal by the best set in the cart (percent of the whole subtotal). */
+  discount: baht,
+  /** What is charged: 0 when free shipping applies. */
   shipping_fee: baht,
   total: baht,
   promptpay_id: z.string(),
