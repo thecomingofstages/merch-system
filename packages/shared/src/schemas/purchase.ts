@@ -59,6 +59,8 @@ export const Purchase = z.object({
   // Orders from before sets have no field.
   promotions: z.array(PurchasePromotion).default([]),
   original_price: baht,
+  // Orders from before set discounts have no field.
+  discount: baht.default(0),
   shipping_fee: baht,
   recipient: Recipient.nullable(),
   shipping_address: Address.nullable(),
@@ -92,6 +94,7 @@ export const CreateOrderResponse = z.object({
   status: z.literal("ORDERED"),
   payment_status: z.literal("PENDING_CHECK"),
   subtotal: baht,
+  discount: baht,
   shipping_fee: baht,
   total: baht,
   created_at: IsoDateTime,

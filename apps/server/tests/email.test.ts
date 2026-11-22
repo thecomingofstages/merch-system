@@ -42,6 +42,13 @@ describe("email.helper (2.5)", () => {
     expect(mail.text).toContain("ตำบลT อำเภอA จังหวัดP 10200");
   });
 
+  it("shows the set discount and takes it off the total", () => {
+    const { text } = renderEmail({ ...order, discount: 110 }, "confirmation");
+    expect(text).toContain("ส่วนลด: -฿110");
+    expect(text).toContain("฿1,049"); // 1099 - 110 + 60
+    expect(renderEmail(order, "confirmation").text).not.toContain("ส่วนลด");
+  });
+
   it("keeps a sender name EMAIL_FROM already has", () => {
     expect(fromHeader("Shop <shop@example.test>")).toBe("Shop <shop@example.test>");
     expect(fromHeader(" no-reply@example.test ")).toBe("TCOS Merchandise <no-reply@example.test>");

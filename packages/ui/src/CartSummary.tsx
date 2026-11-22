@@ -5,6 +5,8 @@ type CartSummaryProps = {
   lines: QuoteLine[];
   /** Promotion sets (D13): the set's price, then the pieces chosen. */
   sets?: QuotePromotion[];
+  /** Set discount from `POST /quote` (D22); shown only when above 0. */
+  discount?: number;
   /** Left out on the POS, which charges no shipping. */
   shippingFee?: number;
   /** The total from `POST /quote`; left out while browsing. */
@@ -24,7 +26,7 @@ function RemoveButton({ label, onClick }: { label: string; onClick: () => void }
 }
 
 /** Lines grouped by product, as in POC screen C ("Prod. X – Var. A ×1 100 ฿"). */
-export function CartSummary({ lines, sets = [], shippingFee, total, onRemoveLine, onRemoveSet }: CartSummaryProps) {
+export function CartSummary({ lines, sets = [], discount, shippingFee, total, onRemoveLine, onRemoveSet }: CartSummaryProps) {
   if (lines.length === 0 && sets.length === 0) return <p>ยังไม่มีสินค้าในตะกร้า</p>;
 
   const products = new Map<string, QuoteLine[]>();
@@ -70,6 +72,14 @@ export function CartSummary({ lines, sets = [], shippingFee, total, onRemoveLine
       ))}
       {shippingFee !== undefined || total !== undefined ? (
         <dl className="border-t border-line pt-3">
+          {discount ? (
+            <div className="flex justify-between">
+              <dt>ส่วนลด</dt>
+              <dd>
+                -<Price amount={discount} />
+              </dd>
+            </div>
+          ) : null}
           {shippingFee !== undefined ? (
             <div className="flex justify-between">
               <dt>ค่าส่ง</dt>

@@ -36,6 +36,8 @@ export const CatalogPromotion = z.object({
   description: z.string(),
   image: z.string().nullable(),
   price: baht,
+  discount_percent: z.number().int().min(0).max(100),
+  free_shipping: z.boolean(),
   /** True when some item can't be filled from the stock left. */
   sold_out: z.boolean(),
   items: z.array(
@@ -52,5 +54,7 @@ export type CatalogPromotion = z.infer<typeof CatalogPromotion>;
 export const CatalogResponse = z.object({
   shops: z.array(CatalogShop),
   promotions: z.array(CatalogPromotion),
+  /** Online shipping is free from this subtotal (after discount); null when switched off. */
+  free_shipping_over: baht.nullable(),
 });
 export type CatalogResponse = z.infer<typeof CatalogResponse>;

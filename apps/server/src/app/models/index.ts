@@ -9,6 +9,7 @@ import { posSchema } from "./pos.model";
 import { productSchema } from "./product.model";
 import { promotionSchema } from "./promotion.model";
 import { purchaseSchema } from "./purchase.model";
+import { settingSchema } from "./setting.model";
 import { shopSchema } from "./shop.model";
 import { userSchema } from "./user.model";
 
@@ -19,6 +20,7 @@ export function models(db: Connection) {
     Product: db.model("Product", productSchema, "products"),
     Purchase: db.model("Purchase", purchaseSchema, "purchases"),
     Pos: db.model("Pos", posSchema, "pos"),
+    Setting: db.model("Setting", settingSchema, "settings"),
     Promotion: db.model("Promotion", promotionSchema, "promotions"),
     AnalyticsConsent: db.model("AnalyticsConsent", analyticsConsentSchema, "analytics_consents"),
     AnalyticsEvent: db.model("AnalyticsEvent", analyticsEventSchema, "analytics_events"),

@@ -12,6 +12,7 @@ import { adminImageRoute } from "./admin/image.route";
 import { adminOrderRoute } from "./admin/order.route";
 import { adminPosRoute } from "./admin/pos.route";
 import { adminPromotionRoute } from "./admin/promotion.route";
+import { adminSettingsRoute } from "./admin/settings.route";
 import { authRoute } from "./auth.route";
 import { healthRoute } from "./health.route";
 import { orderRoute } from "./order.route";
@@ -37,6 +38,7 @@ export function initRoutes(): Router {
   api.use("/admin", adminOrderRoute);
   api.use("/admin", adminPosRoute);
   api.use("/admin", adminPromotionRoute);
+  api.use("/admin", adminSettingsRoute);
   api.use("/admin", adminAnalyticsRoute);
 
   return api;

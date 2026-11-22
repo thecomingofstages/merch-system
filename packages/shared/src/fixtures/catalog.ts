@@ -3,11 +3,12 @@ import type { CatalogResponse } from "../schemas/catalog";
 import type { ErrorCode } from "../schemas/common";
 import type { Product } from "../schemas/product";
 import type { Promotion } from "../schemas/promotion";
-import { catalogPromotions, priceSets, SetError, stockDemand } from "../promotions";
+import type { Settings } from "../schemas/settings";
+import { catalogPromotions, priceExtras, priceSets, SetError, stockDemand } from "../promotions";
 import { QuoteRequest, type CartItem, type QuoteLine, type QuoteResponse } from "../schemas/quote";
 import type { Shop } from "../schemas/shop";
 import { fixtureProducts } from "./products";
-import { fixturePromotions } from "./promotions";
+import { fixturePromotions, fixtureSettings } from "./promotions";
 import { fixtureShops } from "./shops";
 
 // TODO(SHIPPING_FEE value): placeholder shipping fee for fixtures mode only.
@@ -35,8 +36,10 @@ export function toCatalog(
   shops: readonly Shop[],
   products: readonly Product[],
   promotions: readonly Promotion[] = fixturePromotions,
+  settings: Settings = fixtureSettings,
 ): CatalogResponse {
   return {
+    free_shipping_over: settings.free_shipping_enabled ? settings.free_shipping_min : null,
     promotions: catalogPromotions([...promotions], products.filter((p) => !p.archived)),
     shops: [...shops]
       .filter((s) => !s.archived)
@@ -88,6 +91,7 @@ export function mockQuoteForFixtures(
   rawInput: QuoteRequest,
   products: readonly Product[] = fixtureProducts,
   promotions: readonly Promotion[] = fixturePromotions,
+  settings: Settings = fixtureSettings,
 ): QuoteResponse {
   const parsed = QuoteRequest.safeParse(rawInput);
   if (!parsed.success) {
@@ -140,13 +144,20 @@ export function mockQuoteForFixtures(
   }
 
   const subtotal = lines.reduce((sum, l) => sum + l.unit_price * l.count, 0) + sets.reduce((sum, s) => sum + s.price, 0);
-  const shipping_fee = input.channel === "ONLINE" ? FAKE_SHIPPING_FEE : 0;
+  const { discount, shipping_fee } = priceExtras({
+    subtotal,
+    sets: sets.map((s) => promotions.find((p) => p._id === s.promotion_id)!),
+    online: input.channel === "ONLINE",
+    fee: FAKE_SHIPPING_FEE,
+    settings,
+  });
   return {
     lines,
     promotions: sets,
     subtotal,
+    discount,
     shipping_fee,
-    total: subtotal + shipping_fee,
+    total: subtotal - discount + shipping_fee,
     promptpay_id: FAKE_PROMPTPAY_ID,
     promptpay_name: FAKE_PROMPTPAY_NAME,
   };

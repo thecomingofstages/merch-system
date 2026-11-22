@@ -15,6 +15,9 @@ export const promotionSchema = new Schema({
   description: { type: String, default: "" },
   image: { type: String, default: null },
   price: { type: Number, required: true, min: 0, validate: Number.isInteger },
+  // D22: what the set also does to the whole cart.
+  discount_percent: { type: Number, default: 0, min: 0, max: 100, validate: Number.isInteger },
+  free_shipping: { type: Boolean, default: false },
   active: { type: Boolean, default: true },
   // Deleting archives: an order may still point at the set.
   archived: { type: Boolean, default: false },

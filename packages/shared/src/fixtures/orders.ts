@@ -68,6 +68,7 @@ export const fixtureOrders: Purchase[] = [
     ],
     promotions: [],
     original_price: 1020,
+    discount: 0,
     shipping_fee: FAKE_SHIPPING_FEE,
     recipient: {
       first_name: "พิมพ์ชนก",
@@ -115,6 +116,7 @@ export const fixtureOrders: Purchase[] = [
     ],
     promotions: [],
     original_price: 238,
+    discount: 0,
     shipping_fee: FAKE_SHIPPING_FEE,
     recipient: {
       first_name: "ธนกฤต",
@@ -161,6 +163,7 @@ export const fixtureOrders: Purchase[] = [
     ],
     promotions: [],
     original_price: 87,
+    discount: 0,
     shipping_fee: FAKE_SHIPPING_FEE,
     recipient: {
       first_name: "ณัฐกานต์ศิริประภา",
@@ -208,6 +211,7 @@ export const fixtureOrders: Purchase[] = [
     ],
     promotions: [],
     original_price: 250,
+    discount: 0,
     shipping_fee: FAKE_SHIPPING_FEE,
     recipient: {
       first_name: "กิตติพงศ์",
@@ -254,6 +258,7 @@ export const fixtureOrders: Purchase[] = [
     ],
     promotions: [],
     original_price: 190,
+    discount: 0,
     shipping_fee: 0,
     recipient: null,
     shipping_address: null,

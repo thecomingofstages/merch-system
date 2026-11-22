@@ -107,6 +107,7 @@ export async function createSale(
             products: groupByProduct(priced.lines),
             promotions: purchaseSets(priced.promotions),
             original_price: priced.subtotal,
+            discount: priced.discount,
             shipping_fee: priced.shipping_fee,
             // Left out for MANUAL, never null: see the slip index in purchase.model.ts.
             ...(body.verify_method === "QR" && { slip_qr_data: body.slip_qr_data }),
@@ -123,6 +124,7 @@ export async function createSale(
         verify_method: body.verify_method,
         payment_status: "VERIFIED",
         subtotal: priced.subtotal,
+        discount: priced.discount,
         shipping_fee: priced.shipping_fee,
         total: priced.total,
         created_at: sale!.created_at.toISOString(),

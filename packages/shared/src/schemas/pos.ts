@@ -79,6 +79,7 @@ export const CreatePosSaleResponse = z.object({
   verify_method: VerifyMethod,
   payment_status: z.literal("VERIFIED"),
   subtotal: baht,
+  discount: baht,
   shipping_fee: baht,
   total: baht,
   created_at: IsoDateTime,

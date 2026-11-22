@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cartSubtotal, setPieces, unavailableSets, type CartSet } from "./cart";
-import { catalogPromotions, deleteImpact, priceSets, SetError, stockDemand } from "./promotions";
+import { catalogPromotions, deleteImpact, priceExtras, priceSets, SetError, stockDemand } from "./promotions";
 
 const v = (_id: string, online_stock = 5, archived = false) => ({ _id, name: _id.toUpperCase(), image: null, online_stock, archived });
 const shirt = { _id: "p1", name: "shirt", variants: [v("s"), v("m", 1), v("old", 5, true)] };
@@ -71,10 +71,10 @@ describe("cart sets", () => {
   });
 
   it("drops a set whose promotion left the catalog or whose pick has too little stock", () => {
-    const catalog = { shops: [], promotions: catalogPromotions([set], [shirt, bag]) };
+    const catalog = { shops: [], free_shipping_over: null, promotions: catalogPromotions([set], [shirt, bag]) };
     expect(unavailableSets([cartSet], catalog)).toEqual([]);
-    expect(unavailableSets([cartSet], { shops: [], promotions: [] })).toEqual([cartSet]);
-    const short = { shops: [], promotions: catalogPromotions([set], [{ ...shirt, variants: [v("s"), v("m", 0)] }, bag]) };
+    expect(unavailableSets([cartSet], { shops: [], free_shipping_over: null, promotions: [] })).toEqual([cartSet]);
+    const short = { shops: [], free_shipping_over: null, promotions: catalogPromotions([set], [{ ...shirt, variants: [v("s"), v("m", 0)] }, bag]) };
     expect(unavailableSets([cartSet], short)).toEqual([cartSet]);
   });
 });
@@ -91,5 +91,36 @@ describe("deleteImpact", () => {
     const impact = deleteImpact(sets, { variantId: "s" });
     expect(impact.deleted.map((s) => s._id)).toEqual(["set2"]);
     expect(impact.shrunk.map((s) => s._id)).toEqual(["set1"]);
+  });
+});
+
+describe("priceExtras (D22)", () => {
+  const off = { free_shipping_enabled: false, free_shipping_min: 1000 };
+  const on = { free_shipping_enabled: true, free_shipping_min: 1000 };
+  const run = (o: Partial<Parameters<typeof priceExtras>[0]>) => priceExtras({ subtotal: 500, sets: [], online: true, fee: 60, settings: off, ...o });
+
+  it("charges the fee and no discount for a plain cart", () => {
+    expect(run({})).toEqual({ discount: 0, shipping_fee: 60 });
+  });
+
+  it("takes the best set's percent of the whole subtotal, rounded down, never adding sets up", () => {
+    expect(run({ subtotal: 999, sets: [{ discount_percent: 10 }, { discount_percent: 25 }, { discount_percent: 5 }] }).discount).toBe(249);
+    expect(run({ subtotal: 100, sets: [{ discount_percent: 100 }, { discount_percent: 100 }] }).discount).toBe(100);
+  });
+
+  it("makes shipping free from the threshold, counted after the discount", () => {
+    expect(run({ settings: on, subtotal: 1000 }).shipping_fee).toBe(0);
+    expect(run({ settings: on, subtotal: 999 }).shipping_fee).toBe(60);
+    // 1100 - 10% = 990: under the threshold again.
+    expect(run({ settings: on, subtotal: 1100, sets: [{ discount_percent: 10 }] })).toEqual({ discount: 110, shipping_fee: 60 });
+    expect(run({ settings: off, subtotal: 5000 }).shipping_fee).toBe(60);
+  });
+
+  it("lets a set give free shipping alone, with the threshold off", () => {
+    expect(run({ sets: [{ free_shipping: true }] }).shipping_fee).toBe(0);
+  });
+
+  it("never charges shipping at the POS, but still discounts", () => {
+    expect(run({ online: false, sets: [{ discount_percent: 10 }] })).toEqual({ discount: 50, shipping_fee: 0 });
   });
 });

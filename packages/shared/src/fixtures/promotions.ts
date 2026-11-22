@@ -1,5 +1,6 @@
 // Placeholder data for development. Not real TCOS products or prices.
 import type { Promotion } from "../schemas/promotion";
+import type { Settings } from "../schemas/settings";
 import {
   PRODUCT_KEYCHAIN_ID,
   PRODUCT_SHIRT_ID,
@@ -20,6 +21,8 @@ export const fixturePromotions: Promotion[] = [
     description: "Placeholder: any 2 shirts (sizes can be mixed) and 1 keychain bag.",
     image: null,
     price: 599,
+    discount_percent: 0,
+    free_shipping: false,
     active: true,
     archived: false,
     items: [
@@ -34,8 +37,13 @@ export const fixturePromotions: Promotion[] = [
     description: "",
     image: null,
     price: 100,
+    discount_percent: 0,
+    free_shipping: false,
     active: false,
     archived: false,
     items: [{ product_id: PRODUCT_SHIRT_ID, variant_ids: [VARIANT_SHIRT_S_ID], count: 1 }],
   },
 ];
+
+// TODO(free shipping threshold): placeholder, fixtures mode only.
+export const fixtureSettings: Settings = { free_shipping_enabled: true, free_shipping_min: 1500 };

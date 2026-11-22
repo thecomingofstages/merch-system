@@ -12,7 +12,7 @@ describe("pickMax", () => {
 
 describe("setSoldOut", () => {
   const set = {
-    _id: "s", name: "s", description: "", image: null, price: 1,
+    _id: "s", name: "s", description: "", image: null, price: 1, discount_percent: 0, free_shipping: false,
     items: [{ product_id: "p", product_name: "p", count: 2, variants: [{ _id: "a", name: "a", image: null, stock: 1 }, { _id: "b", name: "b", image: null, stock: 1 }] }],
   };
   it("is sold out only when an item's variants together can't fill its count", () => {

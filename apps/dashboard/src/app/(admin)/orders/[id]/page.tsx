@@ -400,6 +400,14 @@ export default function OrderDetailPage() {
               <Price amount={order.original_price} />
             </dd>
           </div>
+          {order.discount > 0 ? (
+            <div className="flex items-center justify-between gap-4">
+              <dt className="text-fg-2">{COPY.discountLabel}</dt>
+              <dd className="font-semibold tabular-nums text-fg">
+                -<Price amount={order.discount} />
+              </dd>
+            </div>
+          ) : null}
           <div className="flex items-center justify-between gap-4">
             <dt className="text-fg-2">{COPY.shippingFeeLabel}</dt>
             <dd className="font-semibold tabular-nums text-fg">

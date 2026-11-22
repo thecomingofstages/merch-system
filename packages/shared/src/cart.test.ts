@@ -56,6 +56,7 @@ describe("stockShortfalls", () => {
   });
   const catalog = {
     promotions: [],
+    free_shipping_over: null,
     shops: [{ _id: "s", shop_name: "s", products: [{ _id: "p1", name: "p1", description: "", image: [], variants: [variant("a", 5), variant("b", 1), variant("c", 0)] }] }],
   };
 

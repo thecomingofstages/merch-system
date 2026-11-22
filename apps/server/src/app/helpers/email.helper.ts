@@ -23,6 +23,7 @@ export type EmailOrder = {
     variants: { products_id?: Id; product_name: string; variants_id?: Id; variant_name: string; count: number }[];
   }[];
   original_price: number;
+  discount?: number;
   shipping_fee: number;
   shipping_address?: { [K in keyof Address]?: string | null } | null;
   tracking_id?: string | null;
@@ -46,6 +47,8 @@ export const emailCopy = {
   price: "ราคา",
   set: "เซ็ตโปรโมชัน",
   subtotal: "ราคาสินค้า",
+  // TODO(Thai copy): "ส่วนลด" is a placeholder until the team confirms the wording.
+  discount: "ส่วนลด",
   shipping: "ค่าส่ง",
   total: "ยอดรวม",
   address: "ที่อยู่จัดส่ง",
@@ -114,7 +117,7 @@ function itemRow(image: string | undefined, name: string, variant: string, count
 </tr>`;
 }
 
-const total = (o: EmailOrder) => o.original_price + o.shipping_fee;
+const total = (o: EmailOrder) => o.original_price - (o.discount ?? 0) + o.shipping_fee;
 
 /** The message as HTML (the shop's dark look, in tables for mail apps) and as plain text. */
 export function renderEmail(order: EmailOrder, kind: "confirmation" | "shipping", images: ItemImages = new Map()) {
@@ -173,6 +176,7 @@ export function renderEmail(order: EmailOrder, kind: "confirmation" | "shipping"
   </table>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 24px;border-top:1px solid ${C.line};padding-top:8px">
   ${sum(emailCopy.subtotal, baht(order.original_price))}
+  ${order.discount ? sum(emailCopy.discount, `-${baht(order.discount)}`) : ""}
   ${sum(emailCopy.shipping, baht(order.shipping_fee))}
   ${sum(emailCopy.total, baht(total(order)), true)}
   </table>
@@ -200,6 +204,7 @@ export function renderEmail(order: EmailOrder, kind: "confirmation" | "shipping"
     ...lines,
     "",
     `${emailCopy.subtotal}: ${baht(order.original_price)}`,
+    ...(order.discount ? [`${emailCopy.discount}: -${baht(order.discount)}`] : []),
     `${emailCopy.shipping}: ${baht(order.shipping_fee)}`,
     `${emailCopy.total}: ${baht(total(order))}`,
     ...(isComplete(order.shipping_address) ? ["", `${emailCopy.address}: ${formatThaiAddress(order.shipping_address)}`] : []),
